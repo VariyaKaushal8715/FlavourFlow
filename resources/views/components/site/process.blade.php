@@ -7,7 +7,7 @@
         <div class="mt-12 grid gap-4 lg:grid-cols-3">
             @foreach ($process['steps'] as $step)
                 <article class="rounded-lg border border-emerald-900/10 bg-white p-6 shadow-sm shadow-emerald-950/5">
-                    <p class="text-sm font-semibold text-red-600">{{ $step['number'] }}</p>
+                    <p class="text-sm font-semibold text-brand-primary">{{ $step['number'] }}</p>
                     <h3 class="mt-4 text-xl font-semibold leading-7 text-zinc-950">{{ $step['title'] }}</h3>
                     <p class="mt-3 text-sm leading-7 text-zinc-600">{{ $step['description'] }}</p>
                 </article>

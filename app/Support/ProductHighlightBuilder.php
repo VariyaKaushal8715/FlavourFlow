@@ -52,6 +52,7 @@ class ProductHighlightBuilder
             'is_featured' => $isFeatured,
             'priority' => $priority,
             'rating' => $rating,
+            'url' => Arr::get($product, 'url', '#products'),
             'highlight_score' => $this->highlightScore($isFeatured, $priority, $rating),
         ];
     }
@@ -84,6 +85,7 @@ class ProductHighlightBuilder
             'is_featured' => true,
             'priority' => 0,
             'rating' => 0,
+            'url' => '#products',
             'highlight_score' => 1000,
         ];
     }

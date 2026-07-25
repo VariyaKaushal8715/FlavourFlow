@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Offer;
 use App\Models\Product;
 use App\Support\ProductHighlightBuilder;
 use Illuminate\Contracts\View\View;
@@ -24,7 +25,17 @@ class HomeController extends Controller
             : $site['products'];
 
         $site['hero']['product_showcase'] = $this->productHighlightBuilder->forHero($products);
+        $offers = Offer::query()
+            ->visibleNow()
+            ->orderByDesc('is_featured')
+            ->orderByDesc('priority')
+            ->limit(6)
+            ->get();
 
-        return view('welcome', ['site' => $site, 'products' => $products]);
+        return view('welcome', [
+            'site' => $site,
+            'products' => $products,
+            'offers' => $offers,
+        ]);
     }
 }
