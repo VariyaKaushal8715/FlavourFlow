@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -127,11 +126,11 @@ class Product extends Model
             'category' => $this->category,
             'description' => $this->description,
             'badge' => $this->badge,
-            'price' => 'Rs. '.Number::format((float) $this->price, 2),
+            'price' => 'Rs. '.number_format((float) $this->price, 2),
             'compare_at_price' => $this->compare_at_price
-                ? 'Rs. '.Number::format((float) $this->compare_at_price, 2)
+                ? 'Rs. '.number_format((float) $this->compare_at_price, 2)
                 : '',
-            'metric' => Number::format((float) $this->rating, 1).' rating',
+            'metric' => number_format((float) $this->rating, 1).' rating',
             'image' => $this->image_path ?: 'images/flavourflow-mark.png',
             'sku' => $this->sku ?? '',
             'unit' => $this->unit,
