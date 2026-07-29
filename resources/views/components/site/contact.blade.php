@@ -4,7 +4,7 @@
     <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
         <div class="grid gap-10 rounded-lg border border-zinc-200 bg-zinc-50 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div class="max-w-3xl">
-                <p class="text-sm font-semibold text-red-600">{{ $contact['eyebrow'] }}</p>
+                <p class="text-sm font-semibold text-brand-primary">{{ $contact['eyebrow'] }}</p>
                 <h2 class="mt-3 text-3xl font-semibold leading-tight text-zinc-950 sm:text-4xl">{{ $contact['title'] }}</h2>
                 <p class="mt-4 text-base leading-8 text-zinc-600 sm:text-lg">{{ $contact['description'] }}</p>
                 <a class="mt-5 inline-flex break-all text-base font-semibold text-emerald-700 transition hover:text-emerald-900" href="mailto:{{ $contact['email'] }}">

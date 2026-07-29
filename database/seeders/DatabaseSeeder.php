@@ -23,6 +23,9 @@ class DatabaseSeeder extends Seeder
             'is_admin' => true,
         ]);
 
-        $this->call(ProductSeeder::class);
+        $this->call([
+            ProductSeeder::class,
+            OfferSeeder::class,
+        ]);
     }
 }

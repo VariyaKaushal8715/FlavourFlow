@@ -6,6 +6,8 @@
 
 @php
     $isEditing = $product !== null;
+    $highlightValue = old('highlights', $product?->highlights ?? []);
+    $highlightValue = is_array($highlightValue) ? implode(PHP_EOL, $highlightValue) : $highlightValue;
 @endphp
 
 <form class="mt-6 space-y-4" method="POST" action="{{ $action }}" enctype="multipart/form-data">
@@ -43,7 +45,46 @@
     <div>
         <label class="text-sm font-semibold text-zinc-800" for="description">Description</label>
         <textarea class="admin-input min-h-24 py-3" id="description" name="description" required>{{ old('description', $product?->description) }}</textarea>
+        <p class="mt-1 text-xs text-zinc-500">Short, attractive copy used on product cards.</p>
         @error('description') <p class="admin-error">{{ $message }}</p> @enderror
+    </div>
+
+    <div class="border-t border-zinc-200 pt-5">
+        <p class="text-xs font-semibold uppercase text-emerald-700">Full product page</p>
+        <p class="mt-1 text-xs leading-5 text-zinc-500">These details appear only after a customer opens the product.</p>
+    </div>
+
+    <div>
+        <label class="text-sm font-semibold text-zinc-800" for="long_description">Full description</label>
+        <textarea class="admin-input min-h-32 py-3" id="long_description" name="long_description">{{ old('long_description', $product?->long_description) }}</textarea>
+        @error('long_description') <p class="admin-error">{{ $message }}</p> @enderror
+    </div>
+
+    <div>
+        <label class="text-sm font-semibold text-zinc-800" for="highlights">Product highlights</label>
+        <textarea class="admin-input min-h-28 py-3" id="highlights" name="highlights" placeholder="Freshly packed&#10;No artificial colours&#10;Balanced everyday flavour">{{ $highlightValue }}</textarea>
+        <p class="mt-1 text-xs text-zinc-500">Add one highlight per line, up to six.</p>
+        @error('highlights') <p class="admin-error">{{ $message }}</p> @enderror
+        @error('highlights.*') <p class="admin-error">{{ $message }}</p> @enderror
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+            <label class="text-sm font-semibold text-zinc-800" for="ingredients">Ingredients</label>
+            <textarea class="admin-input min-h-28 py-3" id="ingredients" name="ingredients">{{ old('ingredients', $product?->ingredients) }}</textarea>
+            @error('ingredients') <p class="admin-error">{{ $message }}</p> @enderror
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-zinc-800" for="usage_instructions">How to use</label>
+            <textarea class="admin-input min-h-28 py-3" id="usage_instructions" name="usage_instructions">{{ old('usage_instructions', $product?->usage_instructions) }}</textarea>
+            @error('usage_instructions') <p class="admin-error">{{ $message }}</p> @enderror
+        </div>
+    </div>
+
+    <div>
+        <label class="text-sm font-semibold text-zinc-800" for="origin">Origin / packed at</label>
+        <input class="admin-input" id="origin" name="origin" type="text" value="{{ old('origin', $product?->origin) }}" placeholder="Blended and packed in Gujarat, India">
+        @error('origin') <p class="admin-error">{{ $message }}</p> @enderror
     </div>
 
     <div class="grid grid-cols-2 gap-4">

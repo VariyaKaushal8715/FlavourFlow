@@ -30,6 +30,12 @@ class StoreProductRequest extends FormRequest
             'category' => ['required', 'string', 'max:80'],
             'unit' => ['required', 'string', 'max:30'],
             'description' => ['required', 'string', 'max:500'],
+            'long_description' => ['nullable', 'string', 'max:3000'],
+            'highlights' => ['nullable', 'array', 'max:6'],
+            'highlights.*' => ['string', 'max:120'],
+            'ingredients' => ['nullable', 'string', 'max:1000'],
+            'usage_instructions' => ['nullable', 'string', 'max:1000'],
+            'origin' => ['nullable', 'string', 'max:120'],
             'badge' => ['required', 'string', 'max:40'],
             'price' => ['required', 'decimal:0,2', 'min:0', 'max:999999.99'],
             'compare_at_price' => ['nullable', 'decimal:0,2', 'gt:price', 'max:999999.99'],
@@ -47,8 +53,28 @@ class StoreProductRequest extends FormRequest
     {
         $this->merge([
             'sku' => $this->string('sku')->trim()->upper()->toString(),
+            'highlights' => $this->normaliseHighlights($this->input('highlights')),
             'is_featured' => $this->boolean('is_featured'),
             'is_active' => $this->boolean('is_active'),
         ]);
+    }
+
+    /**
+     * @return array<int, string>|null
+     */
+    private function normaliseHighlights(mixed $highlights): ?array
+    {
+        if (is_array($highlights)) {
+            return array_values(array_filter(array_map('trim', $highlights)));
+        }
+
+        if (! is_string($highlights) || trim($highlights) === '') {
+            return null;
+        }
+
+        return array_values(array_filter(array_map(
+            'trim',
+            preg_split('/\r\n|\r|\n/', $highlights) ?: [],
+        )));
     }
 }

@@ -55,7 +55,7 @@ test('an administrator can add a product and make it the homepage spotlight', fu
             'low_stock_threshold' => '10',
             'rating' => '4.9',
             'priority' => '98',
-            'image' => UploadedFile::fake()->image('kashmiri-chilli.jpg'),
+            'image' => fakeProductImage('kashmiri-chilli.png'),
             'is_featured' => '1',
             'is_active' => '1',
         ])
@@ -114,7 +114,7 @@ test('an administrator can update product pricing inventory and image', function
             'low_stock_threshold' => '6',
             'rating' => '4.8',
             'priority' => '90',
-            'image' => UploadedFile::fake()->image('lakadong.jpg'),
+            'image' => fakeProductImage('lakadong.png'),
             'is_featured' => '1',
             'is_active' => '1',
         ])
@@ -199,3 +199,15 @@ test('the storefront does not expose template instructions', function () {
         ->assertDontSee('Ready for your details')
         ->assertDontSee('Make this homepage yours');
 });
+
+function fakeProductImage(string $name): UploadedFile
+{
+    $contents = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        true,
+    );
+
+    assert(is_string($contents));
+
+    return UploadedFile::fake()->createWithContent($name, $contents);
+}

@@ -12,7 +12,7 @@
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen bg-zinc-100 text-zinc-950 antialiased">
+    <body class="min-h-screen bg-zinc-100 text-zinc-950 antialiased" data-admin-secure-page="true">
         {{ $slot }}
     </body>
 </html>

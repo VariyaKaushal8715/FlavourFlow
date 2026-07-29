@@ -6,15 +6,26 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-brand-primary: var(--brand-primary);
+    --color-brand-accent: var(--brand-accent);
+    --color-brand-ink: var(--brand-ink);
+    --color-brand-surface: var(--brand-surface);
 }
 
 @layer base {
+    :root {
+        --brand-primary: #b42318;
+        --brand-accent: #f4b942;
+        --brand-ink: #09090b;
+        --brand-surface: #fff9ed;
+    }
+
     html {
         scroll-behavior: smooth;
     }
 
     ::selection {
-        background: #b91c1c;
+        background: var(--brand-primary);
         color: #fff;
     }
 }
@@ -167,9 +178,137 @@
     }
 
     .product-tile:hover {
-        border-color: rgb(185 28 28 / 0.35);
+        border-color: color-mix(in srgb, var(--brand-primary) 40%, transparent);
         box-shadow: 0 20px 45px rgb(24 24 27 / 0.12);
         transform: translateY(-6px);
+    }
+
+    .offer-stage {
+        isolation: isolate;
+        box-shadow: 0 28px 70px rgb(24 24 27 / 0.18);
+    }
+
+    .offer-stage-image {
+        object-position: center;
+        transform: scale(1.02);
+        transition: transform 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .offer-stage[data-active-motion='monsoon'] .offer-stage-image {
+        transform: scale(1.07) translate3d(1%, 0, 0);
+    }
+
+    .offer-stage[data-active-motion='today'] .offer-stage-image {
+        transform: scale(1.05) translate3d(-1%, 0, 0);
+    }
+
+    .offer-stage[data-active-motion='festival'] .offer-stage-image {
+        transform: scale(1.08) translate3d(0, -1%, 0);
+    }
+
+    .offer-stage-shade {
+        background:
+            linear-gradient(90deg, rgb(9 9 11 / 0.94) 0%, rgb(9 9 11 / 0.78) 40%, rgb(9 9 11 / 0.12) 72%),
+            linear-gradient(0deg, rgb(9 9 11 / 0.82) 0%, transparent 45%);
+    }
+
+    .offer-stage-glow {
+        background: radial-gradient(circle at 18% 45%, color-mix(in srgb, var(--brand-accent) 14%, transparent), transparent 47%);
+        animation: offer-glow-drift 5s ease-in-out infinite alternate;
+    }
+
+    .offer-panel {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transform: translate3d(-24px, 0, 0);
+        transition:
+            visibility 0s 300ms,
+            opacity 240ms ease,
+            transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .offer-panel.is-active {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate3d(0, 0, 0);
+        transition-delay: 0s;
+    }
+
+    .offer-panel[data-offer-motion='rise'] {
+        transform: translate3d(0, 28px, 0);
+    }
+
+    .offer-panel[data-offer-motion='focus'] {
+        transform: scale(0.96);
+        filter: blur(5px);
+    }
+
+    .offer-panel[data-offer-motion='focus'].is-active {
+        transform: scale(1);
+        filter: blur(0);
+    }
+
+    .offer-panel[data-offer-motion='today'].is-active .offer-panel-title {
+        animation: offer-title-spotlight 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .offer-panel[data-offer-motion='monsoon'].is-active .offer-panel-title {
+        animation: offer-title-monsoon 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .offer-panel[data-offer-motion='festival'].is-active .offer-panel-title {
+        animation: offer-title-festival 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .offer-panel[data-offer-motion='slide'].is-active .offer-panel-title {
+        animation: offer-title-slide 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .offer-panel.is-active .offer-panel-description,
+    .offer-panel.is-active .offer-panel-meta {
+        animation: offer-detail-rise 360ms 80ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .offer-discount::after {
+        content: '';
+        position: absolute;
+        inset: -30% auto -30% -45%;
+        width: 35%;
+        transform: skewX(-18deg);
+        background: rgb(255 255 255 / 0.58);
+        filter: blur(3px);
+    }
+
+    .offer-panel.is-active .offer-discount {
+        animation: offer-discount-pulse 2.4s ease-in-out infinite;
+    }
+
+    .offer-panel.is-active .offer-discount::after {
+        animation: offer-discount-shine 2.8s 400ms ease-in-out infinite;
+    }
+
+    .offer-tabs {
+        scrollbar-width: thin;
+        scrollbar-color: rgb(251 191 36 / 0.6) transparent;
+    }
+
+    .offer-tab {
+        background: transparent;
+    }
+
+    .offer-tab:hover,
+    .offer-tab.is-active {
+        background: rgb(255 255 255 / 0.1);
+    }
+
+    .offer-tab.is-active .offer-tab-value {
+        color: var(--brand-accent);
+    }
+
+    .offer-tab.is-active .offer-tab-progress > span {
+        animation: offer-tab-progress 3.2s linear both;
     }
 
     [data-reveal] {
@@ -270,6 +409,117 @@
     }
 }
 
+@keyframes offer-glow-drift {
+    from {
+        opacity: 0.45;
+        transform: translate3d(-2%, 0, 0);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate3d(3%, 0, 0);
+    }
+}
+
+@keyframes offer-title-monsoon {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, -22px, 0);
+        filter: blur(5px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        filter: blur(0);
+    }
+}
+
+@keyframes offer-title-spotlight {
+    0% {
+        opacity: 0;
+        transform: scale(0.9);
+        filter: brightness(1.8) blur(4px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: brightness(1) blur(0);
+    }
+}
+
+@keyframes offer-title-festival {
+    0% {
+        opacity: 0;
+        transform: translate3d(18px, 18px, 0) rotate(1deg);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) rotate(0);
+    }
+}
+
+@keyframes offer-title-slide {
+    0% {
+        opacity: 0;
+        transform: translate3d(-32px, 0, 0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes offer-detail-rise {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 16px, 0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes offer-discount-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 14px 30px rgb(120 53 15 / 0.2);
+    }
+
+    50% {
+        transform: scale(1.06);
+        box-shadow: 0 18px 42px rgb(251 191 36 / 0.34);
+    }
+}
+
+@keyframes offer-discount-shine {
+    0%,
+    35% {
+        left: -45%;
+    }
+
+    65%,
+    100% {
+        left: 125%;
+    }
+}
+
+@keyframes offer-tab-progress {
+    from {
+        transform: scaleX(0);
+    }
+
+    to {
+        transform: scaleX(1);
+    }
+}
+
 @media (max-width: 1023px) {
     .hero-media img {
         object-position: 68% center;
@@ -297,6 +547,20 @@
 
     .hero-rank-badge {
         right: 0;
+    }
+
+    .offer-stage-image {
+        object-position: 64% center;
+    }
+
+    .offer-stage-shade {
+        background:
+            linear-gradient(90deg, rgb(9 9 11 / 0.92), rgb(9 9 11 / 0.58)),
+            linear-gradient(0deg, rgb(9 9 11 / 0.92) 0%, transparent 58%);
+    }
+
+    .offer-stage-glow {
+        width: 100%;
     }
 }
 

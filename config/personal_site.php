@@ -12,9 +12,19 @@ return [
         'logo' => 'images/flavourflow-mark.png',
     ],
 
+    'theme' => [
+        'auto_from_logo' => true,
+        'primary' => '#b42318',
+        'accent' => '#f4b942',
+        'ink' => '#09090b',
+        'surface' => '#fff9ed',
+    ],
+
     'navigation' => [
-        ['label' => 'Home', 'href' => '#top'],
-        ['label' => 'Products', 'href' => '#products'],
+        ['label' => 'Home', 'href' => '/#top'],
+        ['label' => 'Offers', 'href' => '/#offers'],
+        ['label' => 'Products', 'href' => '/#products'],
+        ['label' => 'Our story', 'href' => '/#company'],
     ],
 
     'hero' => [
@@ -111,8 +121,36 @@ return [
         ],
     ],
 
+    'company' => [
+        'eyebrow' => 'The company behind the flavour',
+        'title' => 'Built around honest spice and everyday cooking.',
+        'description' => 'FlavourFlow started with a simple belief: the spices used every day should be fresh, dependable, and easy to understand. We source thoughtfully, blend in small batches, and keep every pack focused on real kitchen use.',
+        'facts' => [
+            ['value' => '2021', 'label' => 'Established'],
+            ['value' => '25+', 'label' => 'Spices and blends'],
+            ['value' => '5,000+', 'label' => 'Orders packed'],
+            ['value' => 'Gujarat', 'label' => 'Our roots'],
+        ],
+        'principles' => [
+            [
+                'title' => 'Honest sourcing',
+                'description' => 'Ingredients are selected for aroma, colour, and consistency without unnecessary fillers.',
+            ],
+            [
+                'title' => 'Small-batch freshness',
+                'description' => 'Focused production keeps the flavour lively from the first spoon to the last.',
+            ],
+            [
+                'title' => 'Made for real kitchens',
+                'description' => 'Every blend is designed for practical, repeatable everyday cooking.',
+            ],
+        ],
+    ],
+
     'footer_links' => [
-        ['label' => 'Home', 'href' => '#top'],
-        ['label' => 'Products', 'href' => '#products'],
+        ['label' => 'Home', 'href' => '/#top'],
+        ['label' => 'Offers', 'href' => '/#offers'],
+        ['label' => 'Products', 'href' => '/#products'],
+        ['label' => 'Our story', 'href' => '/#company'],
     ],
 ];

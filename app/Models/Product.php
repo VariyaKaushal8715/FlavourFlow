@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -17,6 +16,11 @@ use Illuminate\Support\Str;
     'category',
     'unit',
     'description',
+    'long_description',
+    'highlights',
+    'ingredients',
+    'usage_instructions',
+    'origin',
     'badge',
     'price',
     'compare_at_price',
@@ -44,6 +48,11 @@ class Product extends Model
         'is_active' => true,
     ];
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     /**
      * @return array<string, string>
      */
@@ -52,6 +61,7 @@ class Product extends Model
         return [
             'price' => 'decimal:2',
             'compare_at_price' => 'decimal:2',
+            'highlights' => 'array',
             'quantity' => 'integer',
             'low_stock_threshold' => 'integer',
             'rating' => 'decimal:1',
@@ -117,6 +127,18 @@ class Product extends Model
         return Str::after($this->image_path, 'storage/');
     }
 
+    public function formattedPrice(): string
+    {
+        return 'Rs. '.number_format((float) $this->price, 2);
+    }
+
+    public function formattedComparePrice(): ?string
+    {
+        return $this->compare_at_price
+            ? 'Rs. '.number_format((float) $this->compare_at_price, 2)
+            : null;
+    }
+
     /**
      * @return array<string, bool|float|int|string>
      */
@@ -127,11 +149,9 @@ class Product extends Model
             'category' => $this->category,
             'description' => $this->description,
             'badge' => $this->badge,
-            'price' => 'Rs. '.Number::format((float) $this->price, 2),
-            'compare_at_price' => $this->compare_at_price
-                ? 'Rs. '.Number::format((float) $this->compare_at_price, 2)
-                : '',
-            'metric' => Number::format((float) $this->rating, 1).' rating',
+            'price' => $this->formattedPrice(),
+            'compare_at_price' => $this->formattedComparePrice() ?? '',
+            'metric' => number_format((float) $this->rating, 1).' rating',
             'image' => $this->image_path ?: 'images/flavourflow-mark.png',
             'sku' => $this->sku ?? '',
             'unit' => $this->unit,
@@ -142,6 +162,7 @@ class Product extends Model
             'is_active' => $this->is_active,
             'priority' => $this->priority,
             'rating' => (float) $this->rating,
+            'url' => route('products.show', ['product' => $this->slug]),
         ];
     }
 }

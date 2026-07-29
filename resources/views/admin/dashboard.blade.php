@@ -1,20 +1,5 @@
 <x-admin.layout title="Products">
-    <header class="border-b border-zinc-200 bg-white">
-        <div class="mx-auto flex w-full max-w-[90rem] items-center justify-between gap-6 px-6 py-4 lg:px-8">
-            <div class="flex items-center gap-3">
-                <img class="h-10 w-10 rounded-lg object-cover" src="{{ asset('images/flavourflow-mark.png') }}" alt="FlavourFlow">
-                <div>
-                    <p class="text-sm font-semibold text-zinc-950">FlavourFlow Admin</p>
-                    <p class="text-xs text-zinc-500">Catalog and inventory</p>
-                </div>
-            </div>
-
-            <form method="POST" action="{{ route('admin.logout') }}">
-                @csrf
-                <button class="text-sm font-semibold text-zinc-600 transition hover:text-red-700" type="submit">Sign out</button>
-            </form>
-        </div>
-    </header>
+    <x-admin.header active="products" />
 
     <main class="mx-auto grid w-full max-w-[90rem] gap-8 px-6 py-8 lg:grid-cols-[24rem_1fr] lg:px-8">
         <section class="self-start rounded-lg border border-zinc-200 bg-white p-6">
@@ -150,7 +135,7 @@
                                 <a class="inline-flex min-h-10 items-center justify-center rounded-lg border border-zinc-300 px-4 text-sm font-semibold text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950" href="{{ route('admin.products.edit', $product) }}">
                                     Edit
                                 </a>
-                                <form method="POST" action="{{ route('admin.products.destroy', $product) }}" data-confirm-delete data-product-name="{{ $product->name }}">
+                                <form method="POST" action="{{ route('admin.products.destroy', $product) }}" data-confirm-delete data-item-name="{{ $product->name }}">
                                     @csrf
                                     @method('DELETE')
                                     <button class="inline-flex min-h-10 items-center justify-center rounded-lg border border-red-200 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-50" type="submit">
