@@ -35,6 +35,7 @@ class ProductHighlightBuilder
         $rating = (float) Arr::get($product, 'rating', 0);
 
         return [
+            'id' => Arr::get($product, 'id'),
             'name' => Arr::get($product, 'name', 'Featured product'),
             'category' => Arr::get($product, 'category', 'Signature product'),
             'description' => Arr::get($product, 'description', 'A highlighted product from your collection.'),
@@ -68,6 +69,7 @@ class ProductHighlightBuilder
     private function fallbackProduct(): array
     {
         return [
+            'id' => null,
             'name' => 'Signature Blend',
             'category' => 'Featured product',
             'description' => 'Your best product will appear here when products are added.',

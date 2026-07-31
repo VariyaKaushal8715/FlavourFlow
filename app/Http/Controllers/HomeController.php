@@ -6,6 +6,7 @@ use App\Models\Offer;
 use App\Models\Product;
 use App\Support\ProductHighlightBuilder;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
@@ -36,6 +37,7 @@ class HomeController extends Controller
             'site' => $site,
             'products' => $products,
             'offers' => $offers,
+            'wishlistProductIds' => Auth::user()?->wishlistProducts()->pluck('products.id')->all() ?? [],
         ]);
     }
 }

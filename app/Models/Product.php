@@ -145,6 +145,8 @@ class Product extends Model
     public function toHighlightData(): array
     {
         return [
+            'id' => $this->id,
+            'slug' => $this->slug,
             'name' => $this->name,
             'category' => $this->category,
             'description' => $this->description,
