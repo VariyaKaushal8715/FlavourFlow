@@ -15,7 +15,6 @@
 
         <title>{{ $pageTitle ?? $site['meta']['title'] }}</title>
 
-        @fonts
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body
