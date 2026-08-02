@@ -78,8 +78,8 @@
     <div class="card">
         <h2>Login</h2>
 
-        @if ($message)
-            <div class="message">{{ $message }}</div>
+        @if (session('message'))
+            <div class="message">{{ session('message') }}</div>
         @endif
 
         @if ($errors->any())
@@ -102,6 +102,7 @@
 
             <button type="submit">Log In</button>
         </form>
+        <p style="margin: 1rem 0 0; text-align: center;"><a href="{{ route('home') }}">Back to shop</a></p>
     </div>
 </body>
 </html>

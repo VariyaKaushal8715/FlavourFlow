@@ -31,6 +31,18 @@
 }
 
 @layer components {
+    .wishlist-button[data-wishlisted='true'] {
+        color: #dc2626;
+    }
+
+    .wishlist-button[data-wishlisted='true'] svg {
+        fill: currentColor;
+    }
+
+    .wishlist-button.is-loading svg {
+        animation: wishlist-pulse 700ms ease-in-out infinite;
+    }
+
     .hero-stage {
         --pointer-x: 0px;
         --pointer-y: 0px;
@@ -521,6 +533,12 @@
         border-color: rgb(180 35 24 / 0.24);
         box-shadow: 0 16px 32px rgb(17 24 39 / 0.12);
         transform: translateY(-2px) scale(1.04);
+    }
+}
+
+@keyframes wishlist-pulse {
+    50% {
+        transform: scale(0.82);
     }
 }
 

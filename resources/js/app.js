@@ -247,10 +247,224 @@ const deriveBrandThemeFromLogo = () => {
     logo.src = logoUrl;
 };
 
+const initializeWishlist = () => {
+    const buttons = Array.from(document.querySelectorAll('[data-wishlist-button]'));
+
+    if (!buttons.length) {
+        return;
+    }
+
+    const wishlistEndpoint = document.body.dataset.wishlistEndpoint;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    const updateButton = (button, wishlisted) => {
+        button.dataset.wishlisted = String(wishlisted);
+        button.setAttribute('aria-pressed', String(wishlisted));
+        button.setAttribute(
+            'aria-label',
+            `${wishlisted ? 'Remove' : 'Add'} ${button.closest('article')?.querySelector('h3')?.textContent?.trim() || 'product'} ${wishlisted ? 'from' : 'to'} wishlist`,
+        );
+    };
+
+    const syncButtons = (productIds) => {
+        const wishlistedIds = new Set(productIds.map(String));
+
+        buttons.forEach((button) => updateButton(button, wishlistedIds.has(button.dataset.productId)));
+    };
+
+    if (wishlistEndpoint) {
+        fetch(wishlistEndpoint, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Unable to load wishlist.');
+                }
+
+                return response.json();
+            })
+            .then(({ product_ids: productIds }) => syncButtons(productIds || []))
+            .catch(() => {
+                // Server-rendered state remains available while the request is retried on the next page load.
+            });
+    }
+
+    buttons.forEach((button) => {
+        button.addEventListener('click', async () => {
+            if (!wishlistEndpoint) {
+                return;
+            }
+
+            const productId = button.dataset.productId;
+
+            if (!productId || button.disabled) {
+                return;
+            }
+
+            const wishlisted = button.dataset.wishlisted === 'true';
+            const template = document.body.dataset[wishlisted ? 'wishlistDestroyUrl' : 'wishlistStoreUrl'];
+
+            if (!template) {
+                return;
+            }
+
+            button.disabled = true;
+            button.classList.add('is-loading');
+
+            try {
+                const response = await fetch(template.replace('__product__', productId), {
+                    method: wishlisted ? 'DELETE' : 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Unable to update wishlist.');
+                }
+
+                const { wishlisted: isWishlisted } = await response.json();
+                updateButton(button, isWishlisted);
+
+                if (!isWishlisted && document.body.dataset.wishlistPage === 'true') {
+                    button.closest('article')?.remove();
+
+                    if (!document.querySelector('[data-wishlist-button]')) {
+                        window.location.reload();
+                    }
+                }
+            } catch {
+                window.alert('We could not update your wishlist. Please try again.');
+            } finally {
+                button.disabled = false;
+                button.classList.remove('is-loading');
+            }
+        });
+    });
+};
+
+const updateCartCount = (count) => {
+    document.querySelectorAll('[data-cart-count]').forEach((element) => {
+        element.textContent = count;
+    });
+};
+
+const showCartMessage = (message) => {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'fixed bottom-6 right-6 z-50 rounded-lg bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-lg';
+    messageElement.setAttribute('role', 'status');
+    messageElement.textContent = message;
+    document.body.append(messageElement);
+    window.setTimeout(() => messageElement.remove(), 3500);
+};
+
+const promptLogin = (message) => {
+    window.alert(message);
+
+    const loginUrl = document.body.dataset.loginUrl;
+
+    if (loginUrl) {
+        window.location.assign(loginUrl);
+    }
+};
+
+const initializeCart = () => {
+    const summaryUrl = document.body.dataset.cartSummaryUrl;
+    const storeTemplate = document.body.dataset.cartStoreUrl;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    if (summaryUrl) {
+        fetch(summaryUrl, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+            .then((response) => response.ok ? response.json() : null)
+            .then((data) => data && updateCartCount(data.count))
+            .catch(() => {});
+    }
+
+    document.querySelectorAll('[data-add-to-cart]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            if (!storeTemplate) {
+                return;
+            }
+
+            const productSlug = button.dataset.productSlug;
+            if (!productSlug || button.disabled) {
+                return;
+            }
+
+            button.disabled = true;
+            try {
+                const response = await fetch(storeTemplate.replace('__product__', productSlug), {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: JSON.stringify({ quantity: 1 }),
+                });
+                if (!response.ok) {
+                    throw new Error('Unable to add to cart.');
+                }
+                const data = await response.json();
+                updateCartCount(data.count);
+                showCartMessage(data.message || 'Added to your cart.');
+            } catch {
+                window.alert('We could not add this product to your cart. Please try again.');
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
+
+    const updateTemplate = document.body.dataset.cartUpdateUrl;
+    const destroyTemplate = document.body.dataset.cartDestroyUrl;
+    document.querySelectorAll('[data-cart-item]').forEach((item) => {
+        const productSlug = item.dataset.cartSlug;
+        const quantityElement = item.querySelector('[data-cart-quantity]');
+        const setQuantity = async (quantity) => {
+            if (!updateTemplate || quantity < 1) {
+                return;
+            }
+            const response = await fetch(updateTemplate.replace('__product__', productSlug), {
+                method: 'PATCH', credentials: 'same-origin',
+                headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                body: JSON.stringify({ quantity }),
+            });
+            if (!response.ok) throw new Error('Unable to update cart.');
+            const data = await response.json();
+            quantityElement.textContent = data.quantity;
+            item.querySelector('[data-cart-line-total]').textContent = `Rs. ${data.line_total}`;
+            document.querySelectorAll('[data-cart-subtotal], [data-cart-total]').forEach((element) => element.textContent = `Rs. ${data.subtotal}`);
+            updateCartCount(data.count);
+        };
+        item.querySelector('[data-cart-increase]')?.addEventListener('click', () => setQuantity(Number(quantityElement.textContent) + 1).catch(() => window.alert('We could not update your cart.')));
+        item.querySelector('[data-cart-decrease]')?.addEventListener('click', () => setQuantity(Number(quantityElement.textContent) - 1).catch(() => window.alert('We could not update your cart.')));
+        item.querySelector('[data-cart-remove]')?.addEventListener('click', async () => {
+            try {
+                const response = await fetch(destroyTemplate.replace('__product__', productSlug), {
+                    method: 'DELETE', credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                });
+                if (!response.ok) throw new Error('Unable to remove cart item.');
+                const data = await response.json();
+                updateCartCount(data.count);
+                document.querySelectorAll('[data-cart-subtotal], [data-cart-total]').forEach((element) => {
+                    element.textContent = `Rs. ${data.subtotal}`;
+                });
+                item.remove();
+                if (!document.querySelector('[data-cart-item]')) {
+                    window.location.reload();
+                }
+            } catch {
+                window.alert('We could not remove this product from your cart.');
+            }
+        });
+    });
+};
+
 restoreCachedBrandTheme();
 
 window.addEventListener('DOMContentLoaded', () => {
     deriveBrandThemeFromLogo();
+    initializeWishlist();
+    initializeCart();
     requestAnimationFrame(() => document.body.classList.add('is-ready'));
 
     document.querySelectorAll('[data-card-delay]').forEach((element) => {

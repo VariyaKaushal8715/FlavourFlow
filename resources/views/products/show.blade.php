@@ -65,6 +65,14 @@
                         <p class="mt-3 text-xs text-zinc-500">Inclusive of applicable taxes.</p>
                     </div>
 
+                    <button
+                        class="mt-8 inline-flex rounded-lg bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
+                        type="button"
+                        data-add-to-cart
+                        data-product-slug="{{ $product->slug }}"
+                        @disabled($product->quantity === 0)
+                    >{{ $product->quantity > 0 ? 'Add to cart' : 'Out of stock' }}</button>
+
                     @if ($product->highlights)
                         <div class="mt-8">
                             <h2 class="text-lg font-semibold text-zinc-950">Product highlights</h2>
