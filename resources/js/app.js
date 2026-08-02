@@ -254,7 +254,6 @@ const initializeWishlist = () => {
         return;
     }
 
-    const loginUrl = document.body.dataset.loginUrl;
     const wishlistEndpoint = document.body.dataset.wishlistEndpoint;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
@@ -291,7 +290,6 @@ const initializeWishlist = () => {
     buttons.forEach((button) => {
         button.addEventListener('click', async () => {
             if (!wishlistEndpoint) {
-                window.location.assign(loginUrl);
                 return;
             }
 
@@ -305,7 +303,6 @@ const initializeWishlist = () => {
             const template = document.body.dataset[wishlisted ? 'wishlistDestroyUrl' : 'wishlistStoreUrl'];
 
             if (!template) {
-                window.location.assign(loginUrl);
                 return;
             }
 
@@ -322,11 +319,6 @@ const initializeWishlist = () => {
                         'X-CSRF-TOKEN': csrfToken,
                     },
                 });
-
-                if (response.redirected || response.status === 401 || response.status === 419) {
-                    window.location.assign(loginUrl);
-                    return;
-                }
 
                 if (!response.ok) {
                     throw new Error('Unable to update wishlist.');
@@ -367,10 +359,19 @@ const showCartMessage = (message) => {
     window.setTimeout(() => messageElement.remove(), 3500);
 };
 
+const promptLogin = (message) => {
+    window.alert(message);
+
+    const loginUrl = document.body.dataset.loginUrl;
+
+    if (loginUrl) {
+        window.location.assign(loginUrl);
+    }
+};
+
 const initializeCart = () => {
     const summaryUrl = document.body.dataset.cartSummaryUrl;
     const storeTemplate = document.body.dataset.cartStoreUrl;
-    const loginUrl = document.body.dataset.loginUrl;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
     if (summaryUrl) {
@@ -383,7 +384,6 @@ const initializeCart = () => {
     document.querySelectorAll('[data-add-to-cart]').forEach((button) => {
         button.addEventListener('click', async () => {
             if (!storeTemplate) {
-                window.location.assign(loginUrl);
                 return;
             }
 
@@ -400,10 +400,6 @@ const initializeCart = () => {
                     headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                     body: JSON.stringify({ quantity: 1 }),
                 });
-                if (response.redirected || response.status === 401 || response.status === 419) {
-                    window.location.assign(loginUrl);
-                    return;
-                }
                 if (!response.ok) {
                     throw new Error('Unable to add to cart.');
                 }

@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Offer;
 use App\Models\Product;
+use App\Support\WishlistState;
 use Illuminate\Contracts\View\View;
 
 class OfferDetailsController extends Controller
 {
-    public function __invoke(Offer $offer): View
+    public function __invoke(Offer $offer, WishlistState $wishlist): View
     {
         abort_unless($offer->isCurrentlyVisible(), 404);
 
@@ -28,6 +29,7 @@ class OfferDetailsController extends Controller
             'site' => config('personal_site'),
             'offer' => $offer,
             'suggestedProducts' => $suggestedProducts,
+            'wishlistProductIds' => $wishlist->productIds(),
         ]);
     }
 }

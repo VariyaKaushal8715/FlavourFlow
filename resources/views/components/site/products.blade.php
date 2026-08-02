@@ -46,7 +46,7 @@
                         class="wishlist-button absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-sm backdrop-blur transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-60"
                         type="button"
                         data-wishlist-button
-                        data-product-slug="{{ $product['slug'] ?? '' }}"
+                        data-product-id="{{ $product['id'] ?? '' }}"
                         data-wishlisted="{{ $isWishlisted ? 'true' : 'false' }}"
                         aria-pressed="{{ $isWishlisted ? 'true' : 'false' }}"
                         aria-label="{{ $isWishlisted ? 'Remove '.$product['name'].' from wishlist' : 'Add '.$product['name'].' to wishlist' }}"

@@ -19,11 +19,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::get('/products/{product:slug}', ProductDetailsController::class)->name('products.show');
 Route::get('/offers/{offer}', OfferDetailsController::class)->name('offers.show');
-Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::get('/cart/summary', [CartController::class, 'summary'])->name('cart.summary');
-Route::post('/cart/{product}', [CartController::class, 'store'])->name('cart.store');
-Route::patch('/cart/items/{product}', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/items/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -36,11 +31,17 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.update');
 });
 
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::get('/cart/summary', [CartController::class, 'summary'])->name('cart.summary');
+Route::post('/cart/{product}', [CartController::class, 'store'])->name('cart.store');
+Route::patch('/cart/items/{product}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/items/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
+Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+Route::get('/wishlist/products', [WishlistController::class, 'products'])->name('wishlist.products');
+Route::post('/wishlist/{product}', [WishlistController::class, 'store'])->name('wishlist.store');
+Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
+
 Route::middleware('auth')->group(function (): void {
-    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
-    Route::get('/wishlist/products', [WishlistController::class, 'products'])->name('wishlist.products');
-    Route::post('/wishlist/{product}', [WishlistController::class, 'store'])->name('wishlist.store');
-    Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
 

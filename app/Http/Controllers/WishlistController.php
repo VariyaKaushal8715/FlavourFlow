@@ -3,22 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Wishlist;
+use App\Support\WishlistState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class WishlistController extends Controller
 {
-    public function index(Request $request): View
+    public function index(WishlistState $wishlist): View
     {
-        $products = $request->user()
-            ->wishlistProducts()
-            ->active()
-            ->latest('wishlists.created_at')
-            ->get()
-            ->map->toHighlightData()
-            ->all();
+        $products = $wishlist->products()->map->toHighlightData()->all();
 
         return view('wishlist.index', [
             'site' => config('personal_site'),
@@ -27,31 +21,25 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function products(Request $request): JsonResponse
+    public function products(WishlistState $wishlist): JsonResponse
     {
         return response()->json([
-            'product_ids' => $request->user()->wishlistProducts()->pluck('products.id')->all(),
+            'product_ids' => $wishlist->productIds(),
         ]);
     }
 
-    public function store(Request $request, Product $product): JsonResponse
+    public function store(Product $product, WishlistState $wishlist): JsonResponse
     {
         abort_unless($product->is_active, 404);
 
-        Wishlist::query()->firstOrCreate([
-            'user_id' => $request->user()->id,
-            'product_id' => $product->id,
-        ]);
+        $wishlist->add($product);
 
         return response()->json(['wishlisted' => true]);
     }
 
-    public function destroy(Request $request, Product $product): JsonResponse
+    public function destroy(Product $product, WishlistState $wishlist): JsonResponse
     {
-        Wishlist::query()
-            ->where('user_id', $request->user()->id)
-            ->where('product_id', $product->id)
-            ->delete();
+        $wishlist->remove($product);
 
         return response()->json(['wishlisted' => false]);
     }

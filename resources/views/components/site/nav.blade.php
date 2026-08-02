@@ -14,12 +14,12 @@
             @foreach ($navigation as $item)
                 <a class="transition hover:text-white" href="{{ $item['href'] }}">{{ $item['label'] }}</a>
             @endforeach
+            <a class="transition hover:text-white" href="{{ route('wishlist.index') }}">Wishlist</a>
+            <a class="inline-flex items-center gap-2 transition hover:text-white" href="{{ route('cart.index') }}">
+                Cart
+                <span class="inline-flex min-w-5 items-center justify-center rounded-full bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-950" data-cart-count>{{ app(\App\Support\CartState::class)->count() }}</span>
+            </a>
             @auth
-                <a class="transition hover:text-white" href="{{ route('wishlist.index') }}">Wishlist</a>
-                <a class="inline-flex items-center gap-2 transition hover:text-white" href="{{ route('cart.index') }}">
-                    Cart
-                    <span class="inline-flex min-w-5 items-center justify-center rounded-full bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-950" data-cart-count>0</span>
-                </a>
                 <span class="text-white/60">Hi, {{ auth()->user()->name }}</span>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

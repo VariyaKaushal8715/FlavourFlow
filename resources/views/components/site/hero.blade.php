@@ -1,9 +1,10 @@
-@props(['brand', 'navigation', 'hero'])
+@props(['brand', 'navigation', 'hero', 'wishlistProductIds' => []])
 
 @php
     $featuredProduct = $hero['product_showcase']['featured'];
     $supportingProducts = $hero['product_showcase']['supporting'];
     $tickerProducts = array_merge([$featuredProduct], $supportingProducts);
+    $featuredWishlisted = in_array($featuredProduct['id'] ?? null, $wishlistProductIds, true);
 @endphp
 
 <section id="top" class="hero-stage" data-hero>
@@ -61,9 +62,9 @@
                     type="button"
                     data-wishlist-button
                     data-product-id="{{ $featuredProduct['id'] ?? '' }}"
-                    data-wishlisted="false"
-                    aria-pressed="false"
-                    aria-label="Add {{ $featuredProduct['name'] }} to wishlist"
+                    data-wishlisted="{{ $featuredWishlisted ? 'true' : 'false' }}"
+                    aria-pressed="{{ $featuredWishlisted ? 'true' : 'false' }}"
+                    aria-label="{{ $featuredWishlisted ? 'Remove '.$featuredProduct['name'].' from wishlist' : 'Add '.$featuredProduct['name'].' to wishlist' }}"
                     @disabled(empty($featuredProduct['id']))
                 >
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

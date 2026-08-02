@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Offer;
 use App\Models\Product;
+use App\Support\WishlistState;
 use App\Support\ProductHighlightBuilder;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
     public function __construct(private ProductHighlightBuilder $productHighlightBuilder) {}
 
-    public function __invoke(): View
+    public function __invoke(WishlistState $wishlist): View
     {
         $site = config('personal_site');
         $storedProducts = Product::query()
@@ -37,7 +37,7 @@ class HomeController extends Controller
             'site' => $site,
             'products' => $products,
             'offers' => $offers,
-            'wishlistProductIds' => Auth::user()?->wishlistProducts()->pluck('products.id')->all() ?? [],
+            'wishlistProductIds' => $wishlist->productIds(),
         ]);
     }
 }
