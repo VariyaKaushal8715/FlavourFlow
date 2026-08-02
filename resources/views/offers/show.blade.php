@@ -66,6 +66,7 @@
     @if ($suggestedProducts)
         <x-site.products
             :products="$suggestedProducts"
+            :wishlist-product-ids="$wishlistProductIds"
             section-id="offer-picks"
             :eyebrow="$pickCount > 0 ? 'Build your offer set' : 'Recommended for this offer'"
             :title="$pickCount > 0 ? 'Pick these '.$pickCount.' products.' : 'Start with these customer favourites.'"
