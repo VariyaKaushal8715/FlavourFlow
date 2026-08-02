@@ -14,11 +14,27 @@
             @foreach ($navigation as $item)
                 <a class="transition hover:text-white" href="{{ $item['href'] }}">{{ $item['label'] }}</a>
             @endforeach
-            <a class="transition hover:text-white" href="{{ route('wishlist.index') }}">Wishlist</a>
-            <a class="inline-flex items-center gap-2 transition hover:text-white" href="{{ route('cart.index') }}">
-                Cart
-                <span class="inline-flex min-w-5 items-center justify-center rounded-full bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-950" data-cart-count>0</span>
-            </a>
+            @auth
+                <a class="transition hover:text-white" href="{{ route('wishlist.index') }}">Wishlist</a>
+                <a class="inline-flex items-center gap-2 transition hover:text-white" href="{{ route('cart.index') }}">
+                    Cart
+                    <span class="inline-flex min-w-5 items-center justify-center rounded-full bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-950" data-cart-count>0</span>
+                </a>
+                <span class="text-white/60">Hi, {{ auth()->user()->name }}</span>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button class="inline-flex items-center rounded-full border border-white/20 px-4 py-2 text-white transition hover:border-white hover:bg-white/10" type="submit">
+                        Sign out
+                    </button>
+                </form>
+            @else
+                <a class="inline-flex items-center rounded-full border border-white/20 px-4 py-2 text-white transition hover:border-white hover:bg-white/10" href="{{ route('login') }}">
+                    Sign in
+                </a>
+                <a class="inline-flex items-center rounded-full bg-brand-accent px-4 py-2 font-semibold text-brand-ink transition hover:opacity-90" href="{{ route('register') }}">
+                    Create account
+                </a>
+            @endauth
         </nav>
     </div>
 </header>

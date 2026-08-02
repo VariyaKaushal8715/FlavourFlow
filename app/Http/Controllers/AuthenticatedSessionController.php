@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,23 +12,23 @@ class AuthenticatedSessionController extends Controller
 {
     public function create(): View
     {
-        return view('login');
+        return view('auth.entry', [
+            'site' => config('personal_site'),
+            'activeForm' => 'login',
+        ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(LoginRequest $request): RedirectResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
-
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'The supplied credentials do not match our records.'])->onlyInput('email');
+        if (! Auth::attempt($request->credentials(), $request->boolean('remember'))) {
+            return back()
+                ->withErrors(['login' => 'The provided credentials are not valid.'])
+                ->onlyInput('login');
         }
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('wishlist.index'));
+        return redirect()->intended(route('home'))->with('success', 'You are signed in.');
     }
 
     public function destroy(Request $request): RedirectResponse
