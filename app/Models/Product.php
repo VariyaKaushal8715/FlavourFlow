@@ -139,6 +139,11 @@ class Product extends Model
             : null;
     }
 
+    public function categoryName(): string
+    {
+        return $this->category ?: 'Uncategorized';
+    }
+
     /**
      * @return array<string, bool|float|int|string>
      */
@@ -146,7 +151,7 @@ class Product extends Model
     {
         return [
             'name' => $this->name,
-            'category' => $this->category,
+            'category' => $this->categoryName(),
             'description' => $this->description,
             'badge' => $this->badge,
             'price' => $this->formattedPrice(),

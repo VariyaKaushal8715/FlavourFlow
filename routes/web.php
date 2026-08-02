@@ -4,15 +4,34 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminSessionController;
+use App\Http\Controllers\Auth\UserSessionController;
+use App\Http\Controllers\CartItemController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OfferDetailsController;
 use App\Http\Controllers\ProductDetailsController;
+use App\Http\Controllers\WishlistItemController;
 use App\Http\Middleware\PreventAdminResponseCaching;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [UserSessionController::class, 'create'])->name('login');
+    Route::post('/login', [UserSessionController::class, 'store'])->name('login.submit');
+});
+
+Route::post('/logout', [UserSessionController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('logout');
+
 Route::get('/products/{product:slug}', ProductDetailsController::class)->name('products.show');
 Route::get('/offers/{offer}', OfferDetailsController::class)->name('offers.show');
+
+Route::middleware('auth')->group(function () {
+    Route::post('/products/{product:slug}/cart', [CartItemController::class, 'store'])->name('cart.store');
+    Route::delete('/products/{product:slug}/cart', [CartItemController::class, 'destroy'])->name('cart.destroy');
+    Route::post('/products/{product:slug}/wishlist', [WishlistItemController::class, 'store'])->name('wishlist.store');
+    Route::delete('/products/{product:slug}/wishlist', [WishlistItemController::class, 'destroy'])->name('wishlist.destroy');
+});
 
 Route::prefix('admin')
     ->name('admin.')
