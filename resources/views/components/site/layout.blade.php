@@ -36,20 +36,50 @@
         </main>
 
         <footer class="border-t border-zinc-200 bg-zinc-50">
-            <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-8 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-                <div class="flex items-center gap-3">
-                    <img class="h-10 w-10 rounded-lg object-cover" src="{{ asset($site['brand']['logo']) }}" alt="{{ $site['brand']['name'] }} mark">
-                    <div>
-                        <p class="text-sm font-semibold text-zinc-950">{{ $site['brand']['name'] }}</p>
-                        <p class="text-sm text-zinc-500">{{ $site['brand']['tagline'] }}</p>
+            <div class="mx-auto grid w-full max-w-7xl gap-8 px-6 py-8 lg:grid-cols-[1fr_1.2fr] lg:px-8">
+                <div class="flex flex-col gap-8">
+                    <div class="flex items-center gap-3">
+                        <img class="h-10 w-10 rounded-lg object-cover" src="{{ asset($site['brand']['logo']) }}" alt="{{ $site['brand']['name'] }} mark">
+                        <div>
+                            <p class="text-sm font-semibold text-zinc-950">{{ $site['brand']['name'] }}</p>
+                            <p class="text-sm text-zinc-500">{{ $site['brand']['tagline'] }}</p>
+                        </div>
                     </div>
+
+                    <nav class="flex flex-wrap gap-x-5 gap-y-3 text-sm font-medium text-zinc-600" aria-label="Footer">
+                        @foreach ($site['footer_links'] as $link)
+                            <a class="transition hover:text-zinc-950" href="{{ $link['href'] }}">{{ $link['label'] }}</a>
+                        @endforeach
+                    </nav>
                 </div>
 
-                <nav class="flex flex-wrap gap-x-5 gap-y-3 text-sm font-medium text-zinc-600" aria-label="Footer">
-                    @foreach ($site['footer_links'] as $link)
-                        <a class="transition hover:text-zinc-950" href="{{ $link['href'] }}">{{ $link['label'] }}</a>
-                    @endforeach
-                </nav>
+                <div class="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-semibold text-brand-primary">{{ $site['footer_location']['label'] }}</p>
+                            <h2 class="mt-2 text-lg font-semibold text-zinc-950">{{ $site['footer_location']['name'] }}</h2>
+                            <div class="mt-3 space-y-1 text-sm leading-6 text-zinc-600">
+                                @foreach ($site['footer_location']['address_lines'] as $line)
+                                    <p>{{ $line }}</p>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <a class="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-zinc-300 bg-zinc-50 px-4 text-sm font-semibold text-zinc-800 transition hover:border-zinc-400 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2" href="{{ $site['footer_location']['directions_url'] }}" target="_blank" rel="noreferrer">
+                            Open maps
+                        </a>
+                    </div>
+
+                    <div class="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
+                        <iframe
+                            title="{{ $site['footer_location']['name'] }} location map"
+                            class="h-64 w-full"
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade"
+                            src="https://www.google.com/maps?q={{ urlencode($site['footer_location']['maps_query']) }}&output=embed"
+                        ></iframe>
+                    </div>
+                </div>
             </div>
         </footer>
     </body>

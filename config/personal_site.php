@@ -153,4 +153,16 @@ return [
         ['label' => 'Products', 'href' => '/#products'],
         ['label' => 'Our story', 'href' => '/#company'],
     ],
+
+    'footer_location' => [
+        'label' => 'Visit our store',
+        'name' => 'FlavourFlow Spice House',
+        'address_lines' => [
+            '12, Aroma Arcade',
+            'Navrangpura, Ahmedabad, Gujarat 380009',
+            'India',
+        ],
+        'maps_query' => 'FlavourFlow Spice House, Navrangpura, Ahmedabad, Gujarat',
+        'directions_url' => 'https://www.google.com/maps/search/?api=1&query=FlavourFlow%20Spice%20House%2C%20Navrangpura%2C%20Ahmedabad%2C%20Gujarat',
+    ],
 ];
