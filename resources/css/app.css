@@ -361,6 +361,171 @@
         color: #b91c1c;
         font-size: 0.75rem;
     }
+
+    .site-footer {
+        isolation: isolate;
+    }
+
+    .footer-panel {
+        border: 1px solid rgb(255 255 255 / 0.8);
+        border-radius: 2rem;
+        background: rgb(255 255 255 / 0.82);
+        box-shadow: 0 18px 50px rgb(17 24 39 / 0.08);
+        padding: 1.5rem;
+        backdrop-filter: blur(14px);
+        transition:
+            transform 260ms ease,
+            box-shadow 260ms ease,
+            border-color 260ms ease;
+    }
+
+    .footer-panel:hover {
+        border-color: rgb(180 35 24 / 0.15);
+        box-shadow: 0 24px 60px rgb(17 24 39 / 0.12);
+        transform: translateY(-4px);
+    }
+
+    .footer-heading {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgb(82 82 91);
+    }
+
+    .footer-link {
+        position: relative;
+        display: inline-flex;
+        width: fit-content;
+        align-items: center;
+        color: rgb(82 82 91);
+        transition:
+            color 220ms ease,
+            transform 220ms ease;
+    }
+
+    .footer-link::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -0.2rem;
+        width: 100%;
+        height: 1px;
+        background: currentColor;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 220ms ease;
+        opacity: 0.75;
+    }
+
+    .footer-link:hover,
+    .footer-link:focus-visible {
+        color: rgb(24 24 27);
+        transform: translateX(2px);
+    }
+
+    .footer-link:hover::after,
+    .footer-link:focus-visible::after {
+        transform: scaleX(1);
+    }
+
+    .footer-info-link {
+        align-items: flex-start;
+        transition:
+            color 220ms ease,
+            transform 220ms ease;
+    }
+
+    .footer-info-link:hover,
+    .footer-info-link:focus-visible {
+        color: rgb(24 24 27);
+        transform: translateX(2px);
+    }
+
+    .footer-inline-icon {
+        display: inline-flex;
+        height: 2.5rem;
+        width: 2.5rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        border: 1px solid rgb(228 228 231);
+        background: rgb(250 250 250);
+        color: var(--brand-primary);
+        box-shadow: 0 10px 22px rgb(17 24 39 / 0.05);
+    }
+
+    .footer-social-button {
+        transition:
+            transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            box-shadow 220ms ease,
+            border-color 220ms ease,
+            color 220ms ease;
+    }
+
+    .footer-social-button:hover,
+    .footer-social-button:focus-visible {
+        color: var(--social-color, var(--brand-primary));
+        border-color: color-mix(in srgb, var(--social-color, var(--brand-primary)) 30%, rgb(228 228 231));
+        box-shadow:
+            0 16px 32px rgb(17 24 39 / 0.08),
+            0 0 0 6px var(--social-glow, rgb(180 35 24 / 0.16));
+        transform: translateY(-4px) scale(1.05);
+    }
+
+    .footer-mini-badge,
+    .footer-payment-badge {
+        transition:
+            transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            box-shadow 220ms ease,
+            border-color 220ms ease;
+    }
+
+    .footer-mini-badge:hover,
+    .footer-payment-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 30px rgb(17 24 39 / 0.1);
+        border-color: rgb(212 212 216);
+    }
+
+    .footer-cta-button {
+        transition:
+            transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            box-shadow 220ms ease,
+            filter 220ms ease;
+    }
+
+    .footer-cta-button:hover,
+    .footer-cta-button:focus-visible {
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 18px 36px rgb(180 35 24 / 0.28);
+        filter: saturate(1.05);
+    }
+
+    .back-to-top {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(14px) scale(0.92);
+        transition:
+            opacity 220ms ease,
+            transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            box-shadow 220ms ease,
+            border-color 220ms ease;
+    }
+
+    .back-to-top.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+    }
+
+    .back-to-top:hover,
+    .back-to-top:focus-visible {
+        border-color: rgb(180 35 24 / 0.24);
+        box-shadow: 0 16px 32px rgb(17 24 39 / 0.12);
+        transform: translateY(-2px) scale(1.04);
+    }
 }
 
 @keyframes wishlist-pulse {

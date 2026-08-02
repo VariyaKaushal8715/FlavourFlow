@@ -602,4 +602,41 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    const backToTop = document.querySelector('[data-back-to-top]');
+
+    if (backToTop) {
+        const toggleBackToTop = () => {
+            const isVisible = window.scrollY > 420;
+
+            backToTop.classList.toggle('is-visible', isVisible);
+            backToTop.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+            backToTop.tabIndex = isVisible ? 0 : -1;
+        };
+
+        let scrollFrame = false;
+
+        const onScroll = () => {
+            if (scrollFrame) {
+                return;
+            }
+
+            scrollFrame = true;
+
+            window.requestAnimationFrame(() => {
+                toggleBackToTop();
+                scrollFrame = false;
+            });
+        };
+
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: prefersReducedMotion ? 'auto' : 'smooth',
+            });
+        });
+
+        toggleBackToTop();
+        window.addEventListener('scroll', onScroll, { passive: true });
+    }
 });

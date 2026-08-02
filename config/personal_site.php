@@ -153,4 +153,85 @@ return [
         ['label' => 'Products', 'href' => '/#products'],
         ['label' => 'Our story', 'href' => '/#company'],
     ],
+
+    'footer_location' => [
+        'label' => 'Visit our store',
+        'name' => 'FlavourFlow Spice House',
+        'address_lines' => [
+            '12, Aroma Arcade',
+            'Navrangpura, Ahmedabad, Gujarat 380009',
+            'India',
+        ],
+        'maps_query' => 'FlavourFlow Spice House, Navrangpura, Ahmedabad, Gujarat',
+        'directions_url' => 'https://www.google.com/maps/search/?api=1&query=FlavourFlow%20Spice%20House%2C%20Navrangpura%2C%20Ahmedabad%2C%20Gujarat',
+    ],
+
+    'footer' => [
+        'brand' => [
+            'tagline' => 'Bringing the Authentic Taste of Indian Spices to Every Kitchen.',
+            'description' => 'We deliver fresh, handpicked spices sourced directly from trusted farms across India, ensuring purity, freshness, and authentic flavor.',
+            'cta' => [
+                'label' => 'Shop fresh spices',
+                'href' => '/#products',
+            ],
+        ],
+        'quick_links' => [
+            ['label' => 'Home', 'href' => '/#top'],
+            ['label' => 'Offers', 'href' => '/#offers'],
+            ['label' => 'About Us', 'href' => '/#company'],
+            ['label' => 'Contact Us', 'href' => '/#contact'],
+        ],
+        'customer_service' => [
+            [
+                'label' => 'Return & Refund Policy',
+                'href' => 'mailto:support@flavourflow.com?subject=Return%20%26%20Refund%20Policy%20Inquiry',
+            ],
+            [
+                'label' => 'Privacy Policy',
+                'href' => 'mailto:support@flavourflow.com?subject=Privacy%20Policy%20Inquiry',
+            ],
+            [
+                'label' => 'Terms & Conditions',
+                'href' => 'mailto:support@flavourflow.com?subject=Terms%20%26%20Conditions%20Inquiry',
+            ],
+            [
+                'label' => 'Help Center',
+                'href' => 'mailto:support@flavourflow.com?subject=Help%20Center%20Support',
+            ],
+        ],
+        'contact' => [
+            'address' => 'Patan, Gujarat, India',
+            'phone' => '+91 99999 99999',
+            'email' => 'support@flavourflow.com',
+            'hours' => [
+                'Monday - Saturday',
+                '9:00 AM - 7:00 PM',
+            ],
+        ],
+        'socials' => [
+            ['label' => 'Facebook', 'href' => 'https://www.facebook.com/', 'icon' => 'facebook', 'brand' => '#1877F2'],
+            ['label' => 'Instagram', 'href' => 'https://www.instagram.com/', 'icon' => 'instagram', 'brand' => '#E4405F'],
+            ['label' => 'Twitter (X)', 'href' => 'https://x.com/', 'icon' => 'x', 'brand' => '#111111'],
+            ['label' => 'YouTube', 'href' => 'https://www.youtube.com/', 'icon' => 'youtube', 'brand' => '#FF0033'],
+            ['label' => 'Pinterest', 'href' => 'https://www.pinterest.com/', 'icon' => 'pinterest', 'brand' => '#E60023'],
+            ['label' => 'LinkedIn', 'href' => 'https://www.linkedin.com/', 'icon' => 'linkedin', 'brand' => '#0A66C2'],
+        ],
+        'trust_badges' => [
+            ['label' => '100% Natural', 'icon' => 'leaf'],
+            ['label' => 'Farm Fresh', 'icon' => 'sprout'],
+            ['label' => 'Secure Payments', 'icon' => 'shield-check'],
+            ['label' => 'Fast Delivery', 'icon' => 'truck'],
+            ['label' => 'Quality Tested', 'icon' => 'quality-check'],
+        ],
+        'payments' => [
+            ['label' => 'Visa', 'icon' => 'visa'],
+            ['label' => 'MasterCard', 'icon' => 'mastercard'],
+            ['label' => 'RuPay', 'icon' => 'rupay'],
+            ['label' => 'UPI', 'icon' => 'upi'],
+            ['label' => 'Google Pay', 'icon' => 'gpay'],
+            ['label' => 'PhonePe', 'icon' => 'phonepe'],
+            ['label' => 'Paytm', 'icon' => 'paytm'],
+        ],
+        'copyright' => '© 2026 FlavourFlow. All Rights Reserved.',
+    ],
 ];
