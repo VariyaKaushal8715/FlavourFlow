@@ -26,21 +26,6 @@
                 <p class="mt-5 max-w-xl text-base leading-8 text-zinc-600 sm:text-lg">
                     Sign in with your username or email, or create a new account in less than a minute. Your wishlist, orders, and future checkout details stay close at hand.
                 </p>
-
-                <div class="mt-8 grid gap-4 sm:grid-cols-3">
-                    <div class="rounded-2xl border border-white bg-white/85 p-5 shadow-sm backdrop-blur">
-                        <p class="text-sm font-semibold text-brand-primary">Quick sign in</p>
-                        <p class="mt-2 text-sm leading-6 text-zinc-600">Use username or email with a single password field.</p>
-                    </div>
-                    <div class="rounded-2xl border border-white bg-white/85 p-5 shadow-sm backdrop-blur">
-                        <p class="text-sm font-semibold text-brand-primary">Secure storage</p>
-                        <p class="mt-2 text-sm leading-6 text-zinc-600">Passwords are hashed before they ever reach the database.</p>
-                    </div>
-                    <div class="rounded-2xl border border-white bg-white/85 p-5 shadow-sm backdrop-blur">
-                        <p class="text-sm font-semibold text-brand-primary">Built for mobile</p>
-                        <p class="mt-2 text-sm leading-6 text-zinc-600">The layout stays clean and usable on every screen size.</p>
-                    </div>
-                </div>
             </div>
 
             <div class="grid gap-6">
