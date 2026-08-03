@@ -40,15 +40,20 @@
                 <div class="mt-8">
                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-zinc-500">Trust signals</p>
                     <div class="mt-4 flex flex-wrap gap-3">
-                        @foreach ($footer['trust_badges'] as $badge)
-                            <span
-                                class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-amber-300 shadow-[0_10px_24px_rgba(0,0,0,0.18)] transition hover:-translate-y-0.5 hover:border-amber-300/30"
-                                title="{{ $badge['label'] }}"
+                        @foreach ($footer['trust_badges'] as $index => $badge)
+                            <button
+                                class="trust-badge inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-amber-300 shadow-[0_10px_24px_rgba(0,0,0,0.18)] transition hover:-translate-y-0.5 hover:border-amber-300/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                                type="button"
+                                data-trust-badge
+                                data-trust-title="{{ $badge['title'] }}"
+                                data-trust-description="{{ $badge['description'] }}"
+                                data-trust-label="{{ $badge['label'] }}"
+                                data-trust-index="{{ $index }}"
                                 aria-label="{{ $badge['label'] }}"
                             >
                                 <x-site.icon :name="$badge['icon']" class="h-5 w-5" />
                                 <span class="sr-only">{{ $badge['label'] }}</span>
-                            </span>
+                            </button>
                         @endforeach
                     </div>
                 </div>
@@ -113,6 +118,44 @@
             >
                 <x-site.icon name="chevron-up" class="h-5 w-5 transition group-hover:-translate-y-0.5" />
             </button>
+        </div>
+    </div>
+
+    <div
+        class="trust-overlay fixed inset-0 z-50 hidden items-center justify-center bg-black/70 px-4 py-8"
+        data-trust-dialog
+        aria-hidden="true"
+    >
+        <div
+            class="w-[min(92vw,28rem)] rounded-[1.5rem] border border-white/10 bg-zinc-950 text-zinc-100 shadow-[0_24px_80px_rgba(0,0,0,0.5)]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="trust-dialog-title"
+            aria-describedby="trust-dialog-description"
+        >
+            <div class="border-b border-white/10 px-6 py-5">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">Trust signal</p>
+                        <h3 id="trust-dialog-title" class="mt-2 text-2xl font-semibold text-white"></h3>
+                    </div>
+                    <button
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                        type="button"
+                        data-trust-close
+                        aria-label="Close trust signal details"
+                    >
+                        <span class="text-xl leading-none">×</span>
+                    </button>
+                </div>
+            </div>
+            <div class="px-6 py-5">
+                <p id="trust-dialog-description" class="text-sm leading-7 text-zinc-300"></p>
+                <div class="mt-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">
+                    <x-site.icon name="shield-check" class="h-4 w-4" />
+                    <span data-trust-label></span>
+                </div>
+            </div>
         </div>
     </div>
 </footer>
