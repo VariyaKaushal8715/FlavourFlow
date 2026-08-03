@@ -4,9 +4,13 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminSessionController;
+use App\Http\Controllers\Auth\UserSessionController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OfferDetailsController;
 use App\Http\Controllers\ProductDetailsController;
+use App\Http\Controllers\WishlistController;
 use App\Http\Middleware\PreventAdminResponseCaching;
 use Illuminate\Support\Facades\Route;
 
@@ -20,8 +24,23 @@ Route::post('/logout', [UserSessionController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
 
+Route::get('/language/{locale}', LocaleController::class)->name('language.switch');
+
 Route::get('/products/{product:slug}', ProductDetailsController::class)->name('products.show');
 Route::get('/offers/{offer}', OfferDetailsController::class)->name('offers.show');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::get('/cart/summary', [CartController::class, 'summary'])->name('cart.summary');
+    Route::post('/cart/{product:slug}', [CartController::class, 'store'])->name('cart.store');
+    Route::put('/cart/{product:slug}', [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/{product:slug}', [CartController::class, 'destroy'])->name('cart.destroy');
+
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::get('/wishlist/products', [WishlistController::class, 'products'])->name('wishlist.products');
+    Route::post('/wishlist/{product:slug}', [WishlistController::class, 'store'])->name('wishlist.store');
+    Route::delete('/wishlist/{product:slug}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
+});
 
 Route::prefix('admin')
     ->name('admin.')

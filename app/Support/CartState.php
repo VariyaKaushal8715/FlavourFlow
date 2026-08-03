@@ -42,6 +42,14 @@ class CartState
                 'product_id' => $product->id,
             ]);
             $item->quantity = ($item->exists ? $item->quantity : 0) + $quantity;
+            $item->product_name = $product->name;
+            $item->product_slug = $product->slug;
+            $item->sku = $product->sku;
+            $item->category = $product->categoryName();
+            $item->unit = $product->unit;
+            $item->unit_price = $product->price;
+            $item->line_total = (float) $product->price * $item->quantity;
+            $item->image_path = $product->image_path;
 
             if ($selectedOptions !== null) {
                 $item->selected_options = $selectedOptions;
@@ -69,7 +77,11 @@ class CartState
             return CartItem::query()
                 ->where('user_id', auth()->id())
                 ->where('product_id', $product->id)
-                ->update(['quantity' => $quantity]) > 0;
+                ->update([
+                    'quantity' => $quantity,
+                    'unit_price' => $product->price,
+                    'line_total' => (float) $product->price * $quantity,
+                ]) > 0;
         }
 
         $items = $this->guestCartItems();
@@ -188,7 +200,7 @@ class CartState
     }
 
     /**
-     * @param array<string, array{quantity: int, selected_options: array<string, mixed>|null, added_at: int}> $items
+     * @param  array<string, array{quantity: int, selected_options: array<string, mixed>|null, added_at: int}>  $items
      */
     private function storeGuestCartItems(array $items): void
     {

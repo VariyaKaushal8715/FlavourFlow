@@ -6,6 +6,7 @@
     'description' => 'Carefully sourced, freshly packed, and balanced for the food you cook every day. Choose a blend and bring a deeper aroma to the table.',
     'tone' => 'default',
     'wishlistProductIds' => [],
+    'sort' => 'featured',
 ])
 
 <section
@@ -17,9 +18,9 @@
 >
     <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
         <div @class([
-            'grid border-b border-zinc-200 lg:grid-cols-[0.8fr_1.2fr] lg:items-end',
-            'gap-8 pb-10' => $tone === 'default',
-            'gap-5 pb-6' => $tone === 'offer',
+            'grid gap-6 border-b border-zinc-200 lg:grid-cols-[0.8fr_1.2fr_auto] lg:items-end',
+            'pb-10' => $tone === 'default',
+            'pb-6' => $tone === 'offer',
         ])>
             <div data-reveal>
                 <p class="text-sm font-semibold text-brand-primary">{{ $eyebrow }}</p>
@@ -32,6 +33,36 @@
             <p class="max-w-2xl text-base leading-8 text-zinc-600 lg:justify-self-end" data-reveal>
                 {{ $description }}
             </p>
+            @if ($tone === 'default')
+                <form class="flex flex-col gap-2 lg:justify-self-end" method="GET" action="{{ route('home') }}" data-reveal>
+                    <label class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500" for="product-sort">{{ __('ui.sort_products') }}</label>
+                    @foreach (request()->except('sort') as $key => $value)
+                        @if (is_array($value))
+                            @foreach ($value as $item)
+                                <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
+                            @endforeach
+                        @else
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endif
+                    @endforeach
+                    <div class="flex items-center gap-3">
+                        <select
+                            id="product-sort"
+                            name="sort"
+                            class="min-h-12 rounded-lg border border-zinc-300 bg-white px-4 text-sm outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                        >
+                            <option value="featured" @selected($sort === 'featured')>{{ __('ui.featured') }}</option>
+                            <option value="rating" @selected($sort === 'rating')>{{ __('ui.top_rated') }}</option>
+                            <option value="price_asc" @selected($sort === 'price_asc')>{{ __('ui.price_low_high') }}</option>
+                            <option value="price_desc" @selected($sort === 'price_desc')>{{ __('ui.price_high_low') }}</option>
+                            <option value="name" @selected($sort === 'name')>{{ __('ui.name_az') }}</option>
+                        </select>
+                        <button class="inline-flex min-h-12 items-center justify-center rounded-lg bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-red-700" type="submit">
+                            {{ __('ui.apply') }}
+                        </button>
+                    </div>
+                </form>
+            @endif
         </div>
 
         <div @class([
@@ -92,13 +123,6 @@
                             <p class="mt-4 text-xs font-semibold text-zinc-950">View full details <span class="ml-1 text-brand-primary" aria-hidden="true">&rarr;</span></p>
                         </div>
                     </a>
-                    <button
-                        class="absolute bottom-5 right-5 rounded-lg bg-zinc-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
-                        type="button"
-                        data-add-to-cart
-                        data-product-id="{{ $product['id'] ?? '' }}"
-                        @disabled(empty($product['slug']) || ! $product['in_stock'])
-                    >Add to cart</button>
                 </article>
             @endforeach
         </div>
