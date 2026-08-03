@@ -1,6 +1,4 @@
 <x-admin.layout title="Products">
-    <x-admin.header active="products" />
-
     <main class="mx-auto grid w-full max-w-[90rem] gap-8 px-6 py-8 lg:grid-cols-[24rem_1fr] lg:px-8">
         <section class="self-start rounded-lg border border-zinc-200 bg-white p-6">
             <p class="text-sm font-semibold text-red-700">New product</p>
@@ -26,7 +24,6 @@
                     <h2 class="mt-2 text-2xl font-semibold text-zinc-950">Products</h2>
                     <p class="mt-2 text-sm text-zinc-600">Manage pricing, visibility, inventory, and homepage placement.</p>
                 </div>
-                <a class="text-sm font-semibold text-zinc-700 transition hover:text-red-700" href="{{ route('home') }}" target="_blank" rel="noreferrer">View live site &rarr;</a>
             </div>
 
             <div class="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">

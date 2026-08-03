@@ -52,6 +52,18 @@ Route::prefix('admin')
             ->name('login');
 
         Route::middleware(['auth', 'can:access-admin'])->group(function () {
+            Route::view('/categories', 'admin.placeholder', [
+                'title' => 'Categories',
+                'headline' => 'Categories',
+                'description' => 'Category management will live here next. For now, this menu is ready in the sidebar.',
+            ])->name('categories.index');
+
+            Route::view('/inventory', 'admin.placeholder', [
+                'title' => 'Inventory',
+                'headline' => 'Inventory',
+                'description' => 'Inventory control will live here next. For now, this menu is ready in the sidebar.',
+            ])->name('inventory.index');
+
             Route::resource('products', AdminProductController::class)
                 ->only(['store', 'edit', 'update', 'destroy']);
             Route::resource('offers', AdminOfferController::class)
