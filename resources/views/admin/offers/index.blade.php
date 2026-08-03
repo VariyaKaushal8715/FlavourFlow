@@ -26,7 +26,6 @@
                     <h2 class="mt-2 text-2xl font-semibold text-zinc-950">Special offers</h2>
                     <p class="mt-2 text-sm text-zinc-600">Manage timing, coupon codes, visibility, and homepage prominence.</p>
                 </div>
-                <a class="text-sm font-semibold text-zinc-700 transition hover:text-red-700" href="{{ route('home').'#offers' }}" target="_blank" rel="noreferrer">View live offers &rarr;</a>
             </div>
 
             <div class="mt-6 grid grid-cols-3 gap-3">

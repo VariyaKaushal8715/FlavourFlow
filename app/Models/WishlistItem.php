@@ -15,20 +15,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'sku',
     'category',
     'unit',
-    'quantity',
     'unit_price',
-    'line_total',
     'image_path',
 ])]
-class CartItem extends Model
+class WishlistItem extends Model
 {
     use HasFactory;
-
-    protected $attributes = [
-        'quantity' => 1,
-        'unit_price' => 0,
-        'line_total' => 0,
-    ];
 
     /**
      * @return array<string, string>
@@ -36,9 +28,7 @@ class CartItem extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
             'unit_price' => 'decimal:2',
-            'line_total' => 'decimal:2',
         ];
     }
 
@@ -50,10 +40,5 @@ class CartItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    public function recalculateTotal(): void
-    {
-        $this->line_total = (float) $this->unit_price * $this->quantity;
     }
 }

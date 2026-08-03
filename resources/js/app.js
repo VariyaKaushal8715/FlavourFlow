@@ -459,12 +459,62 @@ const initializeCart = () => {
     });
 };
 
+const initializeTrustDialog = () => {
+    const dialog = document.querySelector('[data-trust-dialog]');
+    const badges = Array.from(document.querySelectorAll('[data-trust-badge]'));
+    const closeButton = dialog?.querySelector('[data-trust-close]');
+    const titleElement = dialog?.querySelector('#trust-dialog-title');
+    const descriptionElement = dialog?.querySelector('#trust-dialog-description');
+    const labelElement = dialog?.querySelector('[data-trust-label]');
+
+    if (!dialog || !badges.length || !titleElement || !descriptionElement || !labelElement) {
+        return;
+    }
+
+    const openDialog = (badge) => {
+        titleElement.textContent = badge.dataset.trustTitle || badge.dataset.trustLabel || 'Trust signal';
+        descriptionElement.textContent = badge.dataset.trustDescription || '';
+        labelElement.textContent = badge.dataset.trustLabel || '';
+
+        dialog.classList.remove('hidden');
+        dialog.classList.add('flex');
+        dialog.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('overflow-hidden');
+    };
+
+    const closeDialog = () => {
+        dialog.classList.add('hidden');
+        dialog.classList.remove('flex');
+        dialog.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('overflow-hidden');
+    };
+
+    badges.forEach((badge) => {
+        badge.addEventListener('click', () => openDialog(badge));
+    });
+
+    closeButton?.addEventListener('click', closeDialog);
+
+    dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) {
+            closeDialog();
+        }
+    });
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !dialog.classList.contains('hidden')) {
+            closeDialog();
+        }
+    });
+};
+
 restoreCachedBrandTheme();
 
 window.addEventListener('DOMContentLoaded', () => {
     deriveBrandThemeFromLogo();
     initializeWishlist();
     initializeCart();
+    initializeTrustDialog();
     requestAnimationFrame(() => document.body.classList.add('is-ready'));
 
     document.querySelectorAll('[data-card-delay]').forEach((element) => {

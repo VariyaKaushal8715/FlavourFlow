@@ -366,6 +366,14 @@
         isolation: isolate;
     }
 
+    .footer-surface {
+        animation: footer-breathe 8s ease-in-out infinite alternate;
+    }
+
+    .footer-logo {
+        animation: footer-logo-float 5.5s ease-in-out infinite;
+    }
+
     .footer-panel {
         border: 1px solid rgb(255 255 255 / 0.8);
         border-radius: 2rem;
@@ -700,6 +708,27 @@
 
     to {
         transform: scaleX(1);
+    }
+}
+
+@keyframes footer-breathe {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(-6px);
+    }
+}
+
+@keyframes footer-logo-float {
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-4px) rotate(-1deg);
     }
 }
 

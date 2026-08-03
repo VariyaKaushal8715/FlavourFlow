@@ -1,18 +1,4 @@
 <x-admin.layout title="Edit {{ $product->name }}">
-    <header class="border-b border-zinc-200 bg-white">
-        <div class="mx-auto flex w-full max-w-4xl items-center justify-between gap-6 px-6 py-4 lg:px-8">
-            <a class="flex items-center gap-3" href="{{ route('admin.index') }}">
-                <img class="h-10 w-10 rounded-lg object-cover" src="{{ asset('images/flavourflow-mark.png') }}" alt="FlavourFlow">
-                <div>
-                    <p class="text-sm font-semibold text-zinc-950">FlavourFlow Admin</p>
-                    <p class="text-xs text-zinc-500">Back to products</p>
-                </div>
-            </a>
-
-            <a class="text-sm font-semibold text-zinc-600 transition hover:text-red-700" href="{{ route('admin.index') }}">Cancel</a>
-        </div>
-    </header>
-
     <main class="mx-auto w-full max-w-4xl px-6 py-8 lg:px-8">
         <section class="rounded-lg border border-zinc-200 bg-white p-6 sm:p-8">
             <p class="text-sm font-semibold text-red-700">Edit product</p>

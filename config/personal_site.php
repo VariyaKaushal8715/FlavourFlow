@@ -217,11 +217,36 @@ return [
             ['label' => 'LinkedIn', 'href' => 'https://www.linkedin.com/', 'icon' => 'linkedin', 'brand' => '#0A66C2'],
         ],
         'trust_badges' => [
-            ['label' => '100% Natural', 'icon' => 'leaf'],
-            ['label' => 'Farm Fresh', 'icon' => 'sprout'],
-            ['label' => 'Secure Payments', 'icon' => 'shield-check'],
-            ['label' => 'Fast Delivery', 'icon' => 'truck'],
-            ['label' => 'Quality Tested', 'icon' => 'quality-check'],
+            [
+                'label' => '100% Natural',
+                'icon' => 'leaf',
+                'title' => '100% Natural ingredients',
+                'description' => 'Made without unnecessary additives, so the spice flavour stays honest and clean.',
+            ],
+            [
+                'label' => 'Farm Fresh',
+                'icon' => 'sprout',
+                'title' => 'Farm-fresh sourcing',
+                'description' => 'Selected from trusted growers and packed in small batches for a fresher kitchen shelf.',
+            ],
+            [
+                'label' => 'Secure Payments',
+                'icon' => 'shield-check',
+                'title' => 'Secure payment support',
+                'description' => 'Built to support safer online checkout flows and protected transaction handling.',
+            ],
+            [
+                'label' => 'Fast Delivery',
+                'icon' => 'truck',
+                'title' => 'Fast delivery promise',
+                'description' => 'Prepared for quick dispatch so orders move from our store to your kitchen faster.',
+            ],
+            [
+                'label' => 'Quality Tested',
+                'icon' => 'quality-check',
+                'title' => 'Quality tested batches',
+                'description' => 'Every batch is checked for aroma, consistency, and the premium finish your cooking deserves.',
+            ],
         ],
         'payments' => [
             ['label' => 'Visa', 'icon' => 'visa'],
