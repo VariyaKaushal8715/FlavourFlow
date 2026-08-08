@@ -508,6 +508,98 @@ const initializeTrustDialog = () => {
     });
 };
 
+const initializeAdminSidebar = () => {
+    const sidebar = document.querySelector('[data-admin-sidebar]');
+    const overlay = document.querySelector('[data-admin-sidebar-overlay]');
+    const toggle = document.querySelector('[data-admin-sidebar-toggle]');
+
+    if (!sidebar || !overlay || !toggle) {
+        return;
+    }
+
+    const openSidebar = () => {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+        toggle.setAttribute('aria-expanded', 'true');
+    };
+
+    const closeSidebar = () => {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+        toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle.addEventListener('click', () => {
+        if (sidebar.classList.contains('-translate-x-full')) {
+            openSidebar();
+        } else {
+            closeSidebar();
+        }
+    });
+
+    overlay.addEventListener('click', closeSidebar);
+
+    sidebar.querySelectorAll('a, button[type="submit"]').forEach((element) => {
+        element.addEventListener('click', () => {
+            if (window.innerWidth < 1024) {
+                closeSidebar();
+            }
+        });
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 1024) {
+            overlay.classList.add('hidden');
+            sidebar.classList.remove('-translate-x-full');
+            document.body.classList.remove('overflow-hidden');
+            toggle.setAttribute('aria-expanded', 'false');
+        } else if (!sidebar.classList.contains('-translate-x-full')) {
+            overlay.classList.remove('hidden');
+        }
+    });
+};
+
+const initializeSiteNav = () => {
+    const toggle = document.querySelector('[data-site-nav-toggle]');
+    const panel = document.querySelector('[data-site-nav-panel]');
+
+    if (!toggle || !panel) {
+        return;
+    }
+
+    const closePanel = () => {
+        panel.classList.add('hidden');
+        toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle.addEventListener('click', () => {
+        const isHidden = panel.classList.contains('hidden');
+
+        if (isHidden) {
+            panel.classList.remove('hidden');
+            toggle.setAttribute('aria-expanded', 'true');
+        } else {
+            closePanel();
+        }
+    });
+
+    panel.querySelectorAll('a, button').forEach((element) => {
+        element.addEventListener('click', () => {
+            if (window.innerWidth < 768) {
+                closePanel();
+            }
+        });
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) {
+            closePanel();
+        }
+    });
+};
+
 restoreCachedBrandTheme();
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -515,6 +607,8 @@ window.addEventListener('DOMContentLoaded', () => {
     initializeWishlist();
     initializeCart();
     initializeTrustDialog();
+    initializeAdminSidebar();
+    initializeSiteNav();
     requestAnimationFrame(() => document.body.classList.add('is-ready'));
 
     document.querySelectorAll('[data-card-delay]').forEach((element) => {
