@@ -56,5 +56,6 @@ test('the wishlist page displays the authenticated users saved products', functi
     $this->actingAs($user)->get(route('wishlist.index'))
         ->assertSuccessful()
         ->assertSee('Saved Masala')
+        ->assertSee('data-product-slug="'.$product->slug.'"', false)
         ->assertSee('data-wishlisted="true"', false);
 });

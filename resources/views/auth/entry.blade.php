@@ -46,174 +46,185 @@
                     </div>
                 @endif
 
-                <div class="grid gap-6 xl:grid-cols-2">
-                    <article class="rounded-3xl border border-white/80 bg-white/90 p-6 shadow-[0_24px_70px_rgba(24,24,27,0.12)] backdrop-blur">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-primary">Sign in</p>
-                                <h2 class="mt-2 text-2xl font-semibold text-zinc-950">Welcome back.</h2>
-                            </div>
-                            <span class="rounded-full bg-brand-surface px-3 py-1 text-xs font-semibold text-brand-ink">Existing customer</span>
-                        </div>
-
-                        <form class="mt-6 space-y-4" method="POST" action="{{ route('login.submit') }}">
-                            @csrf
-
-                            <div>
-                                <label class="text-sm font-semibold text-zinc-800" for="login">Username or email</label>
-                                <input
-                                    class="mt-2 min-h-12 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-sm outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
-                                    id="login"
-                                    name="login"
-                                    type="text"
-                                    value="{{ old('login') }}"
-                                    autocomplete="username"
-                                    required
-                                >
-                                @error('login')
-                                    <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="text-sm font-semibold text-zinc-800" for="login-password">Password</label>
-                                <input
-                                    class="mt-2 min-h-12 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-sm outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
-                                    id="login-password"
-                                    name="password"
-                                    type="password"
-                                    autocomplete="current-password"
-                                    required
-                                >
-                                @error('password')
-                                    <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="flex items-center justify-between gap-4">
-                                <label class="flex items-center gap-3 text-sm text-zinc-600">
-                                    <input class="h-4 w-4 rounded border-zinc-300 text-brand-primary focus:ring-brand-primary" name="remember" type="checkbox" value="1" @checked(old('remember'))>
-                                    Remember me
-                                </label>
-
-                                <a class="text-sm font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('password.request') }}">
-                                    Forgot password?
-                                </a>
-                            </div>
-
-                            <button class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-brand-ink px-5 text-sm font-semibold text-white transition hover:bg-brand-primary focus:outline-none focus:ring-4 focus:ring-brand-primary/20" type="submit">
-                                Sign in
-                            </button>
-                        </form>
-                    </article>
-
-                    <article class="rounded-3xl border border-brand-primary/10 bg-brand-ink p-6 text-white shadow-[0_24px_70px_rgba(24,24,27,0.22)]">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-accent">Register</p>
-                                <h2 class="mt-2 text-2xl font-semibold">Create your account.</h2>
-                            </div>
-                            <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">New customer</span>
-                        </div>
-
-                        <form class="mt-6 space-y-4" method="POST" action="{{ route('register.submit') }}">
-                            @csrf
-
-                            <div>
-                                <label class="text-sm font-semibold text-white/90" for="full_name">Full name</label>
-                                <input
-                                    class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
-                                    id="full_name"
-                                    name="full_name"
-                                    type="text"
-                                    value="{{ old('full_name') }}"
-                                    autocomplete="name"
-                                    required
-                                >
-                                @error('full_name')
-                                    <p class="mt-2 text-sm text-amber-200">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid gap-6">
+                    @unless ($isRegister)
+                        <article class="rounded-3xl border border-white/80 bg-white/90 p-6 shadow-[0_24px_70px_rgba(24,24,27,0.12)] backdrop-blur">
+                            <div class="flex items-start justify-between gap-4">
                                 <div>
-                                    <label class="text-sm font-semibold text-white/90" for="username">Username</label>
+                                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-primary">Sign in</p>
+                                    <h2 class="mt-2 text-2xl font-semibold text-zinc-950">Welcome back.</h2>
+                                </div>
+                                <span class="rounded-full bg-brand-surface px-3 py-1 text-xs font-semibold text-brand-ink">Existing customer</span>
+                            </div>
+
+                            <form class="mt-6 space-y-4" method="POST" action="{{ route('login.submit') }}">
+                                @csrf
+
+                                <div>
+                                    <label class="text-sm font-semibold text-zinc-800" for="login">Username or email</label>
                                     <input
-                                        class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
-                                        id="username"
-                                        name="username"
+                                        class="mt-2 min-h-12 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-sm outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
+                                        id="login"
+                                        name="login"
                                         type="text"
-                                        value="{{ old('username') }}"
+                                        value="{{ old('login') }}"
                                         autocomplete="username"
                                         required
                                     >
-                                    @error('username')
-                                        <p class="mt-2 text-sm text-amber-200">{{ $message }}</p>
+                                    @error('login')
+                                        <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
                                     @enderror
                                 </div>
 
                                 <div>
-                                    <label class="text-sm font-semibold text-white/90" for="email">Email</label>
+                                    <label class="text-sm font-semibold text-zinc-800" for="login-password">Password</label>
                                     <input
-                                        class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        value="{{ old('email') }}"
-                                        autocomplete="email"
-                                        required
-                                    >
-                                    @error('email')
-                                        <p class="mt-2 text-sm text-amber-200">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="grid gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label class="text-sm font-semibold text-white/90" for="register-password">Password</label>
-                                    <input
-                                        class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
-                                        id="register-password"
+                                        class="mt-2 min-h-12 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-sm outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
+                                        id="login-password"
                                         name="password"
                                         type="password"
-                                        autocomplete="new-password"
+                                        autocomplete="current-password"
                                         required
                                     >
                                     @error('password')
+                                        <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div class="flex items-center justify-between gap-4">
+                                    <label class="flex items-center gap-3 text-sm text-zinc-600">
+                                        <input class="h-4 w-4 rounded border-zinc-300 text-brand-primary focus:ring-brand-primary" name="remember" type="checkbox" value="1" @checked(old('remember'))>
+                                        Remember me
+                                    </label>
+
+                                    <a class="text-sm font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('password.request') }}">
+                                        Forgot password?
+                                    </a>
+                                </div>
+
+                                <button class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-brand-ink px-5 text-sm font-semibold text-white transition hover:bg-brand-primary focus:outline-none focus:ring-4 focus:ring-brand-primary/20" type="submit">
+                                    Sign in
+                                </button>
+                            </form>
+                        </article>
+                    @endunless
+
+                    @if ($isRegister)
+                        <article class="rounded-3xl border border-brand-primary/10 bg-brand-ink p-6 text-white shadow-[0_24px_70px_rgba(24,24,27,0.22)]">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-accent">Register</p>
+                                    <h2 class="mt-2 text-2xl font-semibold">Create your account.</h2>
+                                </div>
+                                <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">New customer</span>
+                            </div>
+
+                            <form class="mt-6 space-y-4" method="POST" action="{{ route('register.submit') }}">
+                                @csrf
+
+                                <div>
+                                    <label class="text-sm font-semibold text-white/90" for="full_name">Full name</label>
+                                    <input
+                                        class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
+                                        id="full_name"
+                                        name="full_name"
+                                        type="text"
+                                        value="{{ old('full_name') }}"
+                                        autocomplete="name"
+                                        required
+                                    >
+                                    @error('full_name')
                                         <p class="mt-2 text-sm text-amber-200">{{ $message }}</p>
                                     @enderror
                                 </div>
 
-                                <div>
-                                    <label class="text-sm font-semibold text-white/90" for="password_confirmation">Confirm password</label>
-                                    <input
-                                        class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
-                                        id="password_confirmation"
-                                        name="password_confirmation"
-                                        type="password"
-                                        autocomplete="new-password"
-                                        required
-                                    >
+                                <div class="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label class="text-sm font-semibold text-white/90" for="username">Username</label>
+                                        <input
+                                            class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
+                                            id="username"
+                                            name="username"
+                                            type="text"
+                                            value="{{ old('username') }}"
+                                            autocomplete="username"
+                                            required
+                                        >
+                                        @error('username')
+                                            <p class="mt-2 text-sm text-amber-200">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="text-sm font-semibold text-white/90" for="email">Email</label>
+                                        <input
+                                            class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
+                                            id="email"
+                                            name="email"
+                                            type="email"
+                                            value="{{ old('email') }}"
+                                            autocomplete="email"
+                                            required
+                                        >
+                                        @error('email')
+                                            <p class="mt-2 text-sm text-amber-200">{{ $message }}</p>
+                                        @enderror
+                                    </div>
                                 </div>
-                            </div>
 
-                            <p class="text-sm leading-6 text-white/65">
-                                By creating an account you can save your wishlist and move through checkout faster.
-                            </p>
+                                <div class="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label class="text-sm font-semibold text-white/90" for="register-password">Password</label>
+                                        <input
+                                            class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
+                                            id="register-password"
+                                            name="password"
+                                            type="password"
+                                            autocomplete="new-password"
+                                            required
+                                        >
+                                        @error('password')
+                                            <p class="mt-2 text-sm text-amber-200">{{ $message }}</p>
+                                        @enderror
+                                    </div>
 
-                            <button class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-brand-accent px-5 text-sm font-semibold text-brand-ink transition hover:opacity-95 focus:outline-none focus:ring-4 focus:ring-brand-accent/25" type="submit">
-                                Create account
-                            </button>
-                        </form>
-                    </article>
+                                    <div>
+                                        <label class="text-sm font-semibold text-white/90" for="password_confirmation">Confirm password</label>
+                                        <input
+                                            class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
+                                            id="password_confirmation"
+                                            name="password_confirmation"
+                                            type="password"
+                                            autocomplete="new-password"
+                                            required
+                                        >
+                                    </div>
+                                </div>
+
+                                <p class="text-sm leading-6 text-white/65">
+                                    By creating an account you can save your wishlist and move through checkout faster.
+                                </p>
+
+                                <button class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-brand-accent px-5 text-sm font-semibold text-brand-ink transition hover:opacity-95 focus:outline-none focus:ring-4 focus:ring-brand-accent/25" type="submit">
+                                    Create account
+                                </button>
+                            </form>
+                        </article>
+                    @endif
                 </div>
 
                 <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/70 bg-white/80 px-5 py-4 text-sm text-zinc-600 shadow-sm backdrop-blur">
-                    <p>
-                        Already have an account?
-                        <a class="font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('login') }}">Sign in here</a>.
-                    </p>
+                    @if ($isRegister)
+                        <p>
+                            Already have an account?
+                            <a class="font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('login') }}">Sign in here</a>.
+                        </p>
+                    @else
+                        <p>
+                            New customer?
+                            <a class="font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('register') }}">Create an account</a>.
+                        </p>
+                    @endif
                     <a class="font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('home') }}">Back to shop</a>
                 </div>
             </div>

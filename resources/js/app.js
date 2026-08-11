@@ -293,9 +293,9 @@ const initializeWishlist = () => {
                 return;
             }
 
-            const productId = button.dataset.productId;
+            const productSlug = button.dataset.productSlug;
 
-            if (!productId || button.disabled) {
+            if (!productSlug || button.disabled) {
                 return;
             }
 
@@ -310,7 +310,7 @@ const initializeWishlist = () => {
             button.classList.add('is-loading');
 
             try {
-                const response = await fetch(template.replace('__product__', productId), {
+                const response = await fetch(template.replace('__product__', productSlug), {
                     method: wishlisted ? 'DELETE' : 'POST',
                     credentials: 'same-origin',
                     headers: {
