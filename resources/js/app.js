@@ -320,6 +320,12 @@ const initializeWishlist = () => {
                     },
                 });
 
+                if (redirectedToLogin(response)) {
+                    promptLogin('Please log in to use your wishlist.');
+
+                    return;
+                }
+
                 if (!response.ok) {
                     throw new Error('Unable to update wishlist.');
                 }
@@ -369,6 +375,14 @@ const promptLogin = (message) => {
     }
 };
 
+const redirectedToLogin = (response) => {
+    const loginUrl = document.body.dataset.loginUrl;
+
+    return response.status === 401 ||
+        response.status === 403 ||
+        (loginUrl && response.redirected && response.url.includes(loginUrl));
+};
+
 const initializeCart = () => {
     const summaryUrl = document.body.dataset.cartSummaryUrl;
     const storeTemplate = document.body.dataset.cartStoreUrl;
@@ -400,6 +414,13 @@ const initializeCart = () => {
                     headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                     body: JSON.stringify({ quantity: 1 }),
                 });
+
+                if (redirectedToLogin(response)) {
+                    promptLogin('Please log in to add products to your cart.');
+
+                    return;
+                }
+
                 if (!response.ok) {
                     throw new Error('Unable to add to cart.');
                 }

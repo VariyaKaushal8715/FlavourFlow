@@ -4,46 +4,18 @@ use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\User;
 
-test('guests can add, update, and remove cart items with persistence after refresh', function () {
+test('guests are redirected to login before viewing or changing cart items', function () {
     $product = Product::factory()->create(['quantity' => 10]);
 
     $this->get(route('cart.index'))
-        ->assertSuccessful();
+        ->assertRedirect(route('login'));
 
-    $this->postJson(route('cart.store', $product), [
-        'quantity' => 2,
-        'selected_options' => ['grind' => 'fine'],
-    ])
-        ->assertSuccessful()
-        ->assertJsonPath('count', 2);
+    $this->post(route('cart.store', $product), ['quantity' => 2])
+        ->assertRedirect(route('login'));
 
-    $this->postJson(route('cart.store', $product))
-        ->assertSuccessful()
-        ->assertJsonPath('count', 3);
-
-    $this->get(route('cart.summary'))
-        ->assertSuccessful()
-        ->assertJsonPath('count', 3);
-
-    $this->patchJson(route('cart.update', $product), [
-        'quantity' => 4,
-    ])
-        ->assertSuccessful()
-        ->assertJsonPath('quantity', 4)
-        ->assertJsonPath('line_total', number_format((float) $product->price * 4, 2, '.', ''));
-
-    $this->get(route('cart.index'))
-        ->assertSuccessful()
-        ->assertSee($product->name)
-        ->assertSee('Rs. '.number_format((float) $product->price * 4, 2));
-
-    $this->deleteJson(route('cart.destroy', $product))
-        ->assertSuccessful()
-        ->assertJsonPath('count', 0);
-
-    $this->get(route('cart.index'))
-        ->assertSuccessful()
-        ->assertSee('Your cart is empty.');
+    $this->assertDatabaseMissing('cart_items', [
+        'product_id' => $product->id,
+    ]);
 });
 
 test('an authenticated user can add products to their saved cart', function () {
@@ -74,7 +46,15 @@ test('an authenticated user can update and remove saved cart items', function ()
     CartItem::query()->create([
         'user_id' => $user->id,
         'product_id' => $product->id,
+        'product_name' => $product->name,
+        'product_slug' => $product->slug,
+        'sku' => $product->sku,
+        'category' => $product->categoryName(),
+        'unit' => $product->unit,
         'quantity' => 2,
+        'unit_price' => $product->price,
+        'line_total' => (float) $product->price * 2,
+        'image_path' => $product->image_path,
     ]);
 
     $this->actingAs($user)->patchJson(route('cart.update', $product), [
@@ -101,7 +81,15 @@ test('the cart page displays saved database items for the authenticated user', f
     CartItem::query()->create([
         'user_id' => $user->id,
         'product_id' => $product->id,
+        'product_name' => $product->name,
+        'product_slug' => $product->slug,
+        'sku' => $product->sku,
+        'category' => $product->categoryName(),
+        'unit' => $product->unit,
         'quantity' => 2,
+        'unit_price' => $product->price,
+        'line_total' => (float) $product->price * 2,
+        'image_path' => $product->image_path,
     ]);
 
     $this->actingAs($user)->get(route('cart.index'))

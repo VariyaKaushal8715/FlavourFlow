@@ -4,6 +4,9 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminSessionController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\UserSessionController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
@@ -17,7 +20,15 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [UserSessionController::class, 'create'])->name('login');
-    Route::post('/login', [UserSessionController::class, 'store'])->name('login.submit');
+    Route::post('/login', [UserSessionController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('login.submit');
+    Route::get('/register', [RegisterController::class, 'create'])->name('register');
+    Route::post('/register', [RegisterController::class, 'store'])->name('register.submit');
+    Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.store');
 });
 
 Route::post('/logout', [UserSessionController::class, 'destroy'])
@@ -33,7 +44,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::get('/cart/summary', [CartController::class, 'summary'])->name('cart.summary');
     Route::post('/cart/{product:slug}', [CartController::class, 'store'])->name('cart.store');
-    Route::put('/cart/{product:slug}', [CartController::class, 'update'])->name('cart.update');
+    Route::match(['put', 'patch'], '/cart/{product:slug}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{product:slug}', [CartController::class, 'destroy'])->name('cart.destroy');
 
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
