@@ -35,6 +35,7 @@
                 <a class="@class(['rounded-full px-3 py-1 transition', 'bg-white text-zinc-950' => app()->getLocale() === 'gu'])" href="{{ route('language.switch', 'gu') }}">{{ __('ui.gujarati') }}</a>
             </div>
             @auth
+                <a class="transition hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.account') }}</a>
                 <span class="text-white/60">Hi, {{ auth()->user()->name }}</span>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
@@ -56,6 +57,9 @@
                 @foreach ($navigation as $item)
                     <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ $item['href'] }}">{{ $item['label'] }}</a>
                 @endforeach
+                @auth
+                    <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.account') }}</a>
+                @endauth
                 <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('wishlist.index') }}">{{ __('ui.wishlist') }}</a>
             </div>
             <div class="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-1 text-xs font-semibold text-white/80">
@@ -64,7 +68,7 @@
             </div>
             @auth
                 <div class="mt-4 flex items-center justify-between gap-3">
-                    <span class="text-sm text-white/60">Hi, {{ auth()->user()->name }}</span>
+                    <a class="text-sm text-white/60 transition hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.account') }}: {{ auth()->user()->name }}</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button class="inline-flex items-center rounded-full border border-white/20 px-4 py-2 text-white transition hover:border-white hover:bg-white/10" type="submit">
