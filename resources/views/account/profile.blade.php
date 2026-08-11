@@ -59,14 +59,33 @@
 
                         <label class="block">
                             <span class="text-sm font-semibold text-zinc-800">Mobile Number</span>
-                            <input
-                                class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
-                                type="tel"
-                                name="mobile_number"
-                                value="{{ old('mobile_number', $profile?->mobile_number) }}"
-                                autocomplete="tel"
-                                required
-                            >
+                            <div class="mt-2 flex flex-col gap-3 sm:flex-row" data-profile-contact>
+                                <input
+                                    class="w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
+                                    type="tel"
+                                    name="mobile_number"
+                                    value="{{ old('mobile_number', $profile?->mobile_number) }}"
+                                    autocomplete="tel"
+                                    pattern="[0-9+\-\s()]{7,25}"
+                                    required
+                                    data-profile-contact-input="mobile_number"
+                                >
+                                @if ($hasProfile)
+                                    <button
+                                        class="inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/70 bg-gradient-to-r from-amber-100 to-red-50 px-4 text-sm font-semibold text-brand-primary shadow-sm transition hover:-translate-y-0.5 hover:border-brand-primary/40 hover:bg-brand-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-70"
+                                        type="button"
+                                        data-profile-contact-button
+                                        data-profile-contact-url="{{ route('account.profile.mobile_number.update') }}"
+                                        data-profile-contact-field="mobile_number"
+                                        data-profile-contact-loading="Updating..."
+                                    >
+                                        Update Mobile Number
+                                    </button>
+                                @endif
+                            </div>
+                            @if ($hasProfile)
+                                <p class="mt-2 min-h-5 text-xs font-semibold" data-profile-contact-message="mobile_number" role="status" aria-live="polite"></p>
+                            @endif
                             @error('mobile_number')
                                 <p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>
                             @enderror
@@ -75,14 +94,32 @@
 
                     <label class="block">
                         <span class="text-sm font-semibold text-zinc-800">Email</span>
-                        <input
-                            class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
-                            type="email"
-                            name="email"
-                            value="{{ old('email', $profile?->email ?? $user?->email) }}"
-                            autocomplete="email"
-                            required
-                        >
+                        <div class="mt-2 flex flex-col gap-3 sm:flex-row" data-profile-contact>
+                            <input
+                                class="w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
+                                type="email"
+                                name="email"
+                                value="{{ old('email', $profile?->email ?? $user?->email) }}"
+                                autocomplete="email"
+                                required
+                                data-profile-contact-input="email"
+                            >
+                            @if ($hasProfile)
+                                <button
+                                    class="inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/70 bg-gradient-to-r from-amber-100 to-red-50 px-4 text-sm font-semibold text-brand-primary shadow-sm transition hover:-translate-y-0.5 hover:border-brand-primary/40 hover:bg-brand-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-70"
+                                    type="button"
+                                    data-profile-contact-button
+                                    data-profile-contact-url="{{ route('account.profile.email.update') }}"
+                                    data-profile-contact-field="email"
+                                    data-profile-contact-loading="Updating..."
+                                >
+                                    Update Email Address
+                                </button>
+                            @endif
+                        </div>
+                        @if ($hasProfile)
+                            <p class="mt-2 min-h-5 text-xs font-semibold" data-profile-contact-message="email" role="status" aria-live="polite"></p>
+                        @endif
                         @error('email')
                             <p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>
                         @enderror
@@ -201,11 +238,11 @@
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
                             <dt class="text-sm text-white/55">Mobile</dt>
-                            <dd class="text-right text-sm font-semibold text-white">{{ $profile?->mobile_number ?? 'Not added yet' }}</dd>
+                            <dd class="text-right text-sm font-semibold text-white" data-profile-contact-value="mobile_number">{{ $profile?->mobile_number ?? 'Not added yet' }}</dd>
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
                             <dt class="text-sm text-white/55">Email</dt>
-                            <dd class="text-right text-sm font-semibold text-white">{{ $profile?->email ?? $user?->email ?? 'Not added yet' }}</dd>
+                            <dd class="text-right text-sm font-semibold text-white" data-profile-contact-value="email">{{ $profile?->email ?? $user?->email ?? 'Not added yet' }}</dd>
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
                             <dt class="text-sm text-white/55">Address</dt>
