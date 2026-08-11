@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreUserSessionRequest;
+use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,19 +13,18 @@ class UserSessionController extends Controller
 {
     public function create(): View
     {
-        return view('login', [
-            'message' => session('message'),
+        return view('auth.entry', [
+            'site' => config('personal_site'),
+            'activeForm' => 'login',
         ]);
     }
 
-    public function store(StoreUserSessionRequest $request): RedirectResponse
+    public function store(LoginRequest $request): RedirectResponse
     {
-        $credentials = $request->safe()->only(['email', 'password']);
-
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::attempt($request->credentials(), $request->boolean('remember'))) {
             return back()
-                ->withErrors(['email' => 'These credentials do not match our records.'])
-                ->onlyInput('email');
+                ->withErrors(['login' => 'These credentials do not match our records.'])
+                ->onlyInput('login');
         }
 
         $request->session()->regenerate();

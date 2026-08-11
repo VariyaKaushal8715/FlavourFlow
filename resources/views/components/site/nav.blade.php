@@ -12,12 +12,9 @@
 
         <div class="flex items-center gap-2 md:hidden">
             @auth
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button class="inline-flex h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15" type="submit">
-                        Sign out
-                    </button>
-                </form>
+                <a class="inline-flex h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15" href="{{ route('account.profile') }}">
+                    {{ __('ui.account') }}
+                </a>
             @endauth
             @guest
                 <a class="inline-flex h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15" href="{{ route('login') }}">
@@ -46,10 +43,11 @@
             @endforeach
             <a class="transition hover:text-white" href="{{ route('wishlist.index') }}">{{ __('ui.wishlist') }}</a>
             @auth
+                <a class="transition hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.account') }}</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button class="inline-flex items-center rounded-full border border-white/20 px-4 py-2 text-white transition hover:border-white hover:bg-white/10" type="submit">
-                        Sign out
+                        {{ __('ui.sign_out') }}
                     </button>
                 </form>
             @endauth
@@ -77,9 +75,12 @@
                 @endforeach
                 <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('wishlist.index') }}">{{ __('ui.wishlist') }}</a>
                 @auth
+                    <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.account') }}</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button class="rounded-xl px-4 py-3 text-left transition hover:bg-white/5 hover:text-white" type="submit">Sign out</button>
+                        <button class="w-full rounded-xl px-4 py-3 text-left transition hover:bg-white/5 hover:text-white" type="submit">
+                            {{ __('ui.sign_out') }}
+                        </button>
                     </form>
                 @endauth
                 @guest

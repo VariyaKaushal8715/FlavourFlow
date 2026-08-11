@@ -2,6 +2,7 @@
 
 return [
     'wishlist' => 'વિશલિસ્ટ',
+    'account' => 'એકાઉન્ટ',
     'sign_out' => 'સાઇન આઉટ',
     'language' => 'ભાષા',
     'english' => 'અંગ્રેજી',

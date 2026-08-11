@@ -5,6 +5,24 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 
+it('shows only the new customer form on the registration page', function (): void {
+    $this->get(route('register'))
+        ->assertSuccessful()
+        ->assertSee('New customer')
+        ->assertSee('Already have an account?')
+        ->assertSee('Sign in here')
+        ->assertDontSee('Existing customer');
+});
+
+it('shows only the existing customer form on the login page', function (): void {
+    $this->get(route('login'))
+        ->assertSuccessful()
+        ->assertSee('Existing customer')
+        ->assertSee('New customer?')
+        ->assertSee('Create an account')
+        ->assertDontSee('New customer</span>', false);
+});
+
 it('registers a new user with a hashed password and logs them in', function (): void {
     $response = $this->post(route('register.submit'), [
         'full_name' => 'Asha Patel',

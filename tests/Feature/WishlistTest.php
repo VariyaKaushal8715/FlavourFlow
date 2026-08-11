@@ -4,35 +4,18 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\Wishlist;
 
-test('guests can save and remove wishlist products with persistence after refresh', function () {
+test('guests are redirected to login before viewing or changing wishlist products', function () {
     $product = Product::factory()->create(['quantity' => 10]);
 
     $this->get(route('wishlist.index'))
-        ->assertSuccessful();
+        ->assertRedirect(route('login'));
 
-    $this->postJson(route('wishlist.store', $product))
-        ->assertSuccessful()
-        ->assertJsonPath('wishlisted', true);
+    $this->post(route('wishlist.store', $product))
+        ->assertRedirect(route('login'));
 
-    $this->postJson(route('wishlist.store', $product))
-        ->assertSuccessful()
-        ->assertJsonPath('wishlisted', true);
-
-    $this->get(route('wishlist.products'))
-        ->assertSuccessful()
-        ->assertJsonPath('product_ids.0', $product->id);
-
-    $this->get(route('home'))
-        ->assertSuccessful()
-        ->assertSee('data-wishlisted="true"', false);
-
-    $this->deleteJson(route('wishlist.destroy', $product))
-        ->assertSuccessful()
-        ->assertJsonPath('wishlisted', false);
-
-    $this->get(route('wishlist.index'))
-        ->assertSuccessful()
-        ->assertSee('Nothing saved yet');
+    $this->assertDatabaseMissing('wishlists', [
+        'product_id' => $product->id,
+    ]);
 });
 
 test('an authenticated user can add a product to their wishlist only once', function () {
@@ -73,5 +56,6 @@ test('the wishlist page displays the authenticated users saved products', functi
     $this->actingAs($user)->get(route('wishlist.index'))
         ->assertSuccessful()
         ->assertSee('Saved Masala')
+        ->assertSee('data-product-slug="'.$product->slug.'"', false)
         ->assertSee('data-wishlisted="true"', false);
 });

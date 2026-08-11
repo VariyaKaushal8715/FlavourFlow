@@ -79,6 +79,7 @@
                             type="button"
                             data-wishlist-button
                             data-product-id="{{ $product->id }}"
+                            data-product-slug="{{ $product->slug }}"
                             data-wishlisted="{{ in_array($product->id, $wishlistProductIds, true) ? 'true' : 'false' }}"
                             aria-pressed="{{ in_array($product->id, $wishlistProductIds, true) ? 'true' : 'false' }}"
                             aria-label="{{ in_array($product->id, $wishlistProductIds, true) ? 'Remove '.$product->name.' from wishlist' : 'Add '.$product->name.' to wishlist' }}"

@@ -293,9 +293,9 @@ const initializeWishlist = () => {
                 return;
             }
 
-            const productId = button.dataset.productId;
+            const productSlug = button.dataset.productSlug;
 
-            if (!productId || button.disabled) {
+            if (!productSlug || button.disabled) {
                 return;
             }
 
@@ -315,7 +315,7 @@ const initializeWishlist = () => {
             button.classList.add('is-loading');
 
             try {
-                const response = await fetch(template.replace('__product__', productId), {
+                const response = await fetch(template.replace('__product__', productSlug), {
                     method: wishlisted ? 'DELETE' : 'POST',
                     credentials: 'same-origin',
                     headers: {
@@ -325,7 +325,7 @@ const initializeWishlist = () => {
                     },
                 });
 
-                if (response.redirected || response.url.includes('/login')) {
+                if (redirectedToLogin(response)) {
                     promptLogin('Please sign in to manage your wishlist.');
                     return;
                 }
@@ -381,6 +381,14 @@ const promptLogin = (message) => {
 
 const needsAuthentication = () => document.body.dataset.authenticated !== 'true';
 
+const redirectedToLogin = (response) => {
+    const loginUrl = document.body.dataset.loginUrl;
+
+    return response.status === 401 ||
+        response.status === 403 ||
+        (loginUrl && response.redirected && response.url.includes(loginUrl));
+};
+
 const initializeCart = () => {
     const summaryUrl = document.body.dataset.cartSummaryUrl;
     const storeTemplate = document.body.dataset.cartStoreUrl;
@@ -417,7 +425,7 @@ const initializeCart = () => {
                     headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                     body: JSON.stringify({ quantity: 1 }),
                 });
-                if (response.redirected || response.url.includes('/login')) {
+                if (redirectedToLogin(response)) {
                     promptLogin('Please sign in to add items to your cart.');
                     return;
                 }
