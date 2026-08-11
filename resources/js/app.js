@@ -299,6 +299,11 @@ const initializeWishlist = () => {
                 return;
             }
 
+            if (needsAuthentication()) {
+                promptLogin('Please sign in to manage your wishlist.');
+                return;
+            }
+
             const wishlisted = button.dataset.wishlisted === 'true';
             const template = document.body.dataset[wishlisted ? 'wishlistDestroyUrl' : 'wishlistStoreUrl'];
 
@@ -319,6 +324,11 @@ const initializeWishlist = () => {
                         'X-CSRF-TOKEN': csrfToken,
                     },
                 });
+
+                if (response.redirected || response.url.includes('/login')) {
+                    promptLogin('Please sign in to manage your wishlist.');
+                    return;
+                }
 
                 if (!response.ok) {
                     throw new Error('Unable to update wishlist.');
@@ -369,6 +379,8 @@ const promptLogin = (message) => {
     }
 };
 
+const needsAuthentication = () => document.body.dataset.authenticated !== 'true';
+
 const initializeCart = () => {
     const summaryUrl = document.body.dataset.cartSummaryUrl;
     const storeTemplate = document.body.dataset.cartStoreUrl;
@@ -392,6 +404,11 @@ const initializeCart = () => {
                 return;
             }
 
+            if (needsAuthentication()) {
+                promptLogin('Please sign in to add items to your cart.');
+                return;
+            }
+
             button.disabled = true;
             try {
                 const response = await fetch(storeTemplate.replace('__product__', productSlug), {
@@ -400,6 +417,11 @@ const initializeCart = () => {
                     headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                     body: JSON.stringify({ quantity: 1 }),
                 });
+                if (response.redirected || response.url.includes('/login')) {
+                    promptLogin('Please sign in to add items to your cart.');
+                    return;
+                }
+
                 if (!response.ok) {
                     throw new Error('Unable to add to cart.');
                 }

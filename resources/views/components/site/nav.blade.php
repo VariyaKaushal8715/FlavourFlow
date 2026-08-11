@@ -10,39 +10,58 @@
             </span>
         </a>
 
-        <button
-            class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white transition hover:bg-white/10 md:hidden"
-            type="button"
-            data-site-nav-toggle
-            aria-label="Open menu"
-            aria-expanded="false"
-            aria-controls="site-nav-panel"
-        >
-            <span class="flex flex-col gap-1.5">
-                <span class="h-0.5 w-5 rounded-full bg-current"></span>
-                <span class="h-0.5 w-5 rounded-full bg-current"></span>
-                <span class="h-0.5 w-5 rounded-full bg-current"></span>
-            </span>
-        </button>
+        <div class="flex items-center gap-2 md:hidden">
+            @auth
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button class="inline-flex h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15" type="submit">
+                        Sign out
+                    </button>
+                </form>
+            @endauth
+            @guest
+                <a class="inline-flex h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15" href="{{ route('login') }}">
+                    Sign in
+                </a>
+            @endguest
+            <button
+                class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white transition hover:bg-white/10"
+                type="button"
+                data-site-nav-toggle
+                aria-label="Open menu"
+                aria-expanded="false"
+                aria-controls="site-nav-panel"
+            >
+                <span class="flex flex-col gap-1.5">
+                    <span class="h-0.5 w-5 rounded-full bg-current"></span>
+                    <span class="h-0.5 w-5 rounded-full bg-current"></span>
+                    <span class="h-0.5 w-5 rounded-full bg-current"></span>
+                </span>
+            </button>
+        </div>
 
         <nav class="hidden items-center gap-7 text-sm font-medium text-white/75 md:flex" aria-label="Primary">
             @foreach ($navigation as $item)
                 <a class="transition hover:text-white" href="{{ $item['href'] }}">{{ $item['label'] }}</a>
             @endforeach
             <a class="transition hover:text-white" href="{{ route('wishlist.index') }}">{{ __('ui.wishlist') }}</a>
+            @auth
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button class="inline-flex items-center rounded-full border border-white/20 px-4 py-2 text-white transition hover:border-white hover:bg-white/10" type="submit">
+                        Sign out
+                    </button>
+                </form>
+            @endauth
+            @guest
+                <a class="inline-flex items-center rounded-full border border-white/20 px-4 py-2 text-white transition hover:border-white hover:bg-white/10" href="{{ route('login') }}">
+                    Sign in
+                </a>
+            @endguest
             <div class="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 p-1 text-xs font-semibold text-white/80">
                 <a class="@class(['rounded-full px-3 py-1 transition', 'bg-white text-zinc-950' => app()->getLocale() === 'en'])" href="{{ route('language.switch', 'en') }}">{{ __('ui.english') }}</a>
                 <a class="@class(['rounded-full px-3 py-1 transition', 'bg-white text-zinc-950' => app()->getLocale() === 'gu'])" href="{{ route('language.switch', 'gu') }}">{{ __('ui.gujarati') }}</a>
             </div>
-            @auth
-                <span class="text-white/60">Hi, {{ auth()->user()->name }}</span>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button class="inline-flex items-center rounded-full border border-white/20 px-4 py-2 text-white transition hover:border-white hover:bg-white/10" type="submit">
-                        {{ __('ui.sign_out') }}
-                    </button>
-                </form>
-            @endauth
         </nav>
     </div>
 
@@ -57,22 +76,20 @@
                     <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ $item['href'] }}">{{ $item['label'] }}</a>
                 @endforeach
                 <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('wishlist.index') }}">{{ __('ui.wishlist') }}</a>
+                @auth
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="rounded-xl px-4 py-3 text-left transition hover:bg-white/5 hover:text-white" type="submit">Sign out</button>
+                    </form>
+                @endauth
+                @guest
+                    <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('login') }}">Sign in</a>
+                @endguest
             </div>
             <div class="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-1 text-xs font-semibold text-white/80">
                 <a class="@class(['rounded-full px-3 py-1 transition', 'bg-white text-zinc-950' => app()->getLocale() === 'en'])" href="{{ route('language.switch', 'en') }}">{{ __('ui.english') }}</a>
                 <a class="@class(['rounded-full px-3 py-1 transition', 'bg-white text-zinc-950' => app()->getLocale() === 'gu'])" href="{{ route('language.switch', 'gu') }}">{{ __('ui.gujarati') }}</a>
             </div>
-            @auth
-                <div class="mt-4 flex items-center justify-between gap-3">
-                    <span class="text-sm text-white/60">Hi, {{ auth()->user()->name }}</span>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button class="inline-flex items-center rounded-full border border-white/20 px-4 py-2 text-white transition hover:border-white hover:bg-white/10" type="submit">
-                            {{ __('ui.sign_out') }}
-                        </button>
-                    </form>
-                </div>
-            @endauth
         </div>
     </div>
 </header>
