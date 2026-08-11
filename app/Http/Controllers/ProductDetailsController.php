@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Support\WishlistState;
 use Illuminate\Contracts\View\View;
 
 class ProductDetailsController extends Controller
 {
-    public function __invoke(Product $product): View
+    public function __invoke(Product $product, WishlistState $wishlist): View
     {
         abort_unless($product->is_active, 404);
 
@@ -25,6 +26,7 @@ class ProductDetailsController extends Controller
             'site' => config('personal_site'),
             'product' => $product,
             'relatedProducts' => $relatedProducts,
+            'wishlistProductIds' => $wishlist->productIds(),
         ]);
     }
 }
