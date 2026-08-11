@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'unit_price',
     'line_total',
     'image_path',
+    'selected_options',
 ])]
 class CartItem extends Model
 {
@@ -39,6 +40,7 @@ class CartItem extends Model
             'quantity' => 'integer',
             'unit_price' => 'decimal:2',
             'line_total' => 'decimal:2',
+            'selected_options' => 'array',
         ];
     }
 
