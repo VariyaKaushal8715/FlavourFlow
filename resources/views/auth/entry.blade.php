@@ -5,6 +5,7 @@
 
 <x-site.layout
     :site="$site"
+    :show-footer="false"
     page-title="Sign in or create an account | FlavourFlow"
     page-description="Sign in to your FlavourFlow account or create a new one to save your wishlist and speed up checkout."
 >
