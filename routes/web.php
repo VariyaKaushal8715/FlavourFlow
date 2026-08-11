@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Account\UserProfileController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminProductController;
@@ -30,6 +31,15 @@ Route::get('/products/{product:slug}', ProductDetailsController::class)->name('p
 Route::get('/offers/{offer}', OfferDetailsController::class)->name('offers.show');
 
 Route::middleware('auth')->group(function () {
+    Route::prefix('account')
+        ->name('account.')
+        ->group(function () {
+            Route::get('/', [UserProfileController::class, 'edit'])->name('profile');
+            Route::post('/', [UserProfileController::class, 'store'])->name('profile.store');
+            Route::put('/', [UserProfileController::class, 'update'])->name('profile.update');
+            Route::delete('/', [UserProfileController::class, 'destroy'])->name('profile.destroy');
+        });
+
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::get('/cart/summary', [CartController::class, 'summary'])->name('cart.summary');
     Route::post('/cart/{product:slug}', [CartController::class, 'store'])->name('cart.store');
