@@ -48,6 +48,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [UserProfileController::class, 'edit'])->name('profile');
             Route::post('/', [UserProfileController::class, 'store'])->name('profile.store');
             Route::put('/', [UserProfileController::class, 'update'])->name('profile.update');
+            Route::patch('/mobile-number', [UserProfileController::class, 'updateMobileNumber'])->name('profile.mobile_number.update');
+            Route::patch('/email-address', [UserProfileController::class, 'updateEmailAddress'])->name('profile.email.update');
             Route::delete('/', [UserProfileController::class, 'destroy'])->name('profile.destroy');
         });
 

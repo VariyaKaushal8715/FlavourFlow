@@ -8,7 +8,7 @@
         $hasProfile = $profile !== null;
     @endphp
 
-    <section class="border-b border-zinc-200 bg-zinc-50 py-10 sm:py-14">
+    <section class="border-b border-amber-200/60 bg-[radial-gradient(circle_at_top_left,rgba(244,185,66,0.24),transparent_34%),linear-gradient(135deg,#fff9ed_0%,#fff_52%,#fff3df_100%)] py-10 sm:py-14">
         <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
             <div class="max-w-3xl" data-reveal>
                 <p class="text-sm font-semibold text-brand-primary">Account settings</p>
@@ -18,21 +18,21 @@
         </div>
     </section>
 
-    <section class="bg-white py-12 sm:py-16">
+    <section class="bg-[linear-gradient(180deg,#fff_0%,#fff9ed_48%,#fff_100%)] py-12 sm:py-16">
         <div class="mx-auto grid w-full max-w-7xl gap-8 px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:px-8">
-            <div class="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8" data-reveal>
+            <div class="rounded-3xl border border-amber-200/70 bg-white/95 p-6 shadow-[0_24px_70px_rgba(120,53,15,0.10)] ring-1 ring-white sm:p-8" data-reveal>
                 @if (session('status'))
-                    <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+                    <div class="mb-6 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-amber-50 px-4 py-3 text-sm font-medium text-emerald-800 shadow-sm shadow-emerald-950/5">
                         {{ session('status') }}
                     </div>
                 @endif
 
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-zinc-500">{{ $hasProfile ? 'Update your profile' : 'Create your profile' }}</p>
+                        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-brand-primary">{{ $hasProfile ? 'Update your profile' : 'Create your profile' }}</p>
                         <h2 class="mt-2 text-2xl font-semibold text-zinc-950">{{ $hasProfile ? 'Edit saved details' : 'Save your details once' }}</h2>
                     </div>
-                    <span class="rounded-full border border-brand-primary/20 bg-brand-surface px-3 py-1 text-xs font-semibold text-brand-primary">Secure account</span>
+                    <span class="rounded-full border border-amber-300/60 bg-gradient-to-r from-amber-100 to-red-50 px-3 py-1 text-xs font-semibold text-brand-primary shadow-sm shadow-amber-900/5">Secure account</span>
                 </div>
 
                 <form class="mt-8 space-y-5" method="POST" action="{{ $hasProfile ? route('account.profile.update') : route('account.profile.store') }}">
@@ -45,7 +45,7 @@
                         <label class="block">
                             <span class="text-sm font-semibold text-zinc-800">Full Name</span>
                             <input
-                                class="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
+                                class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                 type="text"
                                 name="full_name"
                                 value="{{ old('full_name', $profile?->full_name ?? $user?->name) }}"
@@ -59,14 +59,33 @@
 
                         <label class="block">
                             <span class="text-sm font-semibold text-zinc-800">Mobile Number</span>
-                            <input
-                                class="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
-                                type="tel"
-                                name="mobile_number"
-                                value="{{ old('mobile_number', $profile?->mobile_number) }}"
-                                autocomplete="tel"
-                                required
-                            >
+                            <div class="mt-2 flex flex-col gap-3 sm:flex-row" data-profile-contact>
+                                <input
+                                    class="w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
+                                    type="tel"
+                                    name="mobile_number"
+                                    value="{{ old('mobile_number', $profile?->mobile_number) }}"
+                                    autocomplete="tel"
+                                    pattern="[0-9+\-\s()]{7,25}"
+                                    required
+                                    data-profile-contact-input="mobile_number"
+                                >
+                                @if ($hasProfile)
+                                    <button
+                                        class="inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/70 bg-gradient-to-r from-amber-100 to-red-50 px-4 text-sm font-semibold text-brand-primary shadow-sm transition hover:-translate-y-0.5 hover:border-brand-primary/40 hover:bg-brand-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-70"
+                                        type="button"
+                                        data-profile-contact-button
+                                        data-profile-contact-url="{{ route('account.profile.mobile_number.update') }}"
+                                        data-profile-contact-field="mobile_number"
+                                        data-profile-contact-loading="Updating..."
+                                    >
+                                        Update Mobile Number
+                                    </button>
+                                @endif
+                            </div>
+                            @if ($hasProfile)
+                                <p class="mt-2 min-h-5 text-xs font-semibold" data-profile-contact-message="mobile_number" role="status" aria-live="polite"></p>
+                            @endif
                             @error('mobile_number')
                                 <p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>
                             @enderror
@@ -75,14 +94,32 @@
 
                     <label class="block">
                         <span class="text-sm font-semibold text-zinc-800">Email</span>
-                        <input
-                            class="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
-                            type="email"
-                            name="email"
-                            value="{{ old('email', $profile?->email ?? $user?->email) }}"
-                            autocomplete="email"
-                            required
-                        >
+                        <div class="mt-2 flex flex-col gap-3 sm:flex-row" data-profile-contact>
+                            <input
+                                class="w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
+                                type="email"
+                                name="email"
+                                value="{{ old('email', $profile?->email ?? $user?->email) }}"
+                                autocomplete="email"
+                                required
+                                data-profile-contact-input="email"
+                            >
+                            @if ($hasProfile)
+                                <button
+                                    class="inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/70 bg-gradient-to-r from-amber-100 to-red-50 px-4 text-sm font-semibold text-brand-primary shadow-sm transition hover:-translate-y-0.5 hover:border-brand-primary/40 hover:bg-brand-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-70"
+                                    type="button"
+                                    data-profile-contact-button
+                                    data-profile-contact-url="{{ route('account.profile.email.update') }}"
+                                    data-profile-contact-field="email"
+                                    data-profile-contact-loading="Updating..."
+                                >
+                                    Update Email Address
+                                </button>
+                            @endif
+                        </div>
+                        @if ($hasProfile)
+                            <p class="mt-2 min-h-5 text-xs font-semibold" data-profile-contact-message="email" role="status" aria-live="polite"></p>
+                        @endif
                         @error('email')
                             <p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>
                         @enderror
@@ -90,7 +127,7 @@
 
                     <label class="block">
                         <span class="text-sm font-semibold text-zinc-800">Address</span>
-                        <textarea class="mt-2 min-h-32 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10" name="address" autocomplete="street-address" required>{{ old('address', $profile?->address) }}</textarea>
+                        <textarea class="mt-2 min-h-32 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15" name="address" autocomplete="street-address" required>{{ old('address', $profile?->address) }}</textarea>
                         @error('address')
                             <p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>
                         @enderror
@@ -100,7 +137,7 @@
                         <label class="block">
                             <span class="text-sm font-semibold text-zinc-800">City</span>
                             <input
-                                class="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
+                                class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                 type="text"
                                 name="city"
                                 value="{{ old('city', $profile?->city) }}"
@@ -115,7 +152,7 @@
                         <label class="block">
                             <span class="text-sm font-semibold text-zinc-800">State</span>
                             <input
-                                class="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
+                                class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                 type="text"
                                 name="state"
                                 value="{{ old('state', $profile?->state) }}"
@@ -130,7 +167,7 @@
                         <label class="block">
                             <span class="text-sm font-semibold text-zinc-800">Country</span>
                             <input
-                                class="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
+                                class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                 type="text"
                                 name="country"
                                 value="{{ old('country', $profile?->country) }}"
@@ -145,7 +182,7 @@
                         <label class="block">
                             <span class="text-sm font-semibold text-zinc-800">PIN/ZIP Code</span>
                             <input
-                                class="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
+                                class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                 type="text"
                                 name="postal_code"
                                 value="{{ old('postal_code', $profile?->postal_code) }}"
@@ -159,17 +196,17 @@
                     </div>
 
                     <div class="flex flex-wrap gap-3 pt-2">
-                        <button class="inline-flex items-center rounded-2xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white transition hover:brightness-95" type="submit">
+                        <button class="inline-flex items-center rounded-2xl bg-gradient-to-r from-red-700 to-amber-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(180,35,24,0.24)] transition hover:-translate-y-0.5 hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" type="submit">
                             {{ $hasProfile ? 'Update profile' : 'Save profile' }}
                         </button>
-                        <a class="inline-flex items-center rounded-2xl border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:text-zinc-950" href="{{ route('home') }}">
+                        <a class="inline-flex items-center rounded-2xl border border-amber-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-primary/40 hover:bg-brand-surface hover:text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30" href="{{ route('home') }}">
                             Back to shop
                         </a>
                     </div>
                 </form>
 
                 @if ($hasProfile)
-                    <div class="mt-8 border-t border-zinc-200 pt-6">
+                    <div class="mt-8 border-t border-amber-200/70 pt-6">
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <div>
                                 <h3 class="text-lg font-semibold text-zinc-950">Delete saved details</h3>
@@ -178,7 +215,7 @@
                             <form method="POST" action="{{ route('account.profile.destroy') }}" onsubmit="return confirm('Delete your profile and address details?');">
                                 @csrf
                                 @method('DELETE')
-                                <button class="inline-flex items-center rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100" type="submit">
+                                <button class="inline-flex items-center rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-amber-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-sm transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300" type="submit">
                                     Delete profile
                                 </button>
                             </form>
@@ -188,7 +225,7 @@
             </div>
 
             <aside class="space-y-5" data-reveal>
-                <div class="overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-950 text-white shadow-sm">
+                <div class="overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(180,35,24,0.38),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(244,185,66,0.22),transparent_28%),linear-gradient(145deg,#09090b_0%,#18181b_100%)] text-white shadow-[0_28px_80px_rgba(9,9,11,0.28)]">
                     <div class="border-b border-white/10 px-6 py-5">
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-brand-accent">Profile snapshot</p>
                         <h2 class="mt-2 text-xl font-semibold">Your saved identity</h2>
@@ -201,11 +238,11 @@
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
                             <dt class="text-sm text-white/55">Mobile</dt>
-                            <dd class="text-right text-sm font-semibold text-white">{{ $profile?->mobile_number ?? 'Not added yet' }}</dd>
+                            <dd class="text-right text-sm font-semibold text-white" data-profile-contact-value="mobile_number">{{ $profile?->mobile_number ?? 'Not added yet' }}</dd>
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
                             <dt class="text-sm text-white/55">Email</dt>
-                            <dd class="text-right text-sm font-semibold text-white">{{ $profile?->email ?? $user?->email ?? 'Not added yet' }}</dd>
+                            <dd class="text-right text-sm font-semibold text-white" data-profile-contact-value="email">{{ $profile?->email ?? $user?->email ?? 'Not added yet' }}</dd>
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
                             <dt class="text-sm text-white/55">Address</dt>
@@ -228,7 +265,7 @@
                     </dl>
                 </div>
 
-                <div class="rounded-3xl border border-brand-primary/15 bg-brand-surface p-6 shadow-sm">
+                <div class="rounded-3xl border border-amber-200/80 bg-[linear-gradient(135deg,#fff9ed_0%,#fff_48%,#fff0d1_100%)] p-6 shadow-[0_18px_45px_rgba(120,53,15,0.10)]">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-brand-primary">Why it matters</p>
                     <h3 class="mt-2 text-xl font-semibold text-zinc-950">Faster checkout, less typing.</h3>
                     <p class="mt-4 text-sm leading-7 text-zinc-600">Keep your shipping details here so your next spice order is ready to place in a few taps.</p>

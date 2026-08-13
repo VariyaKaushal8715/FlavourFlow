@@ -96,3 +96,69 @@ test('authenticated users can delete their own profile details', function (): vo
         'user_id' => $user->getKey(),
     ]);
 });
+
+test('authenticated users can update their saved mobile number and email address separately', function (): void {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $profile = UserProfile::factory()->for($user)->create([
+        'mobile_number' => '9000000000',
+        'email' => 'meera@example.com',
+    ]);
+    $otherProfile = UserProfile::factory()->for($otherUser)->create([
+        'mobile_number' => '9111111111',
+        'email' => 'other@example.com',
+    ]);
+
+    $this->actingAs($user)
+        ->patchJson(route('account.profile.mobile_number.update'), [
+            'mobile_number' => '+91 98765 43210',
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('profile.mobile_number', '+91 98765 43210')
+        ->assertJsonPath('message', 'Your mobile number has been updated.');
+
+    $this->actingAs($user)
+        ->patchJson(route('account.profile.email.update'), [
+            'email' => 'meera.orders@example.com',
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('profile.email', 'meera.orders@example.com')
+        ->assertJsonPath('message', 'Your email address has been updated.');
+
+    $profile->refresh();
+    $otherProfile->refresh();
+
+    expect($profile->mobile_number)->toBe('+91 98765 43210')
+        ->and($profile->email)->toBe('meera.orders@example.com')
+        ->and($otherProfile->mobile_number)->toBe('9111111111')
+        ->and($otherProfile->email)->toBe('other@example.com');
+});
+
+test('profile contact updates are validated before saving', function (): void {
+    $user = User::factory()->create();
+    $profile = UserProfile::factory()->for($user)->create([
+        'mobile_number' => '9000000000',
+        'email' => 'meera@example.com',
+    ]);
+
+    $this->actingAs($user)
+        ->withHeader('Accept', 'application/json')
+        ->patchJson(route('account.profile.mobile_number.update'), [
+            'mobile_number' => 'abc',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('mobile_number');
+
+    $this->actingAs($user)
+        ->withHeader('Accept', 'application/json')
+        ->patchJson(route('account.profile.email.update'), [
+            'email' => 'not-an-email',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('email');
+
+    $profile->refresh();
+
+    expect($profile->mobile_number)->toBe('9000000000')
+        ->and($profile->email)->toBe('meera@example.com');
+});

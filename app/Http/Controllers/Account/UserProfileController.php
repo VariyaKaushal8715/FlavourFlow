@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Account\StoreUserProfileRequest;
+use App\Http\Requests\Account\UpdateUserProfileEmailRequest;
+use App\Http\Requests\Account\UpdateUserProfileMobileNumberRequest;
 use App\Http\Requests\Account\UpdateUserProfileRequest;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -48,6 +51,40 @@ class UserProfileController extends Controller
         return redirect()
             ->route('account.profile')
             ->with('status', 'Your profile details have been updated.');
+    }
+
+    public function updateMobileNumber(UpdateUserProfileMobileNumberRequest $request): JsonResponse
+    {
+        $profile = $request->user()?->profile()->first();
+
+        abort_if($profile === null, 404);
+
+        $profile->update($request->validated());
+
+        return response()->json([
+            'message' => 'Your mobile number has been updated.',
+            'profile' => [
+                'mobile_number' => $profile->mobile_number,
+                'email' => $profile->email,
+            ],
+        ]);
+    }
+
+    public function updateEmailAddress(UpdateUserProfileEmailRequest $request): JsonResponse
+    {
+        $profile = $request->user()?->profile()->first();
+
+        abort_if($profile === null, 404);
+
+        $profile->update($request->validated());
+
+        return response()->json([
+            'message' => 'Your email address has been updated.',
+            'profile' => [
+                'mobile_number' => $profile->mobile_number,
+                'email' => $profile->email,
+            ],
+        ]);
     }
 
     public function destroy(Request $request): RedirectResponse
