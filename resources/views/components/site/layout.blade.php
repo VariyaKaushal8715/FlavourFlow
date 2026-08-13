@@ -3,6 +3,7 @@
     'pageTitle' => null,
     'pageDescription' => null,
     'preserveOnRefresh' => false,
+    'showFooter' => true,
 ])
 
 <!DOCTYPE html>
@@ -45,6 +46,8 @@
             {{ $slot }}
         </main>
 
-        <x-site.footer :site="$site" />
+        @if ($showFooter)
+            <x-site.footer :site="$site" />
+        @endif
     </body>
 </html>

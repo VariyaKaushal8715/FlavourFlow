@@ -1,10 +1,9 @@
-@props(['brand', 'navigation', 'hero', 'wishlistProductIds' => []])
+@props(['brand', 'navigation', 'hero'])
 
 @php
     $featuredProduct = $hero['product_showcase']['featured'];
     $supportingProducts = $hero['product_showcase']['supporting'];
     $tickerProducts = array_merge([$featuredProduct], $supportingProducts);
-    $featuredWishlisted = in_array($featuredProduct['id'] ?? null, $wishlistProductIds, true);
 @endphp
 
 <section id="top" class="hero-stage" data-hero>
@@ -57,21 +56,6 @@
             <div class="hero-product-lines" aria-hidden="true"></div>
 
             <div class="relative ml-auto w-[min(86vw,25rem)]">
-                <button
-                    class="wishlist-button absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-sm backdrop-blur transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-                    type="button"
-                    data-wishlist-button
-                    data-product-id="{{ $featuredProduct['id'] ?? '' }}"
-                    data-product-slug="{{ $featuredProduct['slug'] ?? '' }}"
-                    data-wishlisted="{{ $featuredWishlisted ? 'true' : 'false' }}"
-                    aria-pressed="{{ $featuredWishlisted ? 'true' : 'false' }}"
-                    aria-label="{{ $featuredWishlisted ? 'Remove '.$featuredProduct['name'].' from wishlist' : 'Add '.$featuredProduct['name'].' to wishlist' }}"
-                    @disabled(empty($featuredProduct['id']) || empty($featuredProduct['slug']))
-                >
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z" />
-                    </svg>
-                </button>
                 <a class="hero-product-card block overflow-hidden rounded-lg border border-white/15 bg-zinc-950/80 shadow-2xl shadow-black/50 backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-brand-accent" href="{{ $featuredProduct['url'] ?? '#products' }}" aria-label="View {{ $featuredProduct['name'] }} details" data-tilt>
                 <div class="relative aspect-[4/3] overflow-hidden bg-zinc-900">
                     <img class="h-full w-full object-cover transition duration-700" src="{{ asset($featuredProduct['image']) }}" alt="{{ $featuredProduct['name'] }}">
