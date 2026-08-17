@@ -105,7 +105,18 @@
                                     {{ $product['stock_label'] }}
                                 </p>
                             </div>
-                            <p class="mt-4 text-xs font-semibold text-zinc-950">View full details <span class="ml-1 text-brand-primary" aria-hidden="true">&rarr;</span></p>
+                            <div class="mt-4 flex items-center justify-between">
+                                <p class="text-xs font-semibold text-zinc-950">View full details <span class="ml-1 text-brand-primary" aria-hidden="true">&rarr;</span></p>
+                                <button
+                                    type="button"
+                                    data-add-to-cart
+                                    data-product-slug="{{ $product['slug'] }}"
+                                    @disabled(! $product['in_stock'])
+                                    class="inline-flex items-center justify-center rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50"
+                                >
+                                    {{ __('Add to cart') }}
+                                </button>
+                            </div>
                         </div>
                     </a>
                 </article>
