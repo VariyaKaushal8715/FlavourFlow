@@ -12,7 +12,7 @@ class StoreUserSessionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->guest();
+        return true;
     }
 
     /**

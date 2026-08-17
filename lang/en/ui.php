@@ -2,6 +2,7 @@
 
 return [
     'wishlist' => 'Wishlist',
+    'account' => 'Account',
     'sign_out' => 'Sign out',
     'language' => 'Language',
     'english' => 'English',

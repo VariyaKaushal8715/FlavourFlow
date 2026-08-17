@@ -67,13 +67,31 @@
                         <p class="mt-3 text-xs text-zinc-500">Inclusive of applicable taxes.</p>
                     </div>
 
-                    <button
-                        class="mt-8 inline-flex rounded-lg bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
-                        type="button"
-                        data-add-to-cart
-                        data-product-slug="{{ $product->slug }}"
-                        @disabled($product->quantity === 0)
-                    >{{ $product->quantity > 0 ? 'Add to cart' : 'Out of stock' }}</button>
+                    <div class="mt-8 flex flex-wrap gap-3">
+                        <button
+                            class="inline-flex rounded-lg bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
+                            type="button"
+                            data-add-to-cart
+                            data-product-slug="{{ $product->slug }}"
+                            @disabled($product->quantity === 0)
+                        >{{ $product->quantity > 0 ? 'Add to cart' : 'Out of stock' }}</button>
+
+                        <button
+                            class="wishlist-button inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-950 hover:text-zinc-950 disabled:cursor-not-allowed disabled:opacity-60"
+                            type="button"
+                            data-wishlist-button
+                            data-product-id="{{ $product->id }}"
+                            data-product-slug="{{ $product->slug }}"
+                            data-wishlisted="{{ in_array($product->id, $wishlistProductIds, true) ? 'true' : 'false' }}"
+                            aria-pressed="{{ in_array($product->id, $wishlistProductIds, true) ? 'true' : 'false' }}"
+                            aria-label="{{ in_array($product->id, $wishlistProductIds, true) ? 'Remove '.$product->name.' from wishlist' : 'Add '.$product->name.' to wishlist' }}"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z" />
+                            </svg>
+                            <span>Wishlist</span>
+                        </button>
+                    </div>
 
                     <button
                         class="mt-3 inline-flex items-center gap-2 rounded-lg border border-zinc-200 px-5 py-3 text-sm font-semibold text-zinc-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"

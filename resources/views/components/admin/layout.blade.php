@@ -17,7 +17,13 @@
         @endphp
 
         <div class="flex min-h-screen flex-row bg-zinc-100">
-            <aside class="sticky top-0 flex h-screen w-72 flex-none flex-col overflow-y-auto border-r border-zinc-800 bg-zinc-950 text-white">
+            <div class="fixed inset-0 z-40 hidden bg-zinc-950/60 lg:hidden" data-admin-sidebar-overlay></div>
+
+            <aside
+                class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col overflow-y-auto border-r border-zinc-800 bg-zinc-950 text-white shadow-2xl transition-transform duration-300 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:flex-none lg:translate-x-0 lg:shadow-none"
+                id="admin-sidebar"
+                data-admin-sidebar
+            >
                 <div class="flex items-center gap-3 border-b border-white/10 px-6 py-5">
                     <img class="h-11 w-11 rounded-lg object-cover ring-1 ring-white/10" src="{{ asset('images/flavourflow-mark.png') }}" alt="FlavourFlow">
                     <div class="min-w-0">
@@ -77,6 +83,28 @@
             </aside>
 
             <div class="min-w-0 flex-1">
+                <header class="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 px-4 py-3 backdrop-blur">
+                    <div class="flex items-center justify-between gap-3">
+                        <button
+                            class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-900 shadow-sm transition hover:border-zinc-300"
+                            type="button"
+                            data-admin-sidebar-toggle
+                            aria-label="Open menu"
+                            aria-expanded="false"
+                            aria-controls="admin-sidebar"
+                        >
+                            <span class="flex flex-col gap-1.5">
+                                <span class="h-0.5 w-5 rounded-full bg-current"></span>
+                                <span class="h-0.5 w-5 rounded-full bg-current"></span>
+                                <span class="h-0.5 w-5 rounded-full bg-current"></span>
+                            </span>
+                        </button>
+                        <div class="min-w-0 text-right">
+                            <p class="truncate text-sm font-semibold text-zinc-950">FlavourFlow Admin</p>
+                            <p class="truncate text-xs text-zinc-500">Menu, products, offers</p>
+                        </div>
+                    </div>
+                </header>
                 {{ $slot }}
             </div>
         </div>
