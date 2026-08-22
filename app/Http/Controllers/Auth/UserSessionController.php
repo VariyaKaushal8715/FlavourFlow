@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Support\CartState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,7 @@ class UserSessionController extends Controller
         ]);
     }
 
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request, CartState $cart): RedirectResponse
     {
         if (! Auth::attempt($request->credentials(), $request->boolean('remember'))) {
             return back()
@@ -28,6 +29,10 @@ class UserSessionController extends Controller
         }
 
         $request->session()->regenerate();
+
+        if (Auth::user()) {
+            $cart->migrateGuestCartToUser(Auth::user());
+        }
 
         return redirect()->intended(route('home'));
     }

@@ -392,6 +392,7 @@ const redirectedToLogin = (response) => {
 const initializeCart = () => {
     const summaryUrl = document.body.dataset.cartSummaryUrl;
     const storeTemplate = document.body.dataset.cartStoreUrl;
+    const clearUrl = document.body.dataset.cartClearUrl;
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
     if (summaryUrl) {
@@ -400,6 +401,31 @@ const initializeCart = () => {
             .then((data) => data && updateCartCount(data.count))
             .catch(() => {});
     }
+
+    document.querySelectorAll('[data-variant-pill]').forEach((pill) => {
+        pill.addEventListener('click', () => {
+            const container = pill.closest('[data-variant-selector]');
+            if (!container) return;
+
+            container.querySelectorAll('[data-variant-pill]').forEach((p) => {
+                p.classList.remove('border-zinc-950', 'bg-zinc-950', 'text-white');
+                p.classList.add('border-zinc-300', 'bg-white', 'text-zinc-800');
+            });
+
+            pill.classList.remove('border-zinc-300', 'bg-white', 'text-zinc-800');
+            pill.classList.add('border-zinc-950', 'bg-zinc-950', 'text-white');
+
+            const weight = pill.dataset.weight;
+            const formattedPrice = pill.dataset.formattedPrice;
+            const priceDisplay = document.querySelector('[data-product-price-display]');
+            const unitDisplay = document.querySelector('[data-product-unit-display]');
+            const addToCartBtn = document.querySelector('[data-add-to-cart][data-selected-weight]');
+
+            if (priceDisplay && formattedPrice) priceDisplay.textContent = formattedPrice;
+            if (unitDisplay && weight) unitDisplay.textContent = `per ${weight}`;
+            if (addToCartBtn && weight) addToCartBtn.dataset.selectedWeight = weight;
+        });
+    });
 
     document.querySelectorAll('[data-add-to-cart]').forEach((button) => {
         button.addEventListener('click', async () => {
@@ -417,14 +443,20 @@ const initializeCart = () => {
                 return;
             }
 
+            const selectedWeight = button.dataset.selectedWeight || '100g';
             button.disabled = true;
+
             try {
                 const response = await fetch(storeTemplate.replace('__product__', productSlug), {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                    body: JSON.stringify({ quantity: 1 }),
+                    body: JSON.stringify({
+                        quantity: 1,
+                        selected_options: { weight: selectedWeight },
+                    }),
                 });
+
                 if (redirectedToLogin(response)) {
                     promptLogin('Please sign in to add items to your cart.');
                     return;
@@ -449,8 +481,39 @@ const initializeCart = () => {
     document.querySelectorAll('[data-cart-item]').forEach((item) => {
         const productSlug = item.dataset.cartSlug;
         const quantityElement = item.querySelector('[data-cart-quantity]');
+
+        const removeItem = async () => {
+            try {
+                const response = await fetch(destroyTemplate.replace('__product__', productSlug), {
+                    method: 'DELETE', credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                });
+                if (!response.ok) throw new Error('Unable to remove cart item.');
+                const data = await response.json();
+                updateCartCount(data.count);
+                document.querySelectorAll('[data-cart-subtotal], [data-cart-total]').forEach((element) => {
+                    element.textContent = `Rs. ${data.subtotal}`;
+                });
+                item.remove();
+
+                if (!document.querySelector('[data-cart-item]')) {
+                    const cartContent = document.getElementById('cart-content');
+                    const emptyMsg = document.getElementById('cart-empty-message');
+                    const clearBtn = document.querySelector('[data-cart-clear]');
+                    if (cartContent) cartContent.remove();
+                    if (emptyMsg) emptyMsg.classList.remove('hidden');
+                    if (clearBtn) clearBtn.remove();
+                }
+            } catch {
+                window.alert('We could not remove this product from your cart.');
+            }
+        };
+
         const setQuantity = async (quantity) => {
-            if (!updateTemplate || quantity < 1) {
+            if (quantity < 1) {
+                await removeItem();
+                return;
+            }
+            if (!updateTemplate) {
                 return;
             }
             const response = await fetch(updateTemplate.replace('__product__', productSlug), {
@@ -465,28 +528,85 @@ const initializeCart = () => {
             document.querySelectorAll('[data-cart-subtotal], [data-cart-total]').forEach((element) => element.textContent = `Rs. ${data.subtotal}`);
             updateCartCount(data.count);
         };
+
         item.querySelector('[data-cart-increase]')?.addEventListener('click', () => setQuantity(Number(quantityElement.textContent) + 1).catch(() => window.alert('We could not update your cart.')));
         item.querySelector('[data-cart-decrease]')?.addEventListener('click', () => setQuantity(Number(quantityElement.textContent) - 1).catch(() => window.alert('We could not update your cart.')));
-        item.querySelector('[data-cart-remove]')?.addEventListener('click', async () => {
-            try {
-                const response = await fetch(destroyTemplate.replace('__product__', productSlug), {
-                    method: 'DELETE', credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                });
-                if (!response.ok) throw new Error('Unable to remove cart item.');
-                const data = await response.json();
-                updateCartCount(data.count);
-                document.querySelectorAll('[data-cart-subtotal], [data-cart-total]').forEach((element) => {
-                    element.textContent = `Rs. ${data.subtotal}`;
-                });
-                item.remove();
-                if (!document.querySelector('[data-cart-item]')) {
-                    window.location.reload();
-                }
-            } catch {
-                window.alert('We could not remove this product from your cart.');
+        item.querySelector('[data-cart-remove]')?.addEventListener('click', () => removeItem());
+    });
+
+    const clearModal = document.getElementById('clear-cart-modal');
+    const clearTriggerBtn = document.querySelector('[data-cart-clear-trigger], [data-cart-clear]');
+    const closeModalBtns = document.querySelectorAll('[data-close-clear-modal]');
+    const clearForm = document.querySelector('[data-cart-clear-form]');
+
+    const openModal = () => {
+        if (clearModal) {
+            clearModal.classList.remove('hidden');
+            clearModal.classList.add('flex');
+            clearModal.setAttribute('aria-hidden', 'false');
+        }
+    };
+
+    const closeModal = () => {
+        if (clearModal) {
+            clearModal.classList.add('hidden');
+            clearModal.classList.remove('flex');
+            clearModal.setAttribute('aria-hidden', 'true');
+        }
+    };
+
+    if (clearTriggerBtn) {
+        clearTriggerBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal();
+        });
+    }
+
+    closeModalBtns.forEach((btn) => {
+        btn.addEventListener('click', () => closeModal());
+    });
+
+    if (clearModal) {
+        clearModal.addEventListener('click', (e) => {
+            if (e.target === clearModal) {
+                closeModal();
             }
         });
-    });
+    }
+
+    if (clearForm) {
+        clearForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const actionUrl = clearForm.getAttribute('action') || clearUrl || '/cart';
+
+            try {
+                const response = await fetch(actionUrl, {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Unable to clear cart.');
+                }
+
+                const data = await response.json();
+                updateCartCount(0);
+                document.querySelectorAll('[data-cart-subtotal], [data-cart-total]').forEach((el) => el.textContent = 'Rs. 0.00');
+
+                const cartContent = document.getElementById('cart-content');
+                const emptyMsg = document.getElementById('cart-empty-message');
+                if (cartContent) cartContent.remove();
+                if (emptyMsg) emptyMsg.classList.remove('hidden');
+                if (clearTriggerBtn) clearTriggerBtn.remove();
+                closeModal();
+                showCartMessage(data.message || 'Cart has been cleared.');
+            } catch {
+                closeModal();
+                clearForm.submit();
+            }
+        });
+    }
 };
 
 const initializeProfileContactUpdates = () => {

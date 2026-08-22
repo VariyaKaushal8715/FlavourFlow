@@ -145,6 +145,45 @@ class Product extends Model
     }
 
     /**
+     * @return array<string, array{key: string, label: string, weight: string, multiplier: float, price: float, formatted_price: string}>
+     */
+    public function availableVariants(): array
+    {
+        $basePrice = (float) $this->price;
+        $options = [
+            '100g' => ['label' => '100g', 'weight' => '100g', 'multiplier' => 1.0],
+            '250g' => ['label' => '250g', 'weight' => '250g', 'multiplier' => 2.4],
+            '500g' => ['label' => '500g', 'weight' => '500g', 'multiplier' => 4.5],
+            '1kg' => ['label' => '1kg', 'weight' => '1kg', 'multiplier' => 8.5],
+        ];
+
+        $variants = [];
+        foreach ($options as $key => $opt) {
+            $variantPrice = round($basePrice * $opt['multiplier'], 2);
+            $variants[$key] = [
+                'key' => $key,
+                'label' => $opt['label'],
+                'weight' => $opt['weight'],
+                'multiplier' => $opt['multiplier'],
+                'price' => $variantPrice,
+                'formatted_price' => 'Rs. '.number_format($variantPrice, 2),
+            ];
+        }
+
+        return $variants;
+    }
+
+    public function priceForWeight(?string $weight): float
+    {
+        $variants = $this->availableVariants();
+        if ($weight && isset($variants[$weight])) {
+            return $variants[$weight]['price'];
+        }
+
+        return (float) $this->price;
+    }
+
+    /**
      * @return array<string, bool|float|int|string>
      */
     public function toHighlightData(): array

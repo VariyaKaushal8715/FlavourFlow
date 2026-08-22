@@ -34,6 +34,7 @@
         data-cart-store-url="{{ route('cart.store', ['product' => '__product__']) }}"
         data-cart-update-url="{{ route('cart.update', ['product' => '__product__']) }}"
         data-cart-destroy-url="{{ route('cart.destroy', ['product' => '__product__']) }}"
+        data-cart-clear-url="{{ route('cart.clear') }}"
         data-login-url="{{ route('login') }}"
         style="
             --brand-primary: {{ $site['theme']['primary'] ?? '#b42318' }};
