@@ -213,7 +213,9 @@ return [
         ],
         'contact' => [
             'address' => 'Patan, Gujarat, India',
+            'map_url' => 'https://www.google.com/maps/search/?api=1&query=Patan%2C+Gujarat%2C+India',
             'phone' => '+91 99999 99999',
+            'whatsapp' => '+91 99999 99999',
             'email' => 'support@flavourflow.com',
             'hours' => [
                 'Monday - Saturday',
@@ -221,6 +223,7 @@ return [
             ],
         ],
         'socials' => [
+            ['label' => 'WhatsApp', 'href' => 'https://wa.me/919999999999?text=Hello%20FlavourFlow%2C%20I%20have%20an%20inquiry%20regarding%20spices.', 'icon' => 'whatsapp', 'brand' => '#25D366'],
             ['label' => 'Facebook', 'href' => 'https://www.facebook.com/', 'icon' => 'facebook', 'brand' => '#1877F2'],
             ['label' => 'Instagram', 'href' => 'https://www.instagram.com/', 'icon' => 'instagram', 'brand' => '#E4405F'],
             ['label' => 'Twitter (X)', 'href' => 'https://x.com/', 'icon' => 'x', 'brand' => '#111111'],

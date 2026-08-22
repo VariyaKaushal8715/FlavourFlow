@@ -22,8 +22,8 @@ test('authenticated users can add a product to the cart with a saved snapshot', 
         'category' => 'Signature blend',
         'unit' => '100 g',
         'price' => '149.00',
-        'quantity' => 50,
         'slug' => 'royal-garam-masala',
+        'quantity' => 10,
     ]);
 
     $this->actingAs($user)

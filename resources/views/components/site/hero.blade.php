@@ -4,6 +4,12 @@
     $featuredProduct = $hero['product_showcase']['featured'];
     $supportingProducts = $hero['product_showcase']['supporting'];
     $tickerProducts = array_merge([$featuredProduct], $supportingProducts);
+
+    $proofLabels = [
+        'Pure ingredients' => __('ui.proof_pure'),
+        'Community rating' => __('ui.proof_rating'),
+        'Small-batch packed' => __('ui.proof_fresh'),
+    ];
 @endphp
 
 <section id="top" class="hero-stage" data-hero>
@@ -19,26 +25,26 @@
         <div class="relative z-10 max-w-3xl">
             <div class="hero-intro hero-intro-one inline-flex items-center gap-3 text-sm font-semibold text-brand-accent">
                 <span class="h-px w-10 bg-brand-primary"></span>
-                {{ $hero['eyebrow'] }}
+                {{ __('ui.hero_eyebrow') }}
             </div>
 
             <h1 class="hero-intro hero-intro-two mt-6 break-words text-6xl font-semibold leading-none text-white sm:text-7xl lg:text-[5.5rem]">
                 {{ $hero['title'] }}
             </h1>
             <p class="hero-intro hero-intro-three mt-6 max-w-2xl text-2xl font-medium leading-snug text-white sm:text-4xl">
-                {{ $hero['subtitle'] }}
+                {{ __('ui.hero_subtitle') }}
             </p>
             <p class="hero-intro hero-intro-four mt-5 max-w-xl text-base leading-8 text-white/70 sm:text-lg">
-                {{ $hero['description'] }}
+                {{ __('ui.hero_description') }}
             </p>
 
             <div class="hero-intro hero-intro-five mt-9 flex flex-col gap-3 sm:flex-row">
                 <a class="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand-primary px-6 text-sm font-semibold text-white shadow-lg shadow-black/30 transition duration-300 hover:-translate-y-0.5 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:ring-offset-2 focus:ring-offset-zinc-950" href="{{ $hero['primary_action']['href'] }}">
-                    {{ $hero['primary_action']['label'] }}
+                    {{ __('ui.explore_collection') }}
                     <span class="ml-3 text-lg" aria-hidden="true">&rarr;</span>
                 </a>
                 <a class="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 bg-black/20 px-6 text-sm font-semibold text-white backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-zinc-950" href="{{ $hero['secondary_action']['href'] }}">
-                    {{ $hero['secondary_action']['label'] }}
+                    {{ __('ui.view_best_sellers') }}
                 </a>
             </div>
 
@@ -46,7 +52,7 @@
                 @foreach ($hero['proof_points'] as $point)
                     <div class="border-white/15 px-3 first:pl-0 not-first:border-l sm:px-5">
                         <p class="text-lg font-semibold text-white sm:text-xl">{{ $point['value'] }}</p>
-                        <p class="mt-1 text-xs leading-5 text-white/55 sm:text-sm">{{ $point['label'] }}</p>
+                        <p class="mt-1 text-xs leading-5 text-white/55 sm:text-sm">{{ $proofLabels[$point['label']] ?? $point['label'] }}</p>
                     </div>
                 @endforeach
             </div>
@@ -73,7 +79,7 @@
                     <p class="text-sm leading-6 text-white/60">{{ $featuredProduct['description'] }}</p>
                     <div class="text-right">
                         <p class="text-base font-semibold text-white">{{ $featuredProduct['price'] }}</p>
-                        <p class="mt-1 text-xs text-emerald-300">{{ $featuredProduct['stock_label'] }} &middot; {{ $featuredProduct['unit'] }}</p>
+                        <p class="mt-1 text-xs text-emerald-300">{{ $featuredProduct['in_stock'] ? __('ui.in_stock') : __('ui.out_of_stock') }} &middot; {{ $featuredProduct['unit'] }}</p>
                     </div>
                 </div>
                 </a>
@@ -93,8 +99,8 @@
             </div>
 
             <div class="hero-rank-badge absolute -bottom-5 right-4 rounded-lg border border-white/15 bg-brand-accent px-4 py-3 text-brand-ink shadow-xl shadow-black/30">
-                <p class="text-[0.65rem] font-semibold uppercase">House favourite</p>
-                <p class="mt-1 text-sm font-semibold">Fresh small-batch selection</p>
+                <p class="text-[0.65rem] font-semibold uppercase">{{ __('ui.house_favourite') }}</p>
+                <p class="mt-1 text-sm font-semibold">{{ __('ui.fresh_selection') }}</p>
             </div>
         </div>
     </div>

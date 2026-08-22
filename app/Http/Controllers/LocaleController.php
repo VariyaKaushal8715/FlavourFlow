@@ -9,7 +9,7 @@ class LocaleController extends Controller
 {
     public function __invoke(Request $request, string $locale): RedirectResponse
     {
-        abort_unless(in_array($locale, ['en', 'gu'], true), 404);
+        abort_unless(in_array($locale, ['en', 'gu', 'hi'], true), 404);
 
         $request->session()->put('locale', $locale);
 

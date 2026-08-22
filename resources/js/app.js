@@ -293,9 +293,9 @@ const initializeWishlist = () => {
                 return;
             }
 
-            const productId = button.dataset.productId;
+            const productSlug = button.dataset.productSlug;
 
-            if (!productId || button.disabled) {
+            if (!productSlug || button.disabled) {
                 return;
             }
 
@@ -315,7 +315,7 @@ const initializeWishlist = () => {
             button.classList.add('is-loading');
 
             try {
-                const response = await fetch(template.replace('__product__', productId), {
+                const response = await fetch(template.replace('__product__', productSlug), {
                     method: wishlisted ? 'DELETE' : 'POST',
                     credentials: 'same-origin',
                     headers: {
@@ -325,7 +325,7 @@ const initializeWishlist = () => {
                     },
                 });
 
-                if (response.redirected || response.url.includes('/login')) {
+                if (redirectedToLogin(response)) {
                     promptLogin('Please sign in to manage your wishlist.');
                     return;
                 }
@@ -380,6 +380,14 @@ const promptLogin = (message) => {
 };
 
 const needsAuthentication = () => document.body.dataset.authenticated !== 'true';
+
+const redirectedToLogin = (response) => {
+    const loginUrl = document.body.dataset.loginUrl;
+
+    return response.status === 401 ||
+        response.status === 403 ||
+        (loginUrl && response.redirected && response.url.includes(loginUrl));
+};
 
 const initializeCart = () => {
     const summaryUrl = document.body.dataset.cartSummaryUrl;
@@ -601,6 +609,88 @@ const initializeCart = () => {
     }
 };
 
+const initializeProfileContactUpdates = () => {
+    const buttons = Array.from(document.querySelectorAll('[data-profile-contact-button]'));
+
+    if (!buttons.length) {
+        return;
+    }
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const setMessage = (field, message, type = 'neutral') => {
+        const messageElement = document.querySelector(`[data-profile-contact-message="${field}"]`);
+
+        if (!messageElement) {
+            return;
+        }
+
+        messageElement.textContent = message;
+        messageElement.classList.remove('text-amber-700', 'text-emerald-700', 'text-red-700');
+        messageElement.classList.add({
+            loading: 'text-amber-700',
+            success: 'text-emerald-700',
+            error: 'text-red-700',
+            neutral: 'text-amber-700',
+        }[type]);
+    };
+    const validationMessage = (data, field, fallback) => data?.errors?.[field]?.[0] || data?.message || fallback;
+
+    buttons.forEach((button) => {
+        button.addEventListener('click', async () => {
+            const field = button.dataset.profileContactField;
+            const url = button.dataset.profileContactUrl;
+            const container = button.closest('[data-profile-contact]');
+            const input = container?.querySelector(`[data-profile-contact-input="${field}"]`);
+            const originalLabel = button.textContent.trim();
+
+            if (!field || !url || !input || button.disabled) {
+                return;
+            }
+
+            if (!input.reportValidity()) {
+                setMessage(field, input.validationMessage, 'error');
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = button.dataset.profileContactLoading || 'Updating...';
+            input.disabled = true;
+            setMessage(field, 'Saving your change...', 'loading');
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PATCH',
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify({ [field]: input.value }),
+                });
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(validationMessage(data, field, 'We could not update this detail.'));
+                }
+
+                const value = data.profile?.[field] || input.value;
+                input.value = value;
+                document.querySelectorAll(`[data-profile-contact-value="${field}"]`).forEach((element) => {
+                    element.textContent = value || 'Not added yet';
+                });
+                setMessage(field, data.message || 'Updated successfully.', 'success');
+            } catch (error) {
+                setMessage(field, error.message || 'We could not update this detail. Please try again.', 'error');
+            } finally {
+                input.disabled = false;
+                button.disabled = false;
+                button.textContent = originalLabel;
+            }
+        });
+    });
+};
+
 const initializeTrustDialog = () => {
     const dialog = document.querySelector('[data-trust-dialog]');
     const badges = Array.from(document.querySelectorAll('[data-trust-badge]'));
@@ -748,6 +838,7 @@ window.addEventListener('DOMContentLoaded', () => {
     deriveBrandThemeFromLogo();
     initializeWishlist();
     initializeCart();
+    initializeProfileContactUpdates();
     initializeTrustDialog();
     initializeAdminSidebar();
     initializeSiteNav();

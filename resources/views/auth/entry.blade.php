@@ -22,10 +22,10 @@
                 </div>
 
                 <h1 class="mt-8 text-4xl font-semibold leading-tight sm:text-5xl">
-                    Fresh spice, faster checkout, and one account for everything.
+                    {{ __('ui.hero_subtitle') }}
                 </h1>
                 <p class="mt-5 max-w-xl text-base leading-8 text-zinc-600 sm:text-lg">
-                    Sign in with your username or email, or create a new account in less than a minute. Your wishlist, orders, and future checkout details stay close at hand.
+                    {{ __('ui.hero_description') }}
                 </p>
             </div>
 
@@ -52,17 +52,17 @@
                         <article class="rounded-3xl border border-white/80 bg-white/90 p-6 shadow-[0_24px_70px_rgba(24,24,27,0.12)] backdrop-blur">
                             <div class="flex items-start justify-between gap-4">
                                 <div>
-                                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-primary">Sign in</p>
-                                    <h2 class="mt-2 text-2xl font-semibold text-zinc-950">Welcome back.</h2>
+                                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-primary">{{ __('ui.sign_in') }}</p>
+                                    <h2 class="mt-2 text-2xl font-semibold text-zinc-950">{{ __('ui.welcome_back') }}</h2>
                                 </div>
-                                <span class="rounded-full bg-brand-surface px-3 py-1 text-xs font-semibold text-brand-ink">Existing customer</span>
+                                <span class="rounded-full bg-brand-surface px-3 py-1 text-xs font-semibold text-brand-ink">{{ __('ui.existing_customer') }}</span>
                             </div>
 
                             <form class="mt-6 space-y-4" method="POST" action="{{ route('login.submit') }}">
                                 @csrf
 
                                 <div>
-                                    <label class="text-sm font-semibold text-zinc-800" for="login">Username or email</label>
+                                    <label class="text-sm font-semibold text-zinc-800" for="login">{{ __('ui.username_or_email') }}</label>
                                     <input
                                         class="mt-2 min-h-12 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-sm outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
                                         id="login"
@@ -78,7 +78,7 @@
                                 </div>
 
                                 <div>
-                                    <label class="text-sm font-semibold text-zinc-800" for="login-password">Password</label>
+                                    <label class="text-sm font-semibold text-zinc-800" for="login-password">{{ __('ui.password') }}</label>
                                     <input
                                         class="mt-2 min-h-12 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-sm outline-none transition focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10"
                                         id="login-password"
@@ -95,16 +95,16 @@
                                 <div class="flex items-center justify-between gap-4">
                                     <label class="flex items-center gap-3 text-sm text-zinc-600">
                                         <input class="h-4 w-4 rounded border-zinc-300 text-brand-primary focus:ring-brand-primary" name="remember" type="checkbox" value="1" @checked(old('remember'))>
-                                        Remember me
+                                        {{ __('ui.remember_me') }}
                                     </label>
 
                                     <a class="text-sm font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('password.request') }}">
-                                        Forgot password?
+                                        {{ __('ui.forgot_password') }}
                                     </a>
                                 </div>
 
                                 <button class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-brand-ink px-5 text-sm font-semibold text-white transition hover:bg-brand-primary focus:outline-none focus:ring-4 focus:ring-brand-primary/20" type="submit">
-                                    Sign in
+                                    {{ __('ui.sign_in') }}
                                 </button>
                             </form>
                         </article>
@@ -114,17 +114,17 @@
                         <article class="rounded-3xl border border-brand-primary/10 bg-brand-ink p-6 text-white shadow-[0_24px_70px_rgba(24,24,27,0.22)]">
                             <div class="flex items-start justify-between gap-4">
                                 <div>
-                                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-accent">Register</p>
-                                    <h2 class="mt-2 text-2xl font-semibold">Create your account.</h2>
+                                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-accent">{{ __('ui.register') }}</p>
+                                    <h2 class="mt-2 text-2xl font-semibold">{{ __('ui.sign_in_account') }}</h2>
                                 </div>
-                                <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">New customer</span>
+                                <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">{{ __('ui.new_customer') }}</span>
                             </div>
 
                             <form class="mt-6 space-y-4" method="POST" action="{{ route('register.submit') }}">
                                 @csrf
 
                                 <div>
-                                    <label class="text-sm font-semibold text-white/90" for="full_name">Full name</label>
+                                    <label class="text-sm font-semibold text-white/90" for="full_name">{{ __('ui.full_name') }}</label>
                                     <input
                                         class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
                                         id="full_name"
@@ -141,7 +141,7 @@
 
                                 <div class="grid gap-4 sm:grid-cols-2">
                                     <div>
-                                        <label class="text-sm font-semibold text-white/90" for="username">Username</label>
+                                        <label class="text-sm font-semibold text-white/90" for="username">{{ __('ui.username_or_email') }}</label>
                                         <input
                                             class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
                                             id="username"
@@ -157,7 +157,7 @@
                                     </div>
 
                                     <div>
-                                        <label class="text-sm font-semibold text-white/90" for="email">Email</label>
+                                        <label class="text-sm font-semibold text-white/90" for="email">{{ __('ui.email_address') }}</label>
                                         <input
                                             class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
                                             id="email"
@@ -175,7 +175,7 @@
 
                                 <div class="grid gap-4 sm:grid-cols-2">
                                     <div>
-                                        <label class="text-sm font-semibold text-white/90" for="register-password">Password</label>
+                                        <label class="text-sm font-semibold text-white/90" for="register-password">{{ __('ui.password') }}</label>
                                         <input
                                             class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
                                             id="register-password"
@@ -190,7 +190,7 @@
                                     </div>
 
                                     <div>
-                                        <label class="text-sm font-semibold text-white/90" for="password_confirmation">Confirm password</label>
+                                        <label class="text-sm font-semibold text-white/90" for="password_confirmation">{{ __('ui.confirm_password') }}</label>
                                         <input
                                             class="mt-2 min-h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/20"
                                             id="password_confirmation"
@@ -202,12 +202,8 @@
                                     </div>
                                 </div>
 
-                                <p class="text-sm leading-6 text-white/65">
-                                    By creating an account you can save your wishlist and move through checkout faster.
-                                </p>
-
                                 <button class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-brand-accent px-5 text-sm font-semibold text-brand-ink transition hover:opacity-95 focus:outline-none focus:ring-4 focus:ring-brand-accent/25" type="submit">
-                                    Create account
+                                    {{ __('ui.register') }}
                                 </button>
                             </form>
                         </article>
@@ -217,16 +213,16 @@
                 <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/70 bg-white/80 px-5 py-4 text-sm text-zinc-600 shadow-sm backdrop-blur">
                     @if ($isRegister)
                         <p>
-                            Already have an account?
-                            <a class="font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('login') }}">Sign in here</a>.
+                            {{ __('ui.already_have_account') }}
+                            <a class="font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('login') }}">{{ __('ui.sign_in_here') }}</a>.
                         </p>
                     @else
                         <p>
-                            New customer?
-                            <a class="font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('register') }}">Create an account</a>.
+                            {{ __('ui.new_customer_question') }}
+                            <a class="font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('register') }}">{{ __('ui.create_an_account') }}</a>.
                         </p>
                     @endif
-                    <a class="font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('home') }}">Back to shop</a>
+                    <a class="font-semibold text-brand-primary transition hover:opacity-80" href="{{ route('home') }}">{{ __('ui.home') }}</a>
                 </div>
             </div>
         </div>
