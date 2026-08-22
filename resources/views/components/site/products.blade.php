@@ -1,13 +1,19 @@
 @props([
     'products',
     'sectionId' => 'products',
-    'eyebrow' => 'The collection',
-    'title' => 'Flavour worth slowing down for.',
-    'description' => 'Carefully sourced, freshly packed, and balanced for the food you cook every day. Choose a blend and bring a deeper aroma to the table.',
+    'eyebrow' => null,
+    'title' => null,
+    'description' => null,
     'tone' => 'default',
     'wishlistProductIds' => [],
     'sort' => 'featured',
 ])
+
+@php
+    $displayEyebrow = $eyebrow ?? __('ui.collection_eyebrow');
+    $displayTitle = $title ?? __('ui.collection_title');
+    $displayDescription = $description ?? __('ui.collection_desc');
+@endphp
 
 <section
     id="{{ $sectionId }}"
@@ -23,15 +29,15 @@
             'pb-6' => $tone === 'offer',
         ])>
             <div data-reveal>
-                <p class="text-sm font-semibold text-brand-primary">{{ $eyebrow }}</p>
+                <p class="text-sm font-semibold text-brand-primary">{{ $displayEyebrow }}</p>
                 <h2 @class([
                     'mt-3 text-3xl font-semibold leading-tight text-zinc-950',
                     'sm:text-5xl' => $tone === 'default',
                     'sm:text-4xl' => $tone === 'offer',
-                ])>{{ $title }}</h2>
+                ])>{{ $displayTitle }}</h2>
             </div>
             <p class="max-w-2xl text-base leading-8 text-zinc-600 lg:justify-self-end" data-reveal>
-                {{ $description }}
+                {{ $displayDescription }}
             </p>
             @if ($tone === 'default')
                 <form class="flex flex-col gap-2 lg:justify-self-end" method="GET" action="{{ route('home') }}" data-reveal>
@@ -102,7 +108,7 @@
                                     'text-emerald-700' => $product['in_stock'],
                                     'text-red-700' => ! $product['in_stock'],
                                 ])>
-                                    {{ $product['stock_label'] }}
+                                    {{ $product['in_stock'] ? __('ui.in_stock') : __('ui.out_of_stock') }}
                                 </p>
                             </div>
                             <div class="mt-4 flex items-center justify-between gap-2">

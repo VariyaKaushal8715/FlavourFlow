@@ -31,25 +31,25 @@
                     <div class="min-w-0">
                         <p class="text-xs font-semibold uppercase tracking-[0.32em] text-amber-300">FlavourFlow</p>
                         <h2 class="mt-2 text-2xl font-semibold text-white sm:text-3xl">{{ $brand['name'] }}</h2>
-                        <p class="mt-2 text-sm leading-6 text-zinc-400">{{ $footer['brand']['tagline'] }}</p>
+                        <p class="mt-2 text-sm leading-6 text-zinc-400">{{ __('ui.footer_tagline') }}</p>
                     </div>
                 </div>
 
                 <p class="mt-6 max-w-xl text-sm leading-7 text-zinc-400">
-                    {{ $footer['brand']['description'] }}
+                    {{ __('ui.footer_desc') }}
                 </p>
 
                 <div class="mt-8 flex flex-wrap gap-3">
                     <a class="inline-flex min-h-12 items-center justify-center rounded-full bg-gradient-to-r from-red-700 to-amber-500 px-5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(180,35,24,0.28)] transition hover:translate-y-[-1px] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" href="{{ $footer['brand']['cta']['href'] }}">
-                        {{ $footer['brand']['cta']['label'] }}
+                        {{ __('ui.shop_fresh_spices') }}
                     </a>
-                        <span class="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200/90">
-                            Premium spice pantry
-                        </span>
+                    <span class="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200/90">
+                        {{ __('ui.premium_pantry') }}
+                    </span>
                 </div>
 
                 <div class="mt-8">
-                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-zinc-500">Trust signals</p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-zinc-500">{{ __('ui.trust_signals') }}</p>
                     <div class="mt-4 flex flex-wrap gap-3">
                         @foreach ($footer['trust_badges'] as $index => $badge)
                             <button
@@ -85,7 +85,7 @@
                             <x-site.icon name="pin" class="h-5 w-5" />
                         </span>
                         <div>
-                            <p class="font-medium text-white">Address</p>
+                            <p class="font-medium text-white">{{ __('ui.address') }}</p>
                             <p class="mt-1 leading-7 text-zinc-400">{{ $contact['address'] }}</p>
                         </div>
                     </a>
@@ -95,7 +95,7 @@
                             <x-site.icon name="phone" class="h-5 w-5" />
                         </span>
                         <div>
-                            <p class="font-medium text-white">Phone</p>
+                            <p class="font-medium text-white">{{ __('ui.phone') }}</p>
                             <p class="mt-1 leading-7 text-zinc-400">{{ $contact['phone'] }}</p>
                         </div>
                     </a>
@@ -140,8 +140,8 @@
                             <x-site.icon name="clock" class="h-5 w-5" />
                         </span>
                         <div>
-                            <p class="font-medium text-white">Working hours</p>
-                            <p class="mt-1 leading-7 text-zinc-400">{{ $contact['hours'][0] }}</p>
+                            <p class="font-medium text-white">{{ __('ui.working_hours') }}</p>
+                            <p class="mt-1 leading-7 text-zinc-400">{{ __('ui.mon_sat') }}</p>
                             <p class="leading-7 text-zinc-400">{{ $contact['hours'][1] }}</p>
                         </div>
                     </div>
@@ -150,12 +150,12 @@
         </div>
 
         <div class="mt-10 flex flex-col gap-3 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between" data-reveal data-reveal-delay="180">
-            <p class="text-sm text-zinc-500">{{ $footer['copyright'] }}</p>
+            <p class="text-sm text-zinc-500">© 2026 FlavourFlow. {{ __('ui.all_rights_reserved') }}</p>
             <button
                 class="back-to-top group inline-flex h-12 w-12 items-center justify-center self-start rounded-full border border-white/10 bg-white/5 text-white transition hover:border-amber-300/30 hover:bg-white/10"
                 type="button"
                 data-back-to-top
-                aria-label="Back to top"
+                aria-label="{{ __('ui.back_to_top') }}"
                 tabindex="-1"
             >
                 <x-site.icon name="chevron-up" class="h-5 w-5 transition group-hover:-translate-y-0.5" />
@@ -178,14 +178,14 @@
             <div class="border-b border-white/10 px-6 py-5">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">Trust signal</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">{{ __('ui.trust_signals') }}</p>
                         <h3 id="trust-dialog-title" class="mt-2 text-2xl font-semibold text-white"></h3>
                     </div>
                     <button
                         class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                         type="button"
                         data-trust-close
-                        aria-label="Close trust signal details"
+                        aria-label="Close"
                     >
                         <span class="text-xl leading-none">×</span>
                     </button>
