@@ -8,8 +8,8 @@
         <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <p class="text-sm font-semibold text-brand-primary">{{ __('ui.your_order') }}</p>
-                    <h1 class="mt-2 text-3xl font-semibold text-zinc-950 sm:text-4xl">{{ __('ui.shopping_cart') }}</h1>
+                    <p class="text-sm font-semibold text-brand-primary">Your order</p>
+                    <h1 class="mt-2 text-3xl font-semibold text-zinc-950 sm:text-4xl">Shopping cart</h1>
                 </div>
                 @if (! $items->isEmpty())
                     <button
@@ -18,14 +18,14 @@
                         data-cart-clear-trigger
                         aria-label="Clear all items from cart"
                     >
-                        {{ __('ui.clear_cart') }}
+                        Clear Cart
                     </button>
                 @endif
             </div>
 
             <div id="cart-empty-message" @class(['mt-8 rounded-lg border border-zinc-200 bg-white p-8 text-center', 'hidden' => ! $items->isEmpty()])>
-                <p class="text-lg font-semibold text-zinc-950">{{ __('ui.cart_empty') }}</p>
-                <a class="mt-5 inline-flex rounded-lg bg-zinc-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-primary" href="{{ route('home').'#products' }}">{{ __('ui.browse_products') }}</a>
+                <p class="text-lg font-semibold text-zinc-950">Your cart is empty.</p>
+                <a class="mt-5 inline-flex rounded-lg bg-zinc-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-primary" href="{{ route('home').'#products' }}">Browse products</a>
             </div>
 
             @if (! $items->isEmpty())
@@ -39,7 +39,7 @@
                                         <h2 class="text-lg font-semibold text-zinc-950">{{ $item['product']->name }}</h2>
                                         <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700">{{ $item['unit'] }}</span>
                                     </div>
-                                    <p class="mt-1 text-sm text-zinc-500">{{ number_format((float) $item['product']->rating, 1) }} / 5 {{ __('ui.rating') }}</p>
+                                    <p class="mt-1 text-sm text-zinc-500">{{ number_format((float) $item['product']->rating, 1) }} / 5 rating</p>
                                     <p class="mt-2 text-sm font-semibold text-zinc-950">Rs. {{ number_format((float) $item['unit_price'], 2) }}</p>
                                     @if ($item['selected_options'])
                                         <p class="mt-1 text-xs text-zinc-500">{{ collect($item['selected_options'])->map(fn ($value, $key) => ucfirst($key).': '.$value)->join(', ') }}</p>
@@ -47,23 +47,23 @@
                                 </div>
                                 <div class="flex flex-wrap items-center gap-3 sm:flex-col sm:items-end">
                                     <div class="flex items-center rounded-lg border border-zinc-300">
-                                        <button class="px-3 py-2 text-lg hover:bg-zinc-100" type="button" data-cart-decrease aria-label="Decrease quantity">&minus;</button>
+                                        <button class="px-3 py-2 text-lg hover:bg-zinc-100" type="button" data-cart-decrease aria-label="Decrease {{ $item['product']->name }} quantity">&minus;</button>
                                         <span class="min-w-8 text-center text-sm font-semibold" data-cart-quantity>{{ $item['quantity'] }}</span>
-                                        <button class="px-3 py-2 text-lg hover:bg-zinc-100" type="button" data-cart-increase aria-label="Increase quantity">+</button>
+                                        <button class="px-3 py-2 text-lg hover:bg-zinc-100" type="button" data-cart-increase aria-label="Increase {{ $item['product']->name }} quantity">+</button>
                                     </div>
                                     <p class="text-sm font-semibold text-zinc-950" data-cart-line-total>Rs. {{ number_format((float) ($item['line_total'] ?? ($item['unit_price'] * $item['quantity'])), 2) }}</p>
-                                    <button class="text-sm font-medium text-red-700 hover:text-red-900" type="button" data-cart-remove>{{ __('ui.remove') }}</button>
+                                    <button class="text-sm font-medium text-red-700 hover:text-red-900" type="button" data-cart-remove>Remove</button>
                                 </div>
                             </article>
                         @endforeach
                     </div>
                     <aside class="h-fit rounded-lg border border-zinc-200 bg-white p-6">
-                        <h2 class="text-lg font-semibold text-zinc-950">{{ __('ui.order_summary') }}</h2>
+                        <h2 class="text-lg font-semibold text-zinc-950">Order summary</h2>
                         <div class="mt-5 flex items-center justify-between border-t border-zinc-200 pt-5 text-sm text-zinc-600">
-                            <span>{{ __('ui.subtotal') }}</span><span data-cart-subtotal>Rs. {{ number_format($subtotal, 2) }}</span>
+                            <span>Subtotal</span><span data-cart-subtotal>Rs. {{ number_format($subtotal, 2) }}</span>
                         </div>
                         <div class="mt-4 flex items-center justify-between text-lg font-semibold text-zinc-950">
-                            <span>{{ __('ui.total') }}</span><span data-cart-total>Rs. {{ number_format($subtotal, 2) }}</span>
+                            <span>Total</span><span data-cart-total>Rs. {{ number_format($subtotal, 2) }}</span>
                         </div>
                     </aside>
                 </div>
@@ -100,9 +100,9 @@
             </div>
 
             <div class="mt-4">
-                <h3 id="clear-cart-modal-title" class="text-lg font-semibold text-zinc-950">{{ __('ui.clear_cart_modal_title') }}</h3>
+                <h3 id="clear-cart-modal-title" class="text-lg font-semibold text-zinc-950">Clear Shopping Cart</h3>
                 <p class="mt-2 text-sm text-zinc-600 leading-relaxed">
-                    {{ __('ui.clear_cart_modal_desc') }}
+                    Are you sure you want to delete these items from your cart?
                 </p>
             </div>
 
@@ -112,7 +112,7 @@
                     data-close-clear-modal
                     class="inline-flex w-full justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 sm:w-auto"
                 >
-                    {{ __('ui.keep_items') }}
+                    No, Keep Items
                 </button>
                 <form method="POST" action="{{ route('cart.clear') }}" data-cart-clear-form class="w-full sm:w-auto">
                     @csrf
@@ -122,7 +122,7 @@
                         data-cart-clear-confirm
                         class="inline-flex w-full justify-center rounded-lg bg-red-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-800 sm:w-auto"
                     >
-                        {{ __('ui.confirm_clear_cart') }}
+                        Yes, Clear Cart
                     </button>
                 </form>
             </div>

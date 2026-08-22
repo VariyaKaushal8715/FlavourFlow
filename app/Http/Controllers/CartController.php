@@ -37,7 +37,7 @@ class CartController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message' => $product->name.' '.__('ui.added_to_cart'),
+                'message' => $product->name.' was added to your cart.',
                 'count' => $cart->count(),
                 'subtotal' => number_format($cart->subtotal(), 2, '.', ''),
             ]);
@@ -76,7 +76,7 @@ class CartController extends Controller
             return response()->json([
                 'count' => $cart->count(),
                 'subtotal' => number_format($cart->subtotal(), 2, '.', ''),
-                'message' => $product->name.' '.__('ui.removed_from_cart'),
+                'message' => $product->name.' was removed from your cart.',
             ]);
         }
 
@@ -91,7 +91,7 @@ class CartController extends Controller
             return response()->json([
                 'count' => 0,
                 'subtotal' => '0.00',
-                'message' => __('ui.cart_cleared'),
+                'message' => 'Cart has been cleared.',
             ]);
         }
 

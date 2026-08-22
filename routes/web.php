@@ -10,7 +10,6 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\UserSessionController;
 use App\Http\Controllers\CartController;
-use App\Http\Controllers\ContactEmailController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OfferDetailsController;
@@ -20,9 +19,6 @@ use App\Http\Middleware\PreventAdminResponseCaching;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
-Route::post('/contact-email', ContactEmailController::class)
-    ->middleware(['web', 'throttle:10,1'])
-    ->name('contact.email');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [UserSessionController::class, 'create'])->name('login');
     Route::post('/login', [UserSessionController::class, 'store'])
