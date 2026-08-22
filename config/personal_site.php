@@ -201,6 +201,7 @@ return [
         ],
         'contact' => [
             'address' => 'Patan, Gujarat, India',
+            'map_url' => 'https://www.google.com/maps/search/?api=1&query=Patan%2C+Gujarat%2C+India',
             'phone' => '+91 99999 99999',
             'whatsapp' => '+91 99999 99999',
             'email' => 'support@flavourflow.com',
