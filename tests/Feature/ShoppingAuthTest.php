@@ -23,10 +23,11 @@ test('authenticated users can add a product to the cart with a saved snapshot', 
         'unit' => '100 g',
         'price' => '149.00',
         'slug' => 'royal-garam-masala',
+        'quantity' => 10,
     ]);
 
     $this->actingAs($user)
-        ->post(route('cart.store', $product), [
+        ->postJson(route('cart.store', $product), [
             'quantity' => 3,
         ])
         ->assertSuccessful();

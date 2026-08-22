@@ -5,7 +5,14 @@
     $brand = $site['brand'];
     $contact = $footer['contact'];
     $phoneHref = 'tel:' . preg_replace('/[^\d+]/', '', $contact['phone']);
-    $emailHref = 'mailto:' . $contact['email'];
+
+    $emailSubject = rawurlencode('Inquiry for ' . $brand['name']);
+    $emailBody = rawurlencode("Hello " . $brand['name'] . " Team,\n\nI would like to send a message regarding your spices.");
+    $emailHref = 'mailto:' . $contact['email'] . '?subject=' . $emailSubject . '&body=' . $emailBody;
+
+    $whatsappNumber = preg_replace('/[^\d]/', '', $contact['whatsapp'] ?? $contact['phone']);
+    $whatsappText = rawurlencode("Hello " . $brand['name'] . ", I would like to send a message regarding your products.");
+    $whatsappHref = 'https://wa.me/' . $whatsappNumber . '?text=' . $whatsappText;
 @endphp
 
 <footer class="site-footer relative overflow-hidden bg-zinc-950 text-zinc-300">
@@ -60,7 +67,7 @@
             </section>
 
             <section class="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm lg:p-8" data-reveal data-reveal-delay="90">
-                <h3 class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">Contact</h3>
+                <h3 class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">Contact & Support</h3>
 
                 <div class="mt-5 space-y-4 text-sm text-zinc-300">
                     <div class="flex gap-3">
@@ -83,13 +90,23 @@
                         </div>
                     </a>
 
-                    <a class="flex gap-3 transition hover:translate-x-1 hover:text-white" href="{{ $emailHref }}">
+                    <a class="flex gap-3 transition hover:translate-x-1 hover:text-white" href="{{ $emailHref }}" title="Click to send email message">
                         <span class="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-amber-300">
                             <x-site.icon name="mail" class="h-5 w-5" />
                         </span>
                         <div>
-                            <p class="font-medium text-white">Email</p>
+                            <p class="font-medium text-white">Email Us</p>
                             <p class="mt-1 break-all leading-7 text-zinc-400">{{ $contact['email'] }}</p>
+                        </div>
+                    </a>
+
+                    <a class="flex gap-3 transition hover:translate-x-1 hover:text-white" href="{{ $whatsappHref }}" target="_blank" rel="noopener noreferrer" title="Click to chat on WhatsApp">
+                        <span class="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-amber-300">
+                            <x-site.icon name="whatsapp" class="h-5 w-5" />
+                        </span>
+                        <div>
+                            <p class="font-medium text-white">WhatsApp Chat</p>
+                            <p class="mt-1 leading-7 text-zinc-400">{{ $contact['whatsapp'] ?? $contact['phone'] }}</p>
                         </div>
                     </a>
 

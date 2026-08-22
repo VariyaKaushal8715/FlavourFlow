@@ -105,17 +105,32 @@
                                     {{ $product['stock_label'] }}
                                 </p>
                             </div>
-                            <div class="mt-4 flex items-center justify-between">
+                            <div class="mt-4 flex items-center justify-between gap-2">
                                 <p class="text-xs font-semibold text-zinc-950">View full details <span class="ml-1 text-brand-primary" aria-hidden="true">&rarr;</span></p>
-                                <button
-                                    type="button"
-                                    data-add-to-cart
-                                    data-product-slug="{{ $product['slug'] ?? '' }}"
-                                    @disabled(! $product['in_stock'])
-                                    class="inline-flex items-center justify-center rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50"
-                                >
-                                    {{ __('Add to cart') }}
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        data-wishlist-button
+                                        data-product-id="{{ $product['id'] ?? '' }}"
+                                        data-product-slug="{{ $product['slug'] ?? '' }}"
+                                        data-wishlisted="{{ in_array($product['id'] ?? null, $wishlistProductIds, true) ? 'true' : 'false' }}"
+                                        class="wishlist-button inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
+                                        aria-label="Toggle wishlist"
+                                    >
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        data-add-to-cart
+                                        data-product-slug="{{ $product['slug'] ?? '' }}"
+                                        @disabled(! $product['in_stock'])
+                                        class="inline-flex items-center justify-center rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50"
+                                    >
+                                        {{ __('Add to cart') }}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </a>
