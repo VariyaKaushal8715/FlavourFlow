@@ -225,6 +225,43 @@
             </div>
 
             <aside class="space-y-5" data-reveal>
+                {{-- Quick links: Wishlist & Cart --}}
+                <div class="grid grid-cols-2 gap-4">
+                    {{-- Wishlist card --}}
+                    <a
+                        href="{{ route('wishlist.index') }}"
+                        class="group flex flex-col gap-3 rounded-3xl border border-amber-200/70 bg-white/95 p-5 shadow-[0_8px_30px_rgba(120,53,15,0.08)] transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_12px_40px_rgba(120,53,15,0.14)]"
+                    >
+                        <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-red-50 text-brand-primary shadow-sm transition group-hover:border-brand-primary/30 group-hover:shadow-md">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <p class="text-sm font-semibold text-zinc-950">{{ __('ui.wishlist') }}</p>
+                            <p class="mt-0.5 text-xs text-zinc-500">Saved items</p>
+                        </div>
+                        <span class="mt-auto text-xs font-semibold text-brand-primary transition group-hover:translate-x-0.5">View &rarr;</span>
+                    </a>
+
+                    {{-- My Cart card --}}
+                    <a
+                        href="{{ route('cart.index') }}"
+                        class="group flex flex-col gap-3 rounded-3xl border border-amber-200/70 bg-white/95 p-5 shadow-[0_8px_30px_rgba(120,53,15,0.08)] transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_12px_40px_rgba(120,53,15,0.14)]"
+                    >
+                        <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-red-50 text-brand-primary shadow-sm transition group-hover:border-brand-primary/30 group-hover:shadow-md">
+                            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M6 5v1H4.667a1.75 1.75 0 00-1.743 1.598l-.826 9.087A1.75 1.75 0 003.84 19h12.32a1.75 1.75 0 001.743-1.815l-.826-9.087A1.75 1.75 0 0015.333 6H14V5a4 4 0 00-8 0zm4-2.5A2.5 2.5 0 007.5 5v1h5V5A2.5 2.5 0 0010 2.5zM7.5 11a.75.75 0 01.75-.75h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z" clip-rule="evenodd"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <p class="text-sm font-semibold text-zinc-950">{{ __('ui.cart') }}</p>
+                            <p class="mt-0.5 text-xs text-zinc-500">Your bag</p>
+                        </div>
+                        <span class="mt-auto text-xs font-semibold text-brand-primary transition group-hover:translate-x-0.5">View &rarr;</span>
+                    </a>
+                </div>
+
                 <div class="overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(180,35,24,0.38),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(244,185,66,0.22),transparent_28%),linear-gradient(145deg,#09090b_0%,#18181b_100%)] text-white shadow-[0_28px_80px_rgba(9,9,11,0.28)]">
                     <div class="border-b border-white/10 px-6 py-5">
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-brand-accent">Profile snapshot</p>

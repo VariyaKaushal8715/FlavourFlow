@@ -119,14 +119,17 @@
                 </div>
             </details>
 
-            @auth
+                @auth
                 <details class="group relative">
                     <summary class="flex cursor-pointer list-none items-center gap-2 text-white/75 transition hover:text-white [&::-webkit-details-marker]:hidden">
                         <span>{{ __('ui.profile') }}</span>
                         <svg class="h-3 w-3 shrink-0 transition duration-200 group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
                     </summary>
-                    <div class="absolute right-0 top-full z-50 mt-2 w-40 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+                    <div class="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-xl">
                         <a class="flex rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.profile') }}</a>
+                        <a class="flex rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white" href="{{ route('wishlist.index') }}">{{ __('ui.wishlist') }}</a>
+                        <a class="flex rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white" href="{{ route('cart.index') }}">{{ __('ui.cart') }}</a>
+                        <div class="my-1 border-t border-white/[0.07]"></div>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button class="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white" type="submit">
@@ -164,6 +167,8 @@
                         </summary>
                         <div class="px-2 pb-2">
                             <a class="block rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.profile') }}</a>
+                            <a class="block rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('wishlist.index') }}">{{ __('ui.wishlist') }}</a>
+                            <a class="block rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('cart.index') }}">{{ __('ui.cart') }}</a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button class="w-full rounded-xl px-4 py-3 text-left transition hover:bg-white/5 hover:text-white" type="submit">
