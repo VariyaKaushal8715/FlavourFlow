@@ -25,6 +25,22 @@ class CartItem extends Model
 {
     use HasFactory;
 
+    /** @var array<int, string> */
+    protected $fillable = [
+        'user_id',
+        'product_id',
+        'product_name',
+        'product_slug',
+        'sku',
+        'category',
+        'unit',
+        'quantity',
+        'unit_price',
+        'line_total',
+        'image_path',
+        'selected_options',
+    ];
+
     protected $attributes = [
         'quantity' => 1,
         'unit_price' => 0,

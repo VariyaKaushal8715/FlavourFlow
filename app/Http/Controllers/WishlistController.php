@@ -6,7 +6,6 @@ use App\Models\Product;
 use App\Support\WishlistState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class WishlistController extends Controller
 {

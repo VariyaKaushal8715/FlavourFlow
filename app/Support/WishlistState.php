@@ -126,7 +126,7 @@ class WishlistState
     }
 
     /**
-     * @param array<string, int> $productIds
+     * @param  array<string, int>  $productIds
      */
     private function storeGuestProductIds(array $productIds): void
     {

@@ -70,9 +70,6 @@
                 </nav>
 
                 <div class="border-t border-white/10 p-4">
-                    <a class="mb-3 flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10" href="{{ route('home') }}" target="_blank" rel="noreferrer">
-                        View live site
-                    </a>
                     <form method="POST" action="{{ route('admin.logout') }}">
                         @csrf
                         <button class="flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10" type="submit">

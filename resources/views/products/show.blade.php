@@ -56,13 +56,35 @@
 
                     <p class="mt-7 text-base leading-8 text-zinc-600">{{ $product->description }}</p>
 
+                    <div class="mt-6">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Select Pack Size / Weight</p>
+                        <div class="mt-3 flex flex-wrap gap-2.5" data-variant-selector>
+                            @foreach ($product->availableVariants() as $vKey => $vOpt)
+                                <button
+                                    type="button"
+                                    data-variant-pill
+                                    data-weight="{{ $vOpt['weight'] }}"
+                                    data-price="{{ $vOpt['price'] }}"
+                                    data-formatted-price="{{ $vOpt['formatted_price'] }}"
+                                    @class([
+                                        'variant-pill rounded-lg border px-4 py-2 text-sm font-semibold transition',
+                                        'border-zinc-950 bg-zinc-950 text-white' => $vKey === '100g',
+                                        'border-zinc-300 bg-white text-zinc-800 hover:border-zinc-950' => $vKey !== '100g',
+                                    ])
+                                >
+                                    {{ $vOpt['weight'] }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+
                     <div class="mt-8 border-y border-zinc-200 py-6">
                         <div class="flex flex-wrap items-end gap-3">
-                            <p class="text-3xl font-semibold text-zinc-950">{{ $product->formattedPrice() }}</p>
+                            <p class="text-3xl font-semibold text-zinc-950" data-product-price-display>{{ $product->formattedPrice() }}</p>
                             @if ($product->formattedComparePrice())
                                 <p class="pb-1 text-base text-zinc-400 line-through">{{ $product->formattedComparePrice() }}</p>
                             @endif
-                            <span class="pb-1 text-sm text-zinc-500">per {{ $product->unit }}</span>
+                            <span class="pb-1 text-sm text-zinc-500" data-product-unit-display>per {{ $product->unit }}</span>
                         </div>
                         <p class="mt-3 text-xs text-zinc-500">Inclusive of applicable taxes.</p>
                     </div>
@@ -73,6 +95,7 @@
                             type="button"
                             data-add-to-cart
                             data-product-slug="{{ $product->slug }}"
+                            data-selected-weight="100g"
                             @disabled($product->quantity === 0)
                         >{{ $product->quantity > 0 ? 'Add to cart' : 'Out of stock' }}</button>
 
