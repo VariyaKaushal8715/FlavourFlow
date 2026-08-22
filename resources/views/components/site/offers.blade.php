@@ -5,8 +5,8 @@
         <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
             <div class="grid gap-6 border-b border-zinc-200 pb-9 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.65fr)] lg:items-end" data-reveal>
                 <div class="max-w-3xl">
-                    <p class="text-sm font-semibold text-brand-primary">Worth opening today</p>
-                    <h2 class="mt-3 text-3xl font-semibold leading-tight text-zinc-950 sm:text-5xl">Special offers, made timely.</h2>
+                    <p class="text-sm font-semibold text-brand-primary">{{ __('ui.offers_eyebrow') }}</p>
+                    <h2 class="mt-3 text-3xl font-semibold leading-tight text-zinc-950 sm:text-5xl">{{ __('ui.offers_title') }}</h2>
                 </div>
                 <p class="max-w-lg text-base leading-8 text-zinc-600 lg:justify-self-end">Seasonal bundles and limited-value picks, kept clear so you always know what you are getting.</p>
             </div>
@@ -55,7 +55,7 @@
                                     @endif
                                     <span class="text-white/60">{{ $offer->dateRangeLabel() }}</span>
                                     <span class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-3 text-zinc-950">
-                                        View offer details <span aria-hidden="true">&rarr;</span>
+                                        {{ __('ui.view_offer_details') }} <span aria-hidden="true">&rarr;</span>
                                     </span>
                                 </div>
                             </a>

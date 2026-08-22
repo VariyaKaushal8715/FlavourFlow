@@ -11,8 +11,8 @@
     <section class="border-b border-amber-200/60 bg-[radial-gradient(circle_at_top_left,rgba(244,185,66,0.24),transparent_34%),linear-gradient(135deg,#fff9ed_0%,#fff_52%,#fff3df_100%)] py-10 sm:py-14">
         <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
             <div class="max-w-3xl" data-reveal>
-                <p class="text-sm font-semibold text-brand-primary">Account settings</p>
-                <h1 class="mt-2 text-3xl font-semibold text-zinc-950 sm:text-4xl">Profile and address details</h1>
+                <p class="text-sm font-semibold text-brand-primary">{{ __('ui.account') }}</p>
+                <h1 class="mt-2 text-3xl font-semibold text-zinc-950 sm:text-4xl">{{ __('ui.profile') }}</h1>
                 <p class="mt-4 text-base leading-7 text-zinc-600">Keep your contact details and delivery address ready for a smoother checkout.</p>
             </div>
         </div>
@@ -29,8 +29,8 @@
 
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-brand-primary">{{ $hasProfile ? 'Update your profile' : 'Create your profile' }}</p>
-                        <h2 class="mt-2 text-2xl font-semibold text-zinc-950">{{ $hasProfile ? 'Edit saved details' : 'Save your details once' }}</h2>
+                        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-brand-primary">{{ $hasProfile ? __('ui.update_profile') : __('ui.save_details') }}</p>
+                        <h2 class="mt-2 text-2xl font-semibold text-zinc-950">{{ $hasProfile ? __('ui.update_profile') : __('ui.save_details') }}</h2>
                     </div>
                     <span class="rounded-full border border-amber-300/60 bg-gradient-to-r from-amber-100 to-red-50 px-3 py-1 text-xs font-semibold text-brand-primary shadow-sm shadow-amber-900/5">Secure account</span>
                 </div>
@@ -43,7 +43,7 @@
 
                     <div class="grid gap-5 sm:grid-cols-2">
                         <label class="block">
-                            <span class="text-sm font-semibold text-zinc-800">Full Name</span>
+                            <span class="text-sm font-semibold text-zinc-800">{{ __('ui.full_name') }}</span>
                             <input
                                 class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                 type="text"
@@ -58,7 +58,7 @@
                         </label>
 
                         <label class="block">
-                            <span class="text-sm font-semibold text-zinc-800">Mobile Number</span>
+                            <span class="text-sm font-semibold text-zinc-800">{{ __('ui.mobile_number') }}</span>
                             <div class="mt-2 flex flex-col gap-3 sm:flex-row" data-profile-contact>
                                 <input
                                     class="w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
@@ -79,7 +79,7 @@
                                         data-profile-contact-field="mobile_number"
                                         data-profile-contact-loading="Updating..."
                                     >
-                                        Update Mobile Number
+                                        {{ __('ui.update_profile') }}
                                     </button>
                                 @endif
                             </div>
@@ -93,7 +93,7 @@
                     </div>
 
                     <label class="block">
-                        <span class="text-sm font-semibold text-zinc-800">Email</span>
+                        <span class="text-sm font-semibold text-zinc-800">{{ __('ui.email_address') }}</span>
                         <div class="mt-2 flex flex-col gap-3 sm:flex-row" data-profile-contact>
                             <input
                                 class="w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
@@ -113,7 +113,7 @@
                                     data-profile-contact-field="email"
                                     data-profile-contact-loading="Updating..."
                                 >
-                                    Update Email Address
+                                    {{ __('ui.update_profile') }}
                                 </button>
                             @endif
                         </div>
@@ -126,7 +126,7 @@
                     </label>
 
                     <label class="block">
-                        <span class="text-sm font-semibold text-zinc-800">Address</span>
+                        <span class="text-sm font-semibold text-zinc-800">{{ __('ui.address_line') }}</span>
                         <textarea class="mt-2 min-h-32 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15" name="address" autocomplete="street-address" required>{{ old('address', $profile?->address) }}</textarea>
                         @error('address')
                             <p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>
@@ -135,7 +135,7 @@
 
                     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                         <label class="block">
-                            <span class="text-sm font-semibold text-zinc-800">City</span>
+                            <span class="text-sm font-semibold text-zinc-800">{{ __('ui.city') }}</span>
                             <input
                                 class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                 type="text"
@@ -150,7 +150,7 @@
                         </label>
 
                         <label class="block">
-                            <span class="text-sm font-semibold text-zinc-800">State</span>
+                            <span class="text-sm font-semibold text-zinc-800">{{ __('ui.state') }}</span>
                             <input
                                 class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                 type="text"
@@ -180,7 +180,7 @@
                         </label>
 
                         <label class="block">
-                            <span class="text-sm font-semibold text-zinc-800">PIN/ZIP Code</span>
+                            <span class="text-sm font-semibold text-zinc-800">{{ __('ui.pincode') }}</span>
                             <input
                                 class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                 type="text"
@@ -197,10 +197,10 @@
 
                     <div class="flex flex-wrap gap-3 pt-2">
                         <button class="inline-flex items-center rounded-2xl bg-gradient-to-r from-red-700 to-amber-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(180,35,24,0.24)] transition hover:-translate-y-0.5 hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" type="submit">
-                            {{ $hasProfile ? 'Update profile' : 'Save profile' }}
+                            {{ $hasProfile ? __('ui.update_profile') : __('ui.save_details') }}
                         </button>
                         <a class="inline-flex items-center rounded-2xl border border-amber-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-primary/40 hover:bg-brand-surface hover:text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/30" href="{{ route('home') }}">
-                            Back to shop
+                            {{ __('ui.home') }}
                         </a>
                     </div>
                 </form>
@@ -209,14 +209,14 @@
                     <div class="mt-8 border-t border-amber-200/70 pt-6">
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <div>
-                                <h3 class="text-lg font-semibold text-zinc-950">Delete saved details</h3>
+                                <h3 class="text-lg font-semibold text-zinc-950">{{ __('ui.delete_saved_details') }}</h3>
                                 <p class="mt-1 text-sm leading-6 text-zinc-500">Remove your profile and address details from this account.</p>
                             </div>
                             <form method="POST" action="{{ route('account.profile.destroy') }}" onsubmit="return confirm('Delete your profile and address details?');">
                                 @csrf
                                 @method('DELETE')
                                 <button class="inline-flex items-center rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-amber-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-sm transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300" type="submit">
-                                    Delete profile
+                                    {{ __('ui.delete_saved_details') }}
                                 </button>
                             </form>
                         </div>
@@ -233,20 +233,20 @@
 
                     <dl class="divide-y divide-white/10">
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
-                            <dt class="text-sm text-white/55">Full name</dt>
-                            <dd class="text-right text-sm font-semibold text-white">{{ $profile?->full_name ?? $user?->name ?? 'Not added yet' }}</dd>
+                            <dt class="text-sm text-white/55">{{ __('ui.full_name') }}</dt>
+                            <dd class="text-right text-sm font-semibold text-white">{{ $profile?->full_name ?? $user?->name ?? '-' }}</dd>
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
-                            <dt class="text-sm text-white/55">Mobile</dt>
-                            <dd class="text-right text-sm font-semibold text-white" data-profile-contact-value="mobile_number">{{ $profile?->mobile_number ?? 'Not added yet' }}</dd>
+                            <dt class="text-sm text-white/55">{{ __('ui.mobile_number') }}</dt>
+                            <dd class="text-right text-sm font-semibold text-white" data-profile-contact-value="mobile_number">{{ $profile?->mobile_number ?? '-' }}</dd>
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
-                            <dt class="text-sm text-white/55">Email</dt>
-                            <dd class="text-right text-sm font-semibold text-white" data-profile-contact-value="email">{{ $profile?->email ?? $user?->email ?? 'Not added yet' }}</dd>
+                            <dt class="text-sm text-white/55">{{ __('ui.email_address') }}</dt>
+                            <dd class="text-right text-sm font-semibold text-white" data-profile-contact-value="email">{{ $profile?->email ?? $user?->email ?? '-' }}</dd>
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
-                            <dt class="text-sm text-white/55">Address</dt>
-                            <dd class="max-w-[14rem] text-right text-sm font-semibold text-white">{{ $profile?->address ?? 'Not added yet' }}</dd>
+                            <dt class="text-sm text-white/55">{{ __('ui.address_line') }}</dt>
+                            <dd class="max-w-[14rem] text-right text-sm font-semibold text-white">{{ $profile?->address ?? '-' }}</dd>
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
                             <dt class="text-sm text-white/55">Location</dt>
@@ -254,21 +254,15 @@
                                 @if ($hasProfile)
                                     {{ collect([$profile->city, $profile->state, $profile->country])->filter()->join(', ') }}
                                 @else
-                                    Not added yet
+                                    -
                                 @endif
                             </dd>
                         </div>
                         <div class="flex items-start justify-between gap-6 px-6 py-4">
-                            <dt class="text-sm text-white/55">PIN/ZIP</dt>
-                            <dd class="text-right text-sm font-semibold text-white">{{ $profile?->postal_code ?? 'Not added yet' }}</dd>
+                            <dt class="text-sm text-white/55">{{ __('ui.pincode') }}</dt>
+                            <dd class="text-right text-sm font-semibold text-white">{{ $profile?->postal_code ?? '-' }}</dd>
                         </div>
                     </dl>
-                </div>
-
-                <div class="rounded-3xl border border-amber-200/80 bg-[linear-gradient(135deg,#fff9ed_0%,#fff_48%,#fff0d1_100%)] p-6 shadow-[0_18px_45px_rgba(120,53,15,0.10)]">
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-brand-primary">Why it matters</p>
-                    <h3 class="mt-2 text-xl font-semibold text-zinc-950">Faster checkout, less typing.</h3>
-                    <p class="mt-4 text-sm leading-7 text-zinc-600">Keep your shipping details here so your next spice order is ready to place in a few taps.</p>
                 </div>
             </aside>
         </div>

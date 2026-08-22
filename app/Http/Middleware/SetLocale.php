@@ -18,7 +18,7 @@ class SetLocale
     {
         $locale = $request->session()->get('locale', config('app.locale'));
 
-        if (in_array($locale, ['en', 'gu'], true)) {
+        if (in_array($locale, ['en', 'gu', 'hi'], true)) {
             App::setLocale($locale);
         }
 
