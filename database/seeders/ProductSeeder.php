@@ -222,5 +222,8 @@ class ProductSeeder extends Seeder
                 [...$product, 'is_active' => true],
             );
         }
+
+        // Add 20 dummy products using factory
+        Product::factory()->count(20)->create();
     }
 }
