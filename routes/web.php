@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Controllers\Account\UserProfileController;
+use App\Http\Controllers\Admin\AdminAnalyticsController;
+use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminInventoryController;
 use App\Http\Controllers\Admin\AdminOfferController;
+use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -24,7 +28,7 @@ Route::get('/', HomeController::class)->name('home');
 Route::post('/contact-email', ContactEmailController::class)
     ->middleware(['web', 'throttle:10,1'])
     ->name('contact.email');
-Route::middleware('guest')->group(function () {
+Route::middleware(['guest', PreventAdminResponseCaching::class])->group(function () {
     Route::get('/login', [UserSessionController::class, 'create'])->name('login');
     Route::post('/login', [UserSessionController::class, 'store'])
         ->middleware('throttle:5,1')
@@ -85,22 +89,31 @@ Route::prefix('admin')
             ->name('login');
 
         Route::middleware(['auth', 'can:access-admin'])->group(function () {
-            Route::view('/categories', 'admin.placeholder', [
-                'title' => 'Categories',
-                'headline' => 'Categories',
-                'description' => 'Category management will live here next. For now, this menu is ready in the sidebar.',
-            ])->name('categories.index');
+            // Analytics
+            Route::prefix('analytics')->name('analytics.')->group(function () {
+                Route::get('/sales', [AdminAnalyticsController::class, 'sales'])->name('sales');
+                Route::get('/products/{product:slug}', [AdminAnalyticsController::class, 'product'])->name('products.show');
+            });
 
-            Route::view('/inventory', 'admin.placeholder', [
-                'title' => 'Inventory',
-                'headline' => 'Inventory',
-                'description' => 'Inventory control will live here next. For now, this menu is ready in the sidebar.',
-            ])->name('inventory.index');
+            // Orders
+            Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+            Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
 
+            // Inventory
+            Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');
+
+            // Categories
+            Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
+            Route::get('/categories/{category}', [AdminCategoryController::class, 'show'])->name('categories.show');
+
+            // Products
             Route::resource('products', AdminProductController::class)
-                ->only(['store', 'edit', 'update', 'destroy']);
+                ->except(['show']);
+
+            // Offers
             Route::resource('offers', AdminOfferController::class)
                 ->only(['index', 'store', 'edit', 'update', 'destroy']);
+
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
         });
     });

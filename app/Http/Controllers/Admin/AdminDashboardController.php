@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
+use App\Models\WishlistItem;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class AdminDashboardController extends Controller
@@ -19,61 +23,153 @@ class AdminDashboardController extends Controller
 
         Gate::authorize('access-admin');
 
-        $search = $request->string('search')->trim()->limit(100)->toString();
-        $status = $this->validStatus($request->string('status')->toString());
-        $sort = $this->validSort($request->string('sort')->toString());
-        $productsQuery = Product::query()->search($search);
+        /** @var object{total:int,active:int,out_of_stock:int,low_stock:int} */
+        $inventory = Product::query()
+            ->toBase()
+            ->selectRaw('count(*) as total')
+            ->selectRaw('count(case when is_active = 1 then 1 end) as active')
+            ->selectRaw('count(case when quantity = 0 then 1 end) as out_of_stock')
+            ->selectRaw('count(case when quantity > 0 and quantity <= low_stock_threshold then 1 end) as low_stock')
+            ->first();
 
-        $this->applyStatus($productsQuery, $status);
-        $this->applySort($productsQuery, $sort);
+        // Orders & revenue metrics
+        $totalOrders = Order::count();
+        $pendingOrders = Order::where('status', 'pending')->count();
+        $processingOrders = Order::where('status', 'processing')->count();
+        $completedOrders = Order::where('status', 'completed')->count();
+        $cancelledOrders = Order::where('status', 'cancelled')->count();
+        $totalRevenue = (float) Order::where('status', 'completed')->sum('total_amount');
+        $averageOrderValue = $completedOrders > 0 ? ($totalRevenue / $completedOrders) : 0;
 
-        return view('admin.dashboard', [
-            'products' => $productsQuery->paginate(10)->withQueryString(),
-            'inventory' => Product::query()
-                ->toBase()
-                ->selectRaw('count(*) as total')
-                ->selectRaw('count(case when is_active = 1 then 1 end) as active')
-                ->selectRaw('count(case when quantity = 0 then 1 end) as out_of_stock')
-                ->selectRaw('count(case when quantity > 0 and quantity <= low_stock_threshold then 1 end) as low_stock')
-                ->first(),
-            'filters' => compact('search', 'status', 'sort'),
-        ]);
-    }
+        // Today vs yesterday
+        $todayRevenue = (float) Order::where('status', 'completed')->whereDate('created_at', Carbon::today())->sum('total_amount');
+        $yesterdayRevenue = (float) Order::where('status', 'completed')->whereDate('created_at', Carbon::yesterday())->sum('total_amount');
+        $revenueGrowth = $yesterdayRevenue > 0 ? round((($todayRevenue - $yesterdayRevenue) / $yesterdayRevenue) * 100) : null;
 
-    private function validStatus(string $status): string
-    {
-        return in_array($status, ['active', 'inactive', 'low_stock', 'out_of_stock'], true)
-            ? $status
-            : 'all';
-    }
+        $todayOrders = Order::whereDate('created_at', Carbon::today())->count();
+        $yesterdayOrders = Order::whereDate('created_at', Carbon::yesterday())->count();
+        $ordersGrowth = $yesterdayOrders > 0 ? round((($todayOrders - $yesterdayOrders) / $yesterdayOrders) * 100) : null;
 
-    private function validSort(string $sort): string
-    {
-        return in_array($sort, ['oldest', 'price_high', 'price_low', 'stock_low', 'priority'], true)
-            ? $sort
-            : 'newest';
-    }
+        // Customers
+        $customersCount = User::where('is_admin', false)->count();
+        $newCustomersThisWeek = User::where('is_admin', false)->where('created_at', '>=', Carbon::now()->startOfWeek())->count();
+        $wishlistCount = WishlistItem::count();
 
-    private function applyStatus(Builder $query, string $status): void
-    {
-        match ($status) {
-            'active' => $query->where('is_active', true),
-            'inactive' => $query->where('is_active', false),
-            'low_stock' => $query->lowStock(),
-            'out_of_stock' => $query->where('quantity', 0),
-            default => null,
-        };
-    }
+        // Recent orders with user
+        $recentOrders = Order::with('user')->latest()->take(6)->get();
 
-    private function applySort(Builder $query, string $sort): void
-    {
-        match ($sort) {
-            'oldest' => $query->oldest(),
-            'price_high' => $query->orderByDesc('price'),
-            'price_low' => $query->orderBy('price'),
-            'stock_low' => $query->orderBy('quantity'),
-            'priority' => $query->orderByDesc('priority'),
-            default => $query->latest(),
-        };
+        // Top selling products (by completed order items)
+        $topProducts = Product::select(
+            'products.id',
+            'products.name',
+            'products.slug',
+            'products.sku',
+            'products.category',
+            'products.price',
+            'products.quantity',
+            'products.low_stock_threshold',
+            'products.image_path',
+            'products.rating',
+            DB::raw('COALESCE(SUM(order_items.quantity), 0) as units_sold'),
+            DB::raw('COALESCE(SUM(order_items.total_price), 0) as revenue_generated')
+        )
+            ->join('order_items', 'products.id', '=', 'order_items.product_id')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.status', 'completed')
+            ->groupBy(
+                'products.id',
+                'products.name',
+                'products.slug',
+                'products.sku',
+                'products.category',
+                'products.price',
+                'products.quantity',
+                'products.low_stock_threshold',
+                'products.image_path',
+                'products.rating'
+            )
+            ->orderByDesc('units_sold')
+            ->take(5)
+            ->get();
+
+        // Best categories with revenue & count
+        $bestCategories = Product::query()
+            ->select(
+                'products.category',
+                DB::raw('COUNT(DISTINCT products.id) as count'),
+                DB::raw('COALESCE(SUM(order_items.total_price), 0) as category_revenue'),
+                DB::raw('COALESCE(SUM(order_items.quantity), 0) as category_units')
+            )
+            ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
+            ->leftJoin('orders', function ($join): void {
+                $join->on('orders.id', '=', 'order_items.order_id')
+                    ->where('orders.status', '=', 'completed');
+            })
+            ->groupBy('products.category')
+            ->orderByDesc('count')
+            ->take(5)
+            ->get();
+
+        $maxCategoryCount = $bestCategories->max('count') ?: 1;
+
+        // Low stock and out of stock alerts
+        $inventoryAlerts = Product::where(function ($q) {
+            $q->where('quantity', 0)
+                ->orWhereColumn('quantity', '<=', 'low_stock_threshold');
+        })
+            ->orderBy('quantity')
+            ->take(6)
+            ->get();
+
+        // Chart Data (7 Days)
+        $chartData7Days = collect(range(6, 0))->map(function ($daysAgo) {
+            $date = Carbon::today()->subDays($daysAgo);
+            $revenue = (float) Order::where('status', 'completed')->whereDate('created_at', $date)->sum('total_amount');
+            $orders = Order::whereDate('created_at', $date)->count();
+
+            return [
+                'date' => $date->format('M d'),
+                'revenue' => $revenue,
+                'orders' => $orders,
+            ];
+        });
+
+        // Chart Data (30 Days)
+        $chartData30Days = collect(range(29, 0))->map(function ($daysAgo) {
+            $date = Carbon::today()->subDays($daysAgo);
+            $revenue = (float) Order::where('status', 'completed')->whereDate('created_at', $date)->sum('total_amount');
+            $orders = Order::whereDate('created_at', $date)->count();
+
+            return [
+                'date' => $date->format('M d'),
+                'revenue' => $revenue,
+                'orders' => $orders,
+            ];
+        });
+
+        return view('admin.dashboard', compact(
+            'inventory',
+            'totalOrders',
+            'pendingOrders',
+            'processingOrders',
+            'completedOrders',
+            'cancelledOrders',
+            'totalRevenue',
+            'averageOrderValue',
+            'todayRevenue',
+            'todayOrders',
+            'revenueGrowth',
+            'ordersGrowth',
+            'customersCount',
+            'newCustomersThisWeek',
+            'wishlistCount',
+            'recentOrders',
+            'topProducts',
+            'bestCategories',
+            'maxCategoryCount',
+            'inventoryAlerts',
+            'chartData7Days',
+            'chartData30Days',
+        ));
     }
 }
