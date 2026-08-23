@@ -98,6 +98,8 @@ Route::prefix('admin')
             });
 
             // Orders
+            Route::get('/orders/unread-summary', [AdminOrderController::class, 'unreadSummary'])->name('orders.unread_summary');
+            Route::post('/orders/mark-viewed', [AdminOrderController::class, 'markViewed'])->name('orders.mark_viewed');
             Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
             Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
 

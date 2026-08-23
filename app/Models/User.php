@@ -28,6 +28,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'admin_orders_last_viewed_at',
     ];
 
     /**
@@ -51,6 +52,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'admin_orders_last_viewed_at' => 'datetime',
         ];
     }
 

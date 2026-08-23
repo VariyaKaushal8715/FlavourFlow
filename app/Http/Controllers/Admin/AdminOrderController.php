@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -13,6 +14,11 @@ class AdminOrderController extends Controller
     public function index(Request $request): View
     {
         Gate::authorize('access-admin');
+
+        $user = $request->user();
+        if ($user) {
+            $user->forceFill(['admin_orders_last_viewed_at' => now()])->save();
+        }
 
         $search = $request->string('search')->trim()->limit(100)->toString();
         $status = $request->string('status')->trim()->toString();
@@ -71,6 +77,63 @@ class AdminOrderController extends Controller
 
         return view('admin.orders.show', [
             'order' => $order,
+        ]);
+    }
+
+    public function unreadSummary(Request $request): JsonResponse
+    {
+        Gate::authorize('access-admin');
+
+        $user = $request->user();
+        $lastViewedAt = $user?->admin_orders_last_viewed_at;
+
+        $query = Order::query();
+        if ($lastViewedAt) {
+            $query->where('created_at', '>', $lastViewedAt);
+        }
+
+        $orderCount = $query->count();
+        $customerCount = (clone $query)->whereNotNull('user_id')->distinct('user_id')->count('user_id');
+
+        if ($customerCount === 0 && $orderCount > 0) {
+            $customerCount = (clone $query)->distinct('email')->count('email');
+        }
+
+        if ($orderCount === 0) {
+            return response()->json([
+                'has_unread' => false,
+                'order_count' => 0,
+                'customer_count' => 0,
+                'message' => null,
+                'orders_url' => route('admin.orders.index'),
+            ]);
+        }
+
+        $ordersText = $orderCount === 1 ? '1 new order' : "{$orderCount} new orders";
+        $customersText = $customerCount === 1 ? '1 customer' : "{$customerCount} customers";
+        $message = "You have {$ordersText} from {$customersText}. Tap to view orders.";
+
+        return response()->json([
+            'has_unread' => true,
+            'order_count' => $orderCount,
+            'customer_count' => $customerCount,
+            'message' => $message,
+            'orders_url' => route('admin.orders.index'),
+        ]);
+    }
+
+    public function markViewed(Request $request): JsonResponse
+    {
+        Gate::authorize('access-admin');
+
+        $user = $request->user();
+        if ($user) {
+            $user->forceFill(['admin_orders_last_viewed_at' => now()])->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'marked_at' => now()->toIso8601String(),
         ]);
     }
 }
