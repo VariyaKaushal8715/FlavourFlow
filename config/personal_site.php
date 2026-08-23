@@ -44,9 +44,6 @@ return [
 
     'products' => [
         [
-            'id' => 1,
-            'slug' => 'royal-garam-masala',
-            'url' => '/products/royal-garam-masala',
             'name' => 'Royal Garam Masala',
             'category' => 'Signature blend',
             'description' => 'A warm, layered masala built for curries, gravies, biryani, and everyday home cooking.',
@@ -66,9 +63,6 @@ return [
             'rating' => 4.9,
         ],
         [
-            'id' => 2,
-            'slug' => 'red-chilli-powder',
-            'url' => '/products/red-chilli-powder',
             'name' => 'Red Chilli Powder',
             'category' => 'Pure spice',
             'description' => 'Bright colour, clean heat, and a bold finish for daily recipes.',
@@ -88,9 +82,6 @@ return [
             'rating' => 4.8,
         ],
         [
-            'id' => 3,
-            'slug' => 'kitchen-king-mix',
-            'url' => '/products/kitchen-king-mix',
             'name' => 'Kitchen King Mix',
             'category' => 'Everyday blend',
             'description' => 'Balanced spice profile for sabzi, snacks, and quick family meals.',
@@ -110,9 +101,6 @@ return [
             'rating' => 4.7,
         ],
         [
-            'id' => 4,
-            'slug' => 'turmeric-powder',
-            'url' => '/products/turmeric-powder',
             'name' => 'Turmeric Powder',
             'category' => 'Essential spice',
             'description' => 'Golden colour and earthy aroma for everyday Indian cooking.',
@@ -213,7 +201,9 @@ return [
         ],
         'contact' => [
             'address' => 'Patan, Gujarat, India',
+            'map_url' => 'https://www.google.com/maps/search/?api=1&query=Patan%2C+Gujarat%2C+India',
             'phone' => '+91 99999 99999',
+            'whatsapp' => '+91 99999 99999',
             'email' => 'support@flavourflow.com',
             'hours' => [
                 'Monday - Saturday',
@@ -221,6 +211,7 @@ return [
             ],
         ],
         'socials' => [
+            ['label' => 'WhatsApp', 'href' => 'https://wa.me/919999999999?text=Hello%20FlavourFlow%2C%20I%20have%20an%20inquiry%20regarding%20spices.', 'icon' => 'whatsapp', 'brand' => '#25D366'],
             ['label' => 'Facebook', 'href' => 'https://www.facebook.com/', 'icon' => 'facebook', 'brand' => '#1877F2'],
             ['label' => 'Instagram', 'href' => 'https://www.instagram.com/', 'icon' => 'instagram', 'brand' => '#E4405F'],
             ['label' => 'Twitter (X)', 'href' => 'https://x.com/', 'icon' => 'x', 'brand' => '#111111'],

@@ -5,7 +5,18 @@
     $brand = $site['brand'];
     $contact = $footer['contact'];
     $phoneHref = 'tel:' . preg_replace('/[^\d+]/', '', $contact['phone']);
-    $emailHref = 'mailto:' . $contact['email'];
+
+    $addressQuery = rawurlencode($contact['address']);
+    $mapHref = $contact['map_url'] ?? ('https://www.google.com/maps/search/?api=1&query=' . $addressQuery);
+
+    $emailSubject = rawurlencode('Inquiry for ' . $brand['name']);
+    $emailBody = rawurlencode("Hello " . $brand['name'] . " Team,\n\nI would like to send a message regarding your spices.");
+    $emailHref = 'mailto:' . $contact['email'] . '?subject=' . $emailSubject . '&body=' . $emailBody;
+    $gmailHref = 'https://mail.google.com/mail/?view=cm&fs=1&to=' . rawurlencode($contact['email']) . '&su=' . $emailSubject . '&body=' . $emailBody;
+
+    $whatsappNumber = preg_replace('/[^\d]/', '', $contact['whatsapp'] ?? $contact['phone']);
+    $whatsappText = rawurlencode("Hello " . $brand['name'] . ", I would like to send a message regarding your products.");
+    $whatsappHref = 'https://wa.me/' . $whatsappNumber . '?text=' . $whatsappText;
 @endphp
 
 <footer class="site-footer relative overflow-hidden bg-zinc-950 text-zinc-300">
@@ -60,10 +71,16 @@
             </section>
 
             <section class="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm lg:p-8" data-reveal data-reveal-delay="90">
-                <h3 class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">Contact</h3>
+                <h3 class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">Contact & Support</h3>
 
                 <div class="mt-5 space-y-4 text-sm text-zinc-300">
-                    <div class="flex gap-3">
+                    <a
+                        class="flex gap-3 transition hover:translate-x-1 hover:text-white"
+                        href="{{ $mapHref }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Click to open location on Google Maps"
+                    >
                         <span class="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-amber-300">
                             <x-site.icon name="pin" class="h-5 w-5" />
                         </span>
@@ -71,7 +88,7 @@
                             <p class="font-medium text-white">Address</p>
                             <p class="mt-1 leading-7 text-zinc-400">{{ $contact['address'] }}</p>
                         </div>
-                    </div>
+                    </a>
 
                     <a class="flex gap-3 transition hover:translate-x-1 hover:text-white" href="{{ $phoneHref }}">
                         <span class="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-amber-300">
@@ -83,13 +100,38 @@
                         </div>
                     </a>
 
-                    <a class="flex gap-3 transition hover:translate-x-1 hover:text-white" href="{{ $emailHref }}">
+                    <div class="space-y-2">
+                        <button
+                            type="button"
+                            class="group flex w-full items-start gap-3 text-left transition hover:translate-x-1 hover:text-white focus:outline-none"
+                            data-open-email-modal
+                            title="Click to send email message"
+                        >
+                            <span class="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-amber-300 group-hover:border-amber-300/40">
+                                <x-site.icon name="mail" class="h-5 w-5" />
+                            </span>
+                            <div class="min-w-0">
+                                <p class="font-medium text-white">Email Us</p>
+                                <p class="mt-1 break-all leading-7 text-zinc-400">{{ $contact['email'] }}</p>
+                            </div>
+                        </button>
+                        <div class="ml-14 flex flex-wrap gap-2 text-xs">
+                            <a class="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-zinc-300 transition hover:bg-white/10 hover:text-white" href="{{ $gmailHref }}" target="_blank" rel="noopener noreferrer">
+                                Open in Gmail &rarr;
+                            </a>
+                            <a class="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-zinc-300 transition hover:bg-white/10 hover:text-white" href="{{ $emailHref }}">
+                                Open Mail App &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <a class="flex gap-3 transition hover:translate-x-1 hover:text-white" href="{{ $whatsappHref }}" target="_blank" rel="noopener noreferrer" title="Click to chat on WhatsApp">
                         <span class="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-amber-300">
-                            <x-site.icon name="mail" class="h-5 w-5" />
+                            <x-site.icon name="whatsapp" class="h-5 w-5" />
                         </span>
                         <div>
-                            <p class="font-medium text-white">Email</p>
-                            <p class="mt-1 break-all leading-7 text-zinc-400">{{ $contact['email'] }}</p>
+                            <p class="font-medium text-white">WhatsApp Chat</p>
+                            <p class="mt-1 leading-7 text-zinc-400">{{ $contact['whatsapp'] ?? $contact['phone'] }}</p>
                         </div>
                     </a>
 
@@ -158,4 +200,180 @@
             </div>
         </div>
     </div>
+
+    <div
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 px-4 py-6 backdrop-blur-sm"
+        data-email-modal
+        aria-hidden="true"
+    >
+        <div
+            class="w-[min(94vw,32rem)] rounded-[1.5rem] border border-white/10 bg-zinc-950 p-6 text-zinc-100 shadow-[0_24px_80px_rgba(0,0,0,0.6)] sm:p-8"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="email-dialog-title"
+        >
+            <div class="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">Email Integration</p>
+                    <h3 id="email-dialog-title" class="mt-1 text-2xl font-semibold text-white">Send Email Message</h3>
+                    <p class="mt-1 text-xs text-zinc-400">Direct to {{ $contact['email'] }}</p>
+                </div>
+                <button
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                    type="button"
+                    data-close-email-modal
+                    aria-label="Close email modal"
+                >
+                    <span class="text-xl leading-none">&times;</span>
+                </button>
+            </div>
+
+            <form class="mt-5 space-y-4" data-email-form action="{{ route('contact.email') }}" method="POST">
+                @csrf
+                <div data-email-status class="hidden rounded-xl border p-3 text-xs leading-6"></div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300" for="email-user-name">Your Name</label>
+                    <input
+                        id="email-user-name"
+                        name="name"
+                        type="text"
+                        required
+                        placeholder="e.g. Rahul Sharma"
+                        class="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-amber-300 focus:ring-1 focus:ring-amber-300"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300" for="email-user-address">Your Email Address</label>
+                    <input
+                        id="email-user-address"
+                        name="email"
+                        type="email"
+                        required
+                        placeholder="you@example.com"
+                        class="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-amber-300 focus:ring-1 focus:ring-amber-300"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300" for="email-user-subject">Subject</label>
+                    <input
+                        id="email-user-subject"
+                        name="subject"
+                        type="text"
+                        required
+                        value="Inquiry for {{ $brand['name'] }}"
+                        class="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-amber-300 focus:ring-1 focus:ring-amber-300"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-300" for="email-user-message">Message</label>
+                    <textarea
+                        id="email-user-message"
+                        name="message"
+                        rows="3"
+                        required
+                        placeholder="Type your message or order inquiry here..."
+                        class="mt-1.5 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-amber-300 focus:ring-1 focus:ring-amber-300"
+                    >Hello {{ $brand['name'] }} Team, I would like to send a message regarding your spices.</textarea>
+                </div>
+
+                <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                    <button
+                        type="submit"
+                        data-send-email-btn
+                        class="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-red-700 to-amber-500 px-6 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 focus:outline-none"
+                    >
+                        Send Email Message
+                    </button>
+
+                    <a
+                        href="{{ $gmailHref }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-4 text-xs font-semibold text-zinc-300 transition hover:bg-white/10 hover:text-white"
+                    >
+                        <span>Open in Gmail</span> &rarr;
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const openBtns = document.querySelectorAll('[data-open-email-modal]');
+            const closeBtn = document.querySelector('[data-close-email-modal]');
+            const modal = document.querySelector('[data-email-modal]');
+            const form = document.querySelector('[data-email-form]');
+            const statusBox = document.querySelector('[data-email-status]');
+            const sendBtn = document.querySelector('[data-send-email-btn]');
+
+            if (!modal) return;
+
+            const openModal = (e) => {
+                if (e) e.preventDefault();
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            };
+
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+
+            openBtns.forEach((btn) => btn.addEventListener('click', openModal));
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    if (!sendBtn || !statusBox) return;
+
+                    sendBtn.disabled = true;
+                    sendBtn.innerText = 'Sending message...';
+                    statusBox.classList.add('hidden');
+                    statusBox.className = 'hidden rounded-xl border p-3 text-xs leading-6';
+
+                    try {
+                        const formData = new FormData(form);
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || formData.get('_token');
+
+                        const res = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                            body: formData,
+                        });
+
+                        const data = await res.json();
+
+                        if (res.ok && data.success) {
+                            statusBox.innerText = data.message;
+                            statusBox.className = 'block rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 p-3 text-xs leading-6';
+                            form.reset();
+                        } else {
+                            const err = data.message || 'Unable to send email message. Please try again.';
+                            statusBox.innerText = err;
+                            statusBox.className = 'block rounded-xl border border-red-500/40 bg-red-500/10 text-red-300 p-3 text-xs leading-6';
+                        }
+                    } catch (err) {
+                        statusBox.innerText = 'An error occurred while sending email. You can also use Gmail or Mail App below.';
+                        statusBox.className = 'block rounded-xl border border-red-500/40 bg-red-500/10 text-red-300 p-3 text-xs leading-6';
+                    } finally {
+                        sendBtn.disabled = false;
+                        sendBtn.innerText = 'Send Email Message';
+                    }
+                });
+            }
+        });
+    </script>
 </footer>

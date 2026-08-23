@@ -71,8 +71,11 @@
             'mt-6' => $tone === 'offer',
         ])>
             @foreach ($products as $index => $product)
-                @php($isWishlisted = in_array($product['id'], $wishlistProductIds, true))
-                <article class="product-tile group relative overflow-hidden rounded-lg border border-zinc-200 bg-white" data-reveal data-reveal-delay="{{ ($index % 3) * 90 }}" data-product-slug="{{ $product['slug'] }}" data-wishlisted="{{ $isWishlisted ? 'true' : 'false' }}">
+                @php
+                    $productId = $product['id'] ?? null;
+                    $isWishlisted = $productId && in_array($productId, $wishlistProductIds, true);
+                @endphp
+                <article class="product-tile group relative overflow-hidden rounded-lg border border-zinc-200 bg-white" data-reveal data-reveal-delay="{{ ($index % 3) * 90 }}">
                     <a class="block h-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500" href="{{ $product['url'] ?? '#products' }}" aria-label="View {{ $product['name'] }} details">
                         <div class="relative aspect-[4/3] overflow-hidden bg-zinc-900">
                             <img class="h-full w-full object-cover transition duration-700 group-hover:scale-105" src="{{ asset($product['image']) }}" alt="{{ $product['name'] }}">
@@ -125,8 +128,8 @@
                         class="wishlist-button absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-zinc-950 shadow-sm transition hover:bg-white hover:text-red-700 data-[wishlisted=true]:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                         type="button"
                         data-wishlist-button
-                        data-product-id="{{ $product['id'] }}"
-                        data-product-slug="{{ $product['slug'] }}"
+                        data-product-id="{{ $product['id'] ?? '' }}"
+                        data-product-slug="{{ $product['slug'] ?? '' }}"
                         data-wishlisted="{{ $isWishlisted ? 'true' : 'false' }}"
                         aria-pressed="{{ $isWishlisted ? 'true' : 'false' }}"
                         aria-label="{{ $isWishlisted ? 'Remove '.$product['name'].' from wishlist' : 'Add '.$product['name'].' to wishlist' }}"
