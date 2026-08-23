@@ -50,8 +50,6 @@ return [
     'view_details' => 'पूरी जानकारी देखें',
     'select_pack_size' => 'पैक का आकार / वजन चुनें',
     'inclusive_taxes' => 'सभी लागू कर शामिल हैं।',
-    'saved_to_wishlist' => 'विशलिस्ट में सहेजा गया',
-    'add_to_wishlist' => 'विशलिस्ट में जोड़ें',
     'product_highlights' => 'उत्पाद की मुख्य विशेषताएं',
     'know_ingredients' => 'जानें हर चम्मच में क्या है।',
     'ingredients' => 'सामग्री',

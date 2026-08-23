@@ -50,8 +50,6 @@ return [
     'view_details' => 'સંપૂર્ણ વિગતો જુઓ',
     'select_pack_size' => 'પેક સાઇઝ / વજન પસંદ કરો',
     'inclusive_taxes' => 'તમામ કર સમાવિષ્ટ છે.',
-    'saved_to_wishlist' => 'વિશલિસ્ટમાં સેવ કર્યું',
-    'add_to_wishlist' => 'વિશલિસ્ટમાં ઉમેરો',
     'product_highlights' => 'ઉત્પાદનની ખાસિયતો',
     'know_ingredients' => 'જાણો દરેક ચમચીમાં શું છે.',
     'ingredients' => 'સામગ્રી',

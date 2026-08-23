@@ -50,8 +50,6 @@ return [
     'view_details' => 'View full details',
     'select_pack_size' => 'Select Pack Size / Weight',
     'inclusive_taxes' => 'Inclusive of applicable taxes.',
-    'saved_to_wishlist' => 'Saved to wishlist',
-    'add_to_wishlist' => 'Add to wishlist',
     'product_highlights' => 'Product highlights',
     'know_ingredients' => 'Know what goes into every spoon.',
     'ingredients' => 'Ingredients',
