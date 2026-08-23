@@ -74,4 +74,3 @@ class AdminOrderController extends Controller
         ]);
     }
 }
-
