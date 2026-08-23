@@ -1,11 +1,10 @@
-- [x] Create migration for `orders` and `order_items` tables
-- [x] Run migrations using `php artisan migrate`
-- [x] Create `Order` model
-- [x] Create `OrderItem` model
-- [x] Modify `CheckoutController` to add stock checks, inventory decrements, DB transaction, and Order ID creation
-- [x] Modify checkout success view to show animation, Order ID, date, status, payment method, and buttons (Track Order, My Orders, Continue Shopping)
-- [x] Add relationship methods to `User` and `Product` models if needed
-- [x] Create tests in `CheckoutTest.php` to verify order insertion and stock reductions
+- [x] Create `OrderController`
+- [x] Add order routes in `routes/web.php`
+- [x] Add "My Orders" links to `resources/views/components/site/nav.blade.php`
+- [x] Link success page buttons to real routes in `checkout/success.blade.php`
+- [x] Create My Orders index view `resources/views/account/orders/index.blade.php`
+- [x] Create Order details view `resources/views/account/orders/show.blade.php`
+- [x] Create Track Order view with timeline `resources/views/account/orders/track.blade.php`
+- [x] Create tests in `OrderTrackingTest.php` to verify access control and timeline highlights
 - [x] Run `php artisan test` to check correctness
-- [x] Run code formatters and build assets
-
+- [x] Run Pint formatter and compile Vite assets

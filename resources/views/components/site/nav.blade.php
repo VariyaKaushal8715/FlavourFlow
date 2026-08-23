@@ -134,6 +134,7 @@
                     </summary>
                     <div class="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-xl">
                         <a class="flex rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.profile') }}</a>
+                        <a class="flex rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white" href="{{ route('account.orders') }}">My Orders</a>
                         <a class="flex rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white" href="{{ route('wishlist.index') }}">{{ __('ui.wishlist') }}</a>
                         <a class="flex rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white" href="{{ route('cart.index') }}">{{ __('ui.cart') }}</a>
                         <div class="my-1 border-t border-white/[0.07]"></div>
@@ -174,6 +175,7 @@
                         </summary>
                         <div class="px-2 pb-2">
                             <a class="block rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.profile') }}</a>
+                            <a class="block rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('account.orders') }}">My Orders</a>
                             <a class="block rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('wishlist.index') }}">{{ __('ui.wishlist') }}</a>
                             <a class="block rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('cart.index') }}">{{ __('ui.cart') }}</a>
                             <form method="POST" action="{{ route('logout') }}">

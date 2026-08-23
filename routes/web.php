@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\Account\UserProfileController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminOfferController;
@@ -56,6 +57,9 @@ Route::middleware('auth')->group(function () {
             Route::patch('/mobile-number', [UserProfileController::class, 'updateMobileNumber'])->name('profile.mobile_number.update');
             Route::patch('/email-address', [UserProfileController::class, 'updateEmailAddress'])->name('profile.email.update');
             Route::delete('/', [UserProfileController::class, 'destroy'])->name('profile.destroy');
+            Route::get('/orders', [OrderController::class, 'index'])->name('orders');
+            Route::get('/orders/{order:order_id}', [OrderController::class, 'show'])->name('orders.show');
+            Route::get('/orders/{order:order_id}/track', [OrderController::class, 'track'])->name('orders.track');
         });
 
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
