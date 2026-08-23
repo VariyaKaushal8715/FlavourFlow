@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login - FlavourFlow</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/flavourflow-mark.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/flavourflow-mark.png') }}">
     <style>
         body {
             font-family: Arial, sans-serif;

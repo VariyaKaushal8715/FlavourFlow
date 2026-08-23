@@ -13,12 +13,17 @@
         <div class="flex items-center justify-between gap-5">
             <nav class="flex items-center gap-1 rounded-lg bg-zinc-100 p-1" aria-label="Admin">
                 <a @class([
-                    'rounded-md px-4 py-2 text-sm font-semibold transition',
+                    'rounded-md px-3 py-1.5 text-xs font-semibold transition',
+                    'bg-white text-zinc-950 shadow-sm' => $active === 'dashboard',
+                    'text-zinc-500 hover:text-zinc-950' => $active !== 'dashboard',
+                ]) href="{{ route('admin.index') }}">Dashboard</a>
+                <a @class([
+                    'rounded-md px-3 py-1.5 text-xs font-semibold transition',
                     'bg-white text-zinc-950 shadow-sm' => $active === 'products',
                     'text-zinc-500 hover:text-zinc-950' => $active !== 'products',
-                ]) href="{{ route('admin.index') }}">Products</a>
+                ]) href="{{ route('admin.products.index') }}">Products</a>
                 <a @class([
-                    'rounded-md px-4 py-2 text-sm font-semibold transition',
+                    'rounded-md px-3 py-1.5 text-xs font-semibold transition',
                     'bg-white text-zinc-950 shadow-sm' => $active === 'offers',
                     'text-zinc-500 hover:text-zinc-950' => $active !== 'offers',
                 ]) href="{{ route('admin.offers.index') }}">Offers</a>
