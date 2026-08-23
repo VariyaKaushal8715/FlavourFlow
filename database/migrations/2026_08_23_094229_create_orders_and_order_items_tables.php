@@ -13,21 +13,24 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->string('order_id')->unique();
+            $table->string('order_id')->nullable();
+            $table->string('order_number')->nullable();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('status')->default('Confirmed');
-            $table->string('name');
-            $table->string('mobile');
-            $table->string('email');
-            $table->text('address');
-            $table->string('city');
-            $table->string('state');
-            $table->string('pincode');
-            $table->string('country');
-            $table->string('payment_method');
-            $table->decimal('subtotal', 10, 2);
-            $table->decimal('delivery_charge', 10, 2);
-            $table->decimal('total', 10, 2);
+            $table->string('status')->default('pending');
+            $table->string('payment_status')->default('pending');
+            $table->string('payment_method')->nullable()->default('cod');
+            $table->string('name')->nullable();
+            $table->string('mobile')->nullable();
+            $table->string('email')->nullable();
+            $table->text('address')->nullable();
+            $table->string('city')->nullable();
+            $table->string('state')->nullable();
+            $table->string('pincode')->nullable();
+            $table->string('country')->nullable();
+            $table->decimal('subtotal', 10, 2)->default(0);
+            $table->decimal('delivery_charge', 10, 2)->default(0);
+            $table->decimal('total', 10, 2)->default(0);
+            $table->decimal('total_amount', 10, 2)->default(0);
             $table->timestamps();
         });
 
@@ -35,13 +38,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->string('product_name');
-            $table->string('product_slug');
+            $table->string('product_name')->nullable();
+            $table->string('product_slug')->nullable();
             $table->string('sku')->nullable();
-            $table->string('unit');
+            $table->string('unit')->nullable();
             $table->integer('quantity');
             $table->decimal('unit_price', 10, 2);
-            $table->decimal('line_total', 10, 2);
+            $table->decimal('line_total', 10, 2)->default(0);
+            $table->decimal('total_price', 10, 2)->default(0);
             $table->timestamps();
         });
     }

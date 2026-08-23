@@ -19,6 +19,7 @@ use App\Http\Controllers\ContactEmailController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OfferDetailsController;
+use App\Http\Controllers\OrderRatingController;
 use App\Http\Controllers\ProductDetailsController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Middleware\PreventAdminResponseCaching;
@@ -72,6 +73,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+    Route::post('/orders/{order}/rate', [OrderRatingController::class, 'store'])->name('orders.rate');
 
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::get('/wishlist/products', [WishlistController::class, 'products'])->name('wishlist.products');
@@ -96,6 +98,8 @@ Route::prefix('admin')
             });
 
             // Orders
+            Route::get('/orders/unread-summary', [AdminOrderController::class, 'unreadSummary'])->name('orders.unread_summary');
+            Route::post('/orders/mark-viewed', [AdminOrderController::class, 'markViewed'])->name('orders.mark_viewed');
             Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
             Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
 

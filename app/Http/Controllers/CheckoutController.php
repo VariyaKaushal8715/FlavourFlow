@@ -69,8 +69,10 @@ class CheckoutController extends Controller
 
                 $order = Order::create([
                     'order_id' => $orderId,
+                    'order_number' => $orderId,
                     'user_id' => $request->user()->id,
                     'status' => 'Confirmed',
+                    'payment_status' => ($validated['payment_method'] === 'cod' ? 'pending' : 'paid'),
                     'name' => $validated['name'],
                     'mobile' => $validated['mobile'],
                     'email' => $validated['email'],
@@ -83,6 +85,7 @@ class CheckoutController extends Controller
                     'subtotal' => $subtotal,
                     'delivery_charge' => $deliveryCharge,
                     'total' => $total,
+                    'total_amount' => $total,
                 ]);
 
                 // 2. Validate stock, decrement inventory, and save Order Items
@@ -109,6 +112,7 @@ class CheckoutController extends Controller
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'line_total' => $item['line_total'],
+                        'total_price' => $item['line_total'],
                     ]);
                 }
 
