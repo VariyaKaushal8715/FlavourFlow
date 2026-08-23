@@ -32,7 +32,7 @@
                                     <p class="mt-0.5 text-xs text-zinc-500">{{ $item->quantity }} × {{ $item->unit }}</p>
                                     <p class="mt-1 text-xs font-bold text-zinc-950">Rs. {{ number_format($item->unit_price, 2) }}</p>
                                 </div>
-                                <span class="text-sm font-semibold text-zinc-950">Rs. {{ number_format($item->line_total, 2) }}</span>
+                                <span class="text-sm font-semibold text-zinc-950">Rs. {{ number_format($item->total_price, 2) }}</span>
                             </article>
                         @endforeach
                     </div>
@@ -44,7 +44,7 @@
                         <div class="mt-4 space-y-3 text-sm">
                             <div class="flex justify-between">
                                 <span class="text-zinc-500">Order ID:</span>
-                                <span class="font-bold text-zinc-950">{{ $order->order_id }}</span>
+                                <span class="font-bold text-zinc-950">{{ $order->order_number }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-zinc-500">Status:</span>
@@ -59,7 +59,7 @@
                                 <span class="font-semibold text-zinc-950">{{ $order->payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment' }}</span>
                             </div>
                         </div>
-                        <a href="{{ route('account.orders.track', $order->order_id) }}" class="mt-5 block w-full rounded-2xl bg-zinc-950 py-3 text-center text-xs font-semibold text-white transition hover:bg-brand-primary">
+                        <a href="{{ route('account.orders.track', $order->order_number) }}" class="mt-5 block w-full rounded-2xl bg-zinc-950 py-3 text-center text-xs font-semibold text-white transition hover:bg-brand-primary">
                             Track Order Progress
                         </a>
                     </div>
@@ -88,7 +88,7 @@
                             </div>
                             <div class="flex justify-between border-t border-zinc-100 pt-3 text-base font-bold text-zinc-950">
                                 <span>Total:</span>
-                                <span>Rs. {{ number_format($order->total, 2) }}</span>
+                                <span>Rs. {{ number_format($order->total_amount, 2) }}</span>
                             </div>
                         </div>
                     </div>

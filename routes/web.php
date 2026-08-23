@@ -62,8 +62,8 @@ Route::middleware('auth')->group(function () {
             Route::patch('/email-address', [UserProfileController::class, 'updateEmailAddress'])->name('profile.email.update');
             Route::delete('/', [UserProfileController::class, 'destroy'])->name('profile.destroy');
             Route::get('/orders', [OrderController::class, 'index'])->name('orders');
-            Route::get('/orders/{order:order_id}', [OrderController::class, 'show'])->name('orders.show');
-            Route::get('/orders/{order:order_id}/track', [OrderController::class, 'track'])->name('orders.track');
+            Route::get('/orders/{order:order_number}', [OrderController::class, 'show'])->name('orders.show');
+            Route::get('/orders/{order:order_number}/track', [OrderController::class, 'track'])->name('orders.track');
         });
 
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');

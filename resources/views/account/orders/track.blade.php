@@ -10,7 +10,7 @@
                     <a href="{{ route('account.orders') }}" class="text-xs font-semibold text-brand-primary hover:underline">&larr; Back to My Orders</a>
                 </div>
                 <h1 class="mt-4 text-3xl font-semibold text-zinc-950 sm:text-4xl">Track Order</h1>
-                <p class="mt-2 text-base leading-7 text-zinc-600">Order ID: <span class="font-bold text-zinc-950">{{ $order->order_id }}</span></p>
+                <p class="mt-2 text-base leading-7 text-zinc-600">Order ID: <span class="font-bold text-zinc-950">{{ $order->order_number }}</span></p>
             </div>
         </div>
     </section>
@@ -23,7 +23,7 @@
                         <h2 class="text-xl font-semibold text-zinc-950">Delivery Progress</h2>
                         <p class="mt-1 text-xs text-zinc-500">Current Status: <span class="font-semibold text-brand-primary">{{ $order->status }}</span></p>
                     </div>
-                    <a href="{{ route('account.orders.show', $order->order_id) }}" class="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50">
+                    <a href="{{ route('account.orders.show', $order->order_number) }}" class="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50">
                         View Details
                     </a>
                 </div>

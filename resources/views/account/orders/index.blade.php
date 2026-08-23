@@ -35,7 +35,7 @@
                             <div class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-100 pb-4">
                                 <div>
                                     <span class="text-xs font-semibold text-zinc-400">Order ID</span>
-                                    <p class="font-bold text-zinc-950 tracking-wide text-sm sm:text-base">{{ $order->order_id }}</p>
+                                    <p class="font-bold text-zinc-950 tracking-wide text-sm sm:text-base">{{ $order->order_number }}</p>
                                 </div>
                                 <div>
                                     <span class="text-xs font-semibold text-zinc-400">Date</span>
@@ -43,7 +43,7 @@
                                 </div>
                                 <div>
                                     <span class="text-xs font-semibold text-zinc-400">Total</span>
-                                    <p class="font-bold text-brand-primary text-sm">Rs. {{ number_format($order->total, 2) }}</p>
+                                    <p class="font-bold text-brand-primary text-sm">Rs. {{ number_format($order->total_amount, 2) }}</p>
                                 </div>
                                 <div>
                                     <span class="text-xs font-semibold text-zinc-400">Status</span>
@@ -66,13 +66,13 @@
 
                                 <div class="flex items-center gap-2">
                                     <a
-                                        href="{{ route('account.orders.show', $order->order_id) }}"
+                                        href="{{ route('account.orders.show', $order->order_number) }}"
                                         class="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50"
                                     >
                                         View Details
                                     </a>
                                     <a
-                                        href="{{ route('account.orders.track', $order->order_id) }}"
+                                        href="{{ route('account.orders.track', $order->order_number) }}"
                                         class="rounded-xl bg-zinc-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-primary"
                                     >
                                         Track Order

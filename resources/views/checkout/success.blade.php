@@ -28,7 +28,7 @@
                 <div class="mt-6 grid gap-6 border-b border-zinc-100 pb-6 text-sm sm:grid-cols-2">
                     <div>
                         <p class="font-medium text-zinc-400">Order ID</p>
-                        <p class="mt-1 font-bold text-zinc-950 text-base tracking-wider">{{ $order->order_id }}</p>
+                        <p class="mt-1 font-bold text-zinc-950 text-base tracking-wider">{{ $order->order_number }}</p>
                     </div>
                     <div>
                         <p class="font-medium text-zinc-400">Order Date</p>
@@ -36,7 +36,7 @@
                     </div>
                     <div>
                         <p class="font-medium text-zinc-400">Total Amount</p>
-                        <p class="mt-1 font-bold text-brand-primary text-base">Rs. {{ number_format($order->total, 2) }}</p>
+                        <p class="mt-1 font-bold text-brand-primary text-base">Rs. {{ number_format($order->total_amount, 2) }}</p>
                     </div>
                     <div>
                         <p class="font-medium text-zinc-400">Payment Method</p>
@@ -61,7 +61,7 @@
             <!-- Track Order, My Orders, Continue Shopping buttons -->
             <div class="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <a
-                    href="{{ route('account.orders.track', $order->order_id) }}"
+                    href="{{ route('account.orders.track', $order->order_number) }}"
                     class="inline-flex items-center justify-center rounded-2xl bg-zinc-950 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-brand-primary"
                 >
                     Track Order

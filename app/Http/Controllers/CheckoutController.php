@@ -59,16 +59,16 @@ class CheckoutController extends Controller
 
         try {
             $order = DB::transaction(function () use ($validated, $cart, $request) {
-                // Generate a unique Order ID
-                $orderId = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(6));
+                // Generate a unique Order Number
+                $orderNumber = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
-                // 1. Create the Order
+                // Calculate checkout totals
                 $subtotal = $cart->subtotal();
                 $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
-                $total = $subtotal + $deliveryCharge;
+                $totalAmount = $subtotal + $deliveryCharge;
 
                 $order = Order::create([
-                    'order_id' => $orderId,
+                    'order_number' => $orderNumber,
                     'user_id' => $request->user()->id,
                     'status' => 'Confirmed',
                     'name' => $validated['name'],
@@ -82,10 +82,10 @@ class CheckoutController extends Controller
                     'payment_method' => $validated['payment_method'],
                     'subtotal' => $subtotal,
                     'delivery_charge' => $deliveryCharge,
-                    'total' => $total,
+                    'total_amount' => $totalAmount,
                 ]);
 
-                // 2. Validate stock, decrement inventory, and save Order Items
+                // Validate stock, decrement inventory, and save Order Items
                 foreach ($cart->items() as $item) {
                     $product = Product::lockForUpdate()->findOrFail($item['product']->id);
 
@@ -108,11 +108,11 @@ class CheckoutController extends Controller
                         'unit' => $item['unit'],
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
-                        'line_total' => $item['line_total'],
+                        'total_price' => $item['line_total'],
                     ]);
                 }
 
-                // 3. Clear the Cart
+                // Clear the Cart
                 $cart->clear();
 
                 return $order;
