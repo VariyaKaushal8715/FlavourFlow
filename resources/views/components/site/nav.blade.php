@@ -16,6 +16,13 @@
     };
 @endphp
 
+<style>
+    summary::-webkit-details-marker,
+    summary::marker {
+        display: none !important;
+    }
+</style>
+
 <header class="relative z-20">
     <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-5 lg:px-8">
         <a class="flex min-w-0 items-center gap-3 text-white" href="{{ route('home') }}" aria-label="{{ $brand['name'] }} home">

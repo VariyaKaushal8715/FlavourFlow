@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\UserSessionController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactEmailController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
@@ -67,6 +68,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/cart/{product:slug}', [CartController::class, 'store'])->name('cart.store');
     Route::match(['put', 'patch'], '/cart/{product:slug}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{product:slug}', [CartController::class, 'destroy'])->name('cart.destroy');
+
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
 
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::get('/wishlist/products', [WishlistController::class, 'products'])->name('wishlist.products');
