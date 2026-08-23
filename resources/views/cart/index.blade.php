@@ -65,6 +65,12 @@
                         <div class="mt-4 flex items-center justify-between text-lg font-semibold text-zinc-950">
                             <span>{{ __('ui.total') }}</span><span data-cart-total>Rs. {{ number_format($subtotal, 2) }}</span>
                         </div>
+                        <a
+                            href="{{ route('checkout.index') }}"
+                            class="mt-6 block w-full rounded-lg bg-zinc-950 py-3 text-center text-sm font-semibold text-white transition hover:bg-brand-primary"
+                        >
+                            Proceed to Checkout
+                        </a>
                     </aside>
                 </div>
             @endif
