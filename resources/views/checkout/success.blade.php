@@ -3,66 +3,83 @@
         <x-site.nav :brand="$site['brand']" :navigation="$site['navigation']" />
     </div>
 
-    <section class="min-h-[70vh] bg-zinc-50 py-16 sm:py-24">
+    <section class="min-h-[75vh] bg-[radial-gradient(circle_at_top,rgba(244,185,66,0.12),transparent_38%),linear-gradient(180deg,#fff_0%,#fff9ed_48%,#fff_100%)] py-16 sm:py-24">
         <div class="mx-auto max-w-3xl px-6 text-center lg:px-8" data-reveal>
-            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 shadow-sm">
-                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <!-- Checkmark Animation container -->
+            <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 shadow-md animate-bounce">
+                <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
             </div>
 
-            <h1 class="mt-6 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">Thank You for Your Order!</h1>
+            <h1 class="mt-6 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">Order Placed Successfully!</h1>
             <p class="mt-4 text-base text-zinc-600 leading-relaxed">
-                Your order has been placed successfully. We are preparing to dispatch your premium selection of handpicked Indian spices.
+                Thank you for shopping with us! Your order has been registered and is now being prepared for shipping.
             </p>
 
-            <div class="mt-8 rounded-3xl border border-amber-200/70 bg-white p-6 shadow-sm text-left sm:p-8">
-                <h2 class="text-lg font-semibold text-zinc-950">Order Summary</h2>
+            <div class="mt-8 rounded-3xl border border-amber-200/70 bg-white/95 p-6 shadow-[0_24px_70px_rgba(120,53,15,0.06)] text-left sm:p-8">
+                <div class="flex items-center justify-between border-b border-zinc-100 pb-4">
+                    <h2 class="text-lg font-semibold text-zinc-950">Order Summary</h2>
+                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 shadow-sm">
+                        {{ $order->status }}
+                    </span>
+                </div>
                 
-                <div class="mt-4 grid gap-4 border-t border-zinc-100 pt-4 text-sm sm:grid-cols-2">
+                <div class="mt-6 grid gap-6 border-b border-zinc-100 pb-6 text-sm sm:grid-cols-2">
                     <div>
-                        <p class="font-medium text-zinc-400">Customer Name</p>
-                        <p class="mt-1 font-semibold text-zinc-950">{{ $order['name'] }}</p>
+                        <p class="font-medium text-zinc-400">Order ID</p>
+                        <p class="mt-1 font-bold text-zinc-950 text-base tracking-wider">{{ $order->order_id }}</p>
                     </div>
                     <div>
-                        <p class="font-medium text-zinc-400">Contact Number</p>
-                        <p class="mt-1 font-semibold text-zinc-950">{{ $order['mobile'] }}</p>
+                        <p class="font-medium text-zinc-400">Order Date</p>
+                        <p class="mt-1 font-semibold text-zinc-950">{{ $order->created_at->format('M d, Y h:i A') }}</p>
                     </div>
                     <div>
-                        <p class="font-medium text-zinc-400">Shipping Address</p>
-                        <p class="mt-1 font-semibold text-zinc-950">
-                            {{ $order['address'] }}, {{ $order['city'] }}, {{ $order['state'] }} - {{ $order['pincode'] }}, {{ $order['country'] }}
-                        </p>
+                        <p class="font-medium text-zinc-400">Total Amount</p>
+                        <p class="mt-1 font-bold text-brand-primary text-base">Rs. {{ number_format($order->total, 2) }}</p>
                     </div>
                     <div>
                         <p class="font-medium text-zinc-400">Payment Method</p>
                         <p class="mt-1 font-semibold text-zinc-950">
-                            {{ $order['payment_method'] === 'cod' ? 'Cash on Delivery (COD)' : 'Online Payment' }}
+                            {{ $order->payment_method === 'cod' ? 'Cash on Delivery (COD)' : 'Online Payment' }}
                         </p>
                     </div>
                 </div>
 
-                <div class="mt-6 border-t border-zinc-100 pt-4 flex items-center justify-between text-base font-bold text-zinc-950">
-                    <span>Total Amount Paid / Payable</span>
-                    <span>Rs. {{ number_format($order['total'], 2) }}</span>
+                <div class="mt-6">
+                    <p class="font-medium text-zinc-400">Delivery Details</p>
+                    <div class="mt-2 text-sm text-zinc-800 space-y-1">
+                        <p class="font-semibold text-zinc-950">{{ $order->name }}</p>
+                        <p>{{ $order->address }}</p>
+                        <p>{{ $order->city }}, {{ $order->state }} - {{ $order->pincode }}</p>
+                        <p>{{ $order->country }}</p>
+                        <p class="mt-2 font-medium">Contact: {{ $order->mobile }} | {{ $order->email }}</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="mt-10 flex flex-wrap justify-center gap-4">
+            <!-- Track Order, My Orders, Continue Shopping buttons -->
+            <div class="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <a
-                    href="{{ route('home') }}"
-                    class="inline-flex items-center justify-center rounded-2xl bg-zinc-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-primary"
+                    href="#"
+                    onclick="alert('Simulating Track Order Flow: Your package is ready for courier collection.'); return false;"
+                    class="inline-flex items-center justify-center rounded-2xl bg-zinc-950 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-brand-primary"
                 >
-                    Continue Shopping
+                    Track Order
                 </a>
                 <a
                     href="{{ route('account.profile') }}"
-                    class="inline-flex items-center justify-center rounded-2xl border border-zinc-300 bg-white px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                    class="inline-flex items-center justify-center rounded-2xl border border-zinc-300 bg-white px-6 py-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
                 >
-                    View Account
+                    My Orders
+                </a>
+                <a
+                    href="{{ route('home') }}"
+                    class="inline-flex items-center justify-center rounded-2xl border border-transparent bg-amber-100 px-6 py-3.5 text-sm font-semibold text-brand-primary transition hover:bg-amber-200"
+                >
+                    Continue Shopping
                 </a>
             </div>
         </div>
     </section>
 </x-site.layout>
-

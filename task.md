@@ -1,0 +1,11 @@
+- [x] Create migration for `orders` and `order_items` tables
+- [x] Run migrations using `php artisan migrate`
+- [x] Create `Order` model
+- [x] Create `OrderItem` model
+- [x] Modify `CheckoutController` to add stock checks, inventory decrements, DB transaction, and Order ID creation
+- [x] Modify checkout success view to show animation, Order ID, date, status, payment method, and buttons (Track Order, My Orders, Continue Shopping)
+- [x] Add relationship methods to `User` and `Product` models if needed
+- [x] Create tests in `CheckoutTest.php` to verify order insertion and stock reductions
+- [x] Run `php artisan test` to check correctness
+- [x] Run code formatters and build assets
+

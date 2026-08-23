@@ -53,4 +53,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(WishlistItem::class);
     }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
 }

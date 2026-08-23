@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
 use App\Support\CartState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
@@ -51,41 +57,86 @@ class CheckoutController extends Controller
             'payment_method' => ['required', 'string', 'in:cod,online'],
         ]);
 
-        // Calculate checkout totals
-        $subtotal = $cart->subtotal();
-        $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
-        $total = $subtotal + $deliveryCharge;
+        try {
+            $order = DB::transaction(function () use ($validated, $cart, $request) {
+                // Generate a unique Order ID
+                $orderId = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
-        // Clear Cart
-        $cart->clear();
+                // 1. Create the Order
+                $subtotal = $cart->subtotal();
+                $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
+                $total = $subtotal + $deliveryCharge;
 
-        return redirect()->route('checkout.success')->with([
-            'order_details' => [
-                'name' => $validated['name'],
-                'mobile' => $validated['mobile'],
-                'email' => $validated['email'],
-                'address' => $validated['address'],
-                'city' => $validated['city'],
-                'state' => $validated['state'],
-                'pincode' => $validated['pincode'],
-                'country' => $validated['country'],
-                'payment_method' => $validated['payment_method'],
-                'total' => $total,
-            ],
-        ]);
+                $order = Order::create([
+                    'order_id' => $orderId,
+                    'user_id' => $request->user()->id,
+                    'status' => 'Confirmed',
+                    'name' => $validated['name'],
+                    'mobile' => $validated['mobile'],
+                    'email' => $validated['email'],
+                    'address' => $validated['address'],
+                    'city' => $validated['city'],
+                    'state' => $validated['state'],
+                    'pincode' => $validated['pincode'],
+                    'country' => $validated['country'],
+                    'payment_method' => $validated['payment_method'],
+                    'subtotal' => $subtotal,
+                    'delivery_charge' => $deliveryCharge,
+                    'total' => $total,
+                ]);
+
+                // 2. Validate stock, decrement inventory, and save Order Items
+                foreach ($cart->items() as $item) {
+                    $product = Product::lockForUpdate()->findOrFail($item['product']->id);
+
+                    if ($product->quantity < $item['quantity']) {
+                        throw ValidationException::withMessages([
+                            'cart' => "The product '{$product->name}' only has {$product->quantity} units left in stock.",
+                        ]);
+                    }
+
+                    // Reduce product inventory
+                    $product->decrement('quantity', $item['quantity']);
+
+                    // Save Order Item
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'product_slug' => $product->slug,
+                        'sku' => $product->sku,
+                        'unit' => $item['unit'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'line_total' => $item['line_total'],
+                    ]);
+                }
+
+                // 3. Clear the Cart
+                $cart->clear();
+
+                return $order;
+            });
+
+            return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
+        } catch (ValidationException $e) {
+            return redirect()->route('cart.index')->withErrors($e->errors());
+        }
     }
 
     public function success(): View|RedirectResponse
     {
-        $orderDetails = session('order_details');
+        $orderId = session('placed_order_id');
 
-        if (! $orderDetails) {
+        if (! $orderId) {
             return redirect()->route('home');
         }
 
+        $order = Order::with('items')->findOrFail($orderId);
+
         return view('checkout.success', [
             'site' => config('personal_site'),
-            'order' => $orderDetails,
+            'order' => $order,
         ]);
     }
 }
