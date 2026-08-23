@@ -97,14 +97,13 @@
             <!-- Track Order, My Orders, Continue Shopping buttons -->
             <div class="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <a
-                    href="#"
-                    onclick="alert('Simulating Track Order Flow: Your package is ready for courier collection.'); return false;"
+                    href="{{ route('account.orders.track', $order->order_id) }}"
                     class="inline-flex items-center justify-center rounded-2xl bg-zinc-950 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-brand-primary"
                 >
                     Track Order
                 </a>
                 <a
-                    href="{{ route('account.profile') }}"
+                    href="{{ route('account.orders') }}"
                     class="inline-flex items-center justify-center rounded-2xl border border-zinc-300 bg-white px-6 py-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
                 >
                     My Orders
