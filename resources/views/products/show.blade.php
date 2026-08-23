@@ -4,7 +4,6 @@
     :page-description="$product->description"
     :preserve-on-refresh="true"
 >
-    @php($isWishlisted = in_array($product->id, $wishlistProductIds, true))
 
     <div class="bg-zinc-950">
         <x-site.nav :brand="$site['brand']" :navigation="$site['navigation']" />
@@ -13,9 +12,9 @@
     <section class="bg-white py-10 sm:py-14">
         <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
             <nav class="flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-500" aria-label="Breadcrumb">
-                <a class="transition hover:text-red-700" href="{{ route('home') }}">Home</a>
+                <a class="transition hover:text-red-700" href="{{ route('home') }}">{{ __('ui.home') }}</a>
                 <span aria-hidden="true">/</span>
-                <a class="transition hover:text-red-700" href="{{ route('home').'#products' }}">Products</a>
+                <a class="transition hover:text-red-700" href="{{ route('home').'#products' }}">{{ __('ui.products') }}</a>
                 <span aria-hidden="true">/</span>
                 <span class="text-zinc-950">{{ $product->name }}</span>
             </nav>
@@ -28,20 +27,20 @@
                     </div>
                     <div class="mt-3 grid grid-cols-3 gap-3">
                         <div class="rounded-lg border border-zinc-200 p-4">
-                            <p class="text-xs text-zinc-500">Pack size</p>
+                            <p class="text-xs text-zinc-500">{{ __('ui.pack_size') }}</p>
                             <p class="mt-1 text-sm font-semibold text-zinc-950">{{ $product->unit }}</p>
                         </div>
                         <div class="rounded-lg border border-zinc-200 p-4">
-                            <p class="text-xs text-zinc-500">Rating</p>
+                            <p class="text-xs text-zinc-500">{{ __('ui.rating') }}</p>
                             <p class="mt-1 text-sm font-semibold text-zinc-950">{{ number_format((float) $product->rating, 1) }} / 5</p>
                         </div>
                         <div class="rounded-lg border border-zinc-200 p-4">
-                            <p class="text-xs text-zinc-500">Availability</p>
+                            <p class="text-xs text-zinc-500">{{ __('ui.availability') }}</p>
                             <p @class([
                                 'mt-1 text-sm font-semibold',
                                 'text-emerald-700' => $product->quantity > 0,
                                 'text-red-700' => $product->quantity === 0,
-                            ])>{{ $product->stockLabel() }}</p>
+                            ])>{{ $product->quantity > 0 ? __('ui.in_stock') : __('ui.out_of_stock') }}</p>
                         </div>
                     </div>
                 </div>
@@ -50,14 +49,14 @@
                     <p class="text-sm font-semibold text-red-700">{{ $product->category }}</p>
                     <h1 class="mt-3 text-4xl font-semibold leading-tight text-zinc-950 sm:text-5xl">{{ $product->name }}</h1>
                     <div class="mt-5 flex flex-wrap items-center gap-3 text-sm">
-                        <span class="rounded-lg bg-emerald-100 px-3 py-2 font-semibold text-emerald-800">{{ number_format((float) $product->rating, 1) }} customer rating</span>
+                        <span class="rounded-lg bg-emerald-100 px-3 py-2 font-semibold text-emerald-800">{{ number_format((float) $product->rating, 1) }} customer {{ __('ui.rating') }}</span>
                         <span class="text-zinc-500">SKU: {{ $product->sku }}</span>
                     </div>
 
                     <p class="mt-7 text-base leading-8 text-zinc-600">{{ $product->description }}</p>
 
                     <div class="mt-6">
-                        <p class="text-xs font-semibold uppercase tracking-wider text-zinc-500">Select Pack Size / Weight</p>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-zinc-500">{{ __('ui.select_pack_size') }}</p>
                         <div class="mt-3 flex flex-wrap gap-2.5" data-variant-selector>
                             @foreach ($product->availableVariants() as $vKey => $vOpt)
                                 <button
@@ -86,7 +85,7 @@
                             @endif
                             <span class="pb-1 text-sm text-zinc-500" data-product-unit-display>per {{ $product->unit }}</span>
                         </div>
-                        <p class="mt-3 text-xs text-zinc-500">Inclusive of applicable taxes.</p>
+                        <p class="mt-3 text-xs text-zinc-500">{{ __('ui.inclusive_taxes') }}</p>
                     </div>
 
                     <div class="mt-8 flex flex-wrap gap-3">
@@ -97,7 +96,7 @@
                             data-product-slug="{{ $product->slug }}"
                             data-selected-weight="100g"
                             @disabled($product->quantity === 0)
-                        >{{ $product->quantity > 0 ? 'Add to cart' : 'Out of stock' }}</button>
+                        >{{ $product->quantity > 0 ? __('ui.add_to_cart') : __('ui.out_of_stock') }}</button>
 
                         <button
                             class="wishlist-button inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition hover:border-zinc-950 hover:text-zinc-950 disabled:cursor-not-allowed disabled:opacity-60"
@@ -112,30 +111,14 @@
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                 <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z" />
                             </svg>
-                            <span>Wishlist</span>
+                            <span>{{ __('ui.wishlist') }}</span>
                         </button>
                     </div>
 
-                    <button
-                        class="mt-3 inline-flex items-center gap-2 rounded-lg border border-zinc-200 px-5 py-3 text-sm font-semibold text-zinc-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        type="button"
-                        data-wishlist-button
-                        data-product-id="{{ $product->id }}"
-                        data-product-slug="{{ $product->slug }}"
-                        data-wishlisted="{{ $isWishlisted ? 'true' : 'false' }}"
-                        aria-pressed="{{ $isWishlisted ? 'true' : 'false' }}"
-                        aria-label="{{ $isWishlisted ? 'Remove '.$product->name.' from wishlist' : 'Add '.$product->name.' to wishlist' }}"
-                        @disabled(empty($product->id) || empty($product->slug))
-                    >
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z" />
-                        </svg>
-                        <span>{{ $isWishlisted ? 'Saved to wishlist' : 'Add to wishlist' }}</span>
-                    </button>
 
                     @if ($product->highlights)
                         <div class="mt-8">
-                            <h2 class="text-lg font-semibold text-zinc-950">Product highlights</h2>
+                            <h2 class="text-lg font-semibold text-zinc-950">{{ __('ui.product_highlights') }}</h2>
                             <ul class="mt-5 grid gap-3 sm:grid-cols-2">
                                 @foreach ($product->highlights as $highlight)
                                     <li class="grid grid-cols-[1.25rem_1fr] gap-3 text-sm leading-6 text-zinc-700">
@@ -149,16 +132,16 @@
 
                     <div class="mt-9 grid gap-3 sm:grid-cols-3">
                         <div class="rounded-lg bg-zinc-100 p-4">
-                            <p class="text-xs font-semibold text-zinc-950">Freshly packed</p>
-                            <p class="mt-2 text-xs leading-5 text-zinc-500">Small-batch care for lively aroma.</p>
+                            <p class="text-xs font-semibold text-zinc-950">{{ __('ui.freshly_packed') }}</p>
+                            <p class="mt-2 text-xs leading-5 text-zinc-500">{{ __('ui.small_batch_care') }}</p>
                         </div>
                         <div class="rounded-lg bg-zinc-100 p-4">
-                            <p class="text-xs font-semibold text-zinc-950">Secure packaging</p>
-                            <p class="mt-2 text-xs leading-5 text-zinc-500">Made to protect flavour and freshness.</p>
+                            <p class="text-xs font-semibold text-zinc-950">{{ __('ui.secure_packaging') }}</p>
+                            <p class="mt-2 text-xs leading-5 text-zinc-500">{{ __('ui.protect_flavour') }}</p>
                         </div>
                         <div class="rounded-lg bg-zinc-100 p-4">
-                            <p class="text-xs font-semibold text-zinc-950">Kitchen ready</p>
-                            <p class="mt-2 text-xs leading-5 text-zinc-500">Clear pack size, usage, and ingredients.</p>
+                            <p class="text-xs font-semibold text-zinc-950">{{ __('ui.kitchen_ready') }}</p>
+                            <p class="mt-2 text-xs leading-5 text-zinc-500">{{ __('ui.clear_pack_usage') }}</p>
                         </div>
                     </div>
                 </div>
@@ -169,27 +152,27 @@
     <section class="border-y border-zinc-200 bg-zinc-50 py-16 sm:py-20">
         <div class="mx-auto grid w-full max-w-7xl gap-10 px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
             <div data-reveal>
-                <p class="text-sm font-semibold text-red-700">Full product details</p>
-                <h2 class="mt-3 text-3xl font-semibold text-zinc-950">Know what goes into every spoon.</h2>
+                <p class="text-sm font-semibold text-red-700">{{ __('ui.view_details') }}</p>
+                <h2 class="mt-3 text-3xl font-semibold text-zinc-950">{{ __('ui.know_ingredients') }}</h2>
                 <p class="mt-6 whitespace-pre-line text-base leading-8 text-zinc-600">{{ $product->long_description ?: $product->description }}</p>
             </div>
 
             <dl class="divide-y divide-zinc-200 border-y border-zinc-200" data-reveal>
                 <div class="py-5">
-                    <dt class="text-xs font-semibold uppercase text-zinc-500">Ingredients</dt>
+                    <dt class="text-xs font-semibold uppercase text-zinc-500">{{ __('ui.ingredients') }}</dt>
                     <dd class="mt-2 text-sm leading-7 text-zinc-800">{{ $product->ingredients ?: 'See the product pack for ingredient information.' }}</dd>
                 </div>
                 <div class="py-5">
-                    <dt class="text-xs font-semibold uppercase text-zinc-500">How to use</dt>
+                    <dt class="text-xs font-semibold uppercase text-zinc-500">{{ __('ui.how_to_use') }}</dt>
                     <dd class="mt-2 text-sm leading-7 text-zinc-800">{{ $product->usage_instructions ?: 'Add to taste while cooking.' }}</dd>
                 </div>
                 <div class="py-5">
-                    <dt class="text-xs font-semibold uppercase text-zinc-500">Origin</dt>
+                    <dt class="text-xs font-semibold uppercase text-zinc-500">{{ __('ui.origin') }}</dt>
                     <dd class="mt-2 text-sm leading-7 text-zinc-800">{{ $product->origin ?: 'India' }}</dd>
                 </div>
                 <div class="py-5">
-                    <dt class="text-xs font-semibold uppercase text-zinc-500">Storage</dt>
-                    <dd class="mt-2 text-sm leading-7 text-zinc-800">Keep sealed in a cool, dry place away from direct sunlight and moisture.</dd>
+                    <dt class="text-xs font-semibold uppercase text-zinc-500">{{ __('ui.storage') }}</dt>
+                    <dd class="mt-2 text-sm leading-7 text-zinc-800">{{ __('ui.storage_info') }}</dd>
                 </div>
             </dl>
         </div>
@@ -199,8 +182,8 @@
         <x-site.products
             :products="$relatedProducts"
             section-id="related-products"
-            eyebrow="You may also like"
-            title="More from this collection."
+            :eyebrow="__('ui.you_may_also_like')"
+            :title="__('ui.more_from_collection')"
             description="Explore related products selected from the same category."
         />
     @endif
