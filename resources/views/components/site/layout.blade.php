@@ -16,6 +16,9 @@
 
         <title>{{ $pageTitle ?? $site['meta']['title'] }}</title>
 
+        <link rel="icon" type="image/png" href="{{ asset('images/flavourflow-mark.png') }}">
+        <link rel="apple-touch-icon" href="{{ asset('images/flavourflow-mark.png') }}">
+
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body

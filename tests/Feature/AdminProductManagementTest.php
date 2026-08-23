@@ -59,7 +59,7 @@ test('an administrator can add a product and make it the homepage spotlight', fu
             'is_featured' => '1',
             'is_active' => '1',
         ])
-        ->assertRedirect(route('admin.index'))
+        ->assertRedirect(route('admin.products.index'))
         ->assertSessionHas('status');
 
     $product = Product::query()->where('name', 'Smoked Kashmiri Chilli')->firstOrFail();
@@ -72,7 +72,7 @@ test('an administrator can add a product and make it the homepage spotlight', fu
 
     Storage::disk('public')->assertExists(Str::after($product->image_path, 'storage/'));
 
-    $this->get(route('admin.index'))
+    $this->get(route('admin.products.index'))
         ->assertSuccessful()
         ->assertSee('Smoked Kashmiri Chilli')
         ->assertSee('Products');
@@ -118,7 +118,7 @@ test('an administrator can update product pricing inventory and image', function
             'is_featured' => '1',
             'is_active' => '1',
         ])
-        ->assertRedirect(route('admin.index'))
+        ->assertRedirect(route('admin.products.index'))
         ->assertSessionHas('status');
 
     $product->refresh();
@@ -156,7 +156,7 @@ test('deleting a product permanently removes its database row and uploaded image
 
     $this->actingAs($admin)
         ->delete(route('admin.products.destroy', $product))
-        ->assertRedirect(route('admin.index'))
+        ->assertRedirect(route('admin.products.index'))
         ->assertSessionHas('status');
 
     $this->assertModelMissing($product);
@@ -179,12 +179,12 @@ test('the product dashboard can search filter and report inventory', function ()
     ]);
 
     $this->actingAs($admin)
-        ->get(route('admin.index', ['search' => 'FF-LOW-1']))
+        ->get(route('admin.products.index', ['search' => 'FF-LOW-1']))
         ->assertSuccessful()
         ->assertSee('Low Stock Masala')
         ->assertDontSee('Sold Out Masala');
 
-    $this->get(route('admin.index', ['status' => 'out_of_stock']))
+    $this->get(route('admin.products.index', ['status' => 'out_of_stock']))
         ->assertSuccessful()
         ->assertSee('Sold Out Masala')
         ->assertDontSee('Low Stock Masala');
