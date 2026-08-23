@@ -1,90 +1,5 @@
 <x-admin.layout title="Dashboard">
-    <main class="mx-auto w-full max-w-[92rem] px-4 py-8 sm:px-6 lg:px-8" x-data="{
-        chartRange: '7',
-        chartType: 'revenue',
-        data7: @js($chartData7Days),
-        data30: @js($chartData30Days),
-        chartInstance: null,
-        init() {
-            this.$nextTick(() => this.updateChart());
-        },
-        updateChart() {
-            const data = this.chartRange === '7' ? this.data7 : this.data30;
-            const labels = data.map(d => d.date);
-            const isRevenue = this.chartType === 'revenue';
-            const values = data.map(d => isRevenue ? d.revenue : d.orders);
-            const color = isRevenue ? '#b42318' : '#2563eb';
-            const bgColor = isRevenue ? 'rgba(180, 35, 24, 0.08)' : 'rgba(37, 99, 235, 0.08)';
-
-            const ctx = document.getElementById('analyticsChart');
-            if (!ctx) return;
-
-            if (this.chartInstance) {
-                this.chartInstance.destroy();
-            }
-
-            this.chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: isRevenue ? 'Revenue (₹)' : 'Orders',
-                        data: values,
-                        borderColor: color,
-                        backgroundColor: bgColor,
-                        borderWidth: 2.5,
-                        tension: 0.35,
-                        fill: true,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: color,
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        pointHoverBackgroundColor: color,
-                        pointHoverBorderColor: '#ffffff',
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#18181b',
-                            titleColor: '#ffffff',
-                            bodyColor: '#e4e4e7',
-                            padding: 10,
-                            borderRadius: 8,
-                            callbacks: {
-                                label: (item) => isRevenue
-                                    ? ' Revenue: ₹' + new Intl.NumberFormat('en-IN').format(item.raw)
-                                    : ' Orders: ' + new Intl.NumberFormat('en-IN').format(item.raw)
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: '#f4f4f5' },
-                            ticks: {
-                                font: { size: 11 },
-                                color: '#71717a',
-                                callback: (v) => isRevenue
-                                    ? '₹' + new Intl.NumberFormat('en-IN', { notation: 'compact' }).format(v)
-                                    : v
-                            },
-                            border: { dash: [4, 4] }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { font: { size: 11 }, color: '#71717a' }
-                        }
-                    }
-                }
-            });
-        }
-    }">
+    <main class="mx-auto w-full max-w-[92rem] px-4 py-8 sm:px-6 lg:px-8">
         {{-- Page Header --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -247,62 +162,45 @@
             </a>
         </div>
 
-        {{-- Main Analytics Grid: Chart + Categories --}}
+        {{-- Main Analytics Grid: Store Pulse Chart + Categories --}}
         <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {{-- Interactive Trend Chart (2 cols) --}}
-            <div class="lg:col-span-2 rounded-xl border border-zinc-200 bg-white shadow-sm">
+            {{-- Store Pulse — Interactive Trend Chart (2 cols) --}}
+            <div class="lg:col-span-2 rounded-xl border border-zinc-200 bg-white shadow-sm" id="store-pulse-widget">
                 <div class="flex flex-col gap-3 border-b border-zinc-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h2 class="text-base font-bold text-zinc-950">Performance Timeline</h2>
-                        <p class="text-xs text-zinc-500">Sales and order volume trajectory across the store.</p>
+                        <h2 class="text-base font-bold text-zinc-950">Store Pulse</h2>
+                        <p class="text-xs text-zinc-500">Live metrics across your entire store.</p>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
-                        {{-- Metric toggle --}}
-                        <div class="inline-flex rounded-lg bg-zinc-100 p-0.5 text-xs font-semibold">
+                        {{-- Metric selector dropdown --}}
+                        <div class="relative" id="sp-metric-dropdown">
                             <button
                                 type="button"
-                                @click="chartType = 'revenue'; updateChart()"
-                                :class="chartType === 'revenue' ? 'bg-white text-zinc-950 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'"
-                                class="rounded-md px-3 py-1 transition"
+                                id="sp-metric-trigger"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50"
                             >
-                                Revenue
+                                <span class="h-2 w-2 rounded-full" id="sp-metric-dot" style="background:#b42318"></span>
+                                <span id="sp-metric-label">Revenue</span>
+                                <svg class="h-3.5 w-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                             </button>
-                            <button
-                                type="button"
-                                @click="chartType = 'orders'; updateChart()"
-                                :class="chartType === 'orders' ? 'bg-white text-zinc-950 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'"
-                                class="rounded-md px-3 py-1 transition"
-                            >
-                                Orders
-                            </button>
+
+                            <div id="sp-metric-menu" class="absolute right-0 z-20 mt-1.5 w-48 origin-top-right rounded-xl border border-zinc-200 bg-white py-1 shadow-lg hidden">
+                                {{-- Menu items generated by JS --}}
+                            </div>
                         </div>
 
                         {{-- Period toggle --}}
                         <div class="inline-flex rounded-lg bg-zinc-100 p-0.5 text-xs font-semibold">
-                            <button
-                                type="button"
-                                @click="chartRange = '7'; updateChart()"
-                                :class="chartRange === '7' ? 'bg-white text-zinc-950 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'"
-                                class="rounded-md px-3 py-1 transition"
-                            >
-                                7 Days
-                            </button>
-                            <button
-                                type="button"
-                                @click="chartRange = '30'; updateChart()"
-                                :class="chartRange === '30' ? 'bg-white text-zinc-950 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'"
-                                class="rounded-md px-3 py-1 transition"
-                            >
-                                30 Days
-                            </button>
+                            <button type="button" data-sp-range="7" class="rounded-md px-3 py-1 transition bg-white text-zinc-950 shadow-sm">7 Days</button>
+                            <button type="button" data-sp-range="30" class="rounded-md px-3 py-1 transition text-zinc-500 hover:text-zinc-900">30 Days</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="p-6">
                     <div class="h-[280px] w-full">
-                        <canvas id="analyticsChart"></canvas>
+                        <canvas id="storePulseChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -393,12 +291,8 @@
                                                 </div>
                                             </a>
                                         </td>
-                                        <td class="px-3 py-3.5 text-right text-sm font-bold text-zinc-900">
-                                            {{ number_format($p->units_sold) }}
-                                        </td>
-                                        <td class="px-3 py-3.5 text-right text-sm font-bold text-zinc-900">
-                                            ₹{{ number_format($p->revenue_generated, 0) }}
-                                        </td>
+                                        <td class="px-3 py-3.5 text-right text-sm font-bold text-zinc-900">{{ number_format($p->units_sold) }}</td>
+                                        <td class="px-3 py-3.5 text-right text-sm font-bold text-zinc-900">₹{{ number_format($p->revenue_generated, 0) }}</td>
                                         <td class="px-3 py-3.5 text-center">
                                             @if($p->quantity === 0)
                                                 <span class="inline-flex rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">Out</span>
@@ -409,9 +303,7 @@
                                             @endif
                                         </td>
                                         <td class="py-3.5 pl-3 pr-6 text-right">
-                                            <a href="{{ route('admin.analytics.products.show', $p) }}" class="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200">
-                                                Analytics →
-                                            </a>
+                                            <a href="{{ route('admin.analytics.products.show', $p) }}" class="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200">Analytics →</a>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -428,9 +320,7 @@
                         <h2 class="text-base font-bold text-zinc-950">Inventory Alerts</h2>
                         <p class="text-xs text-zinc-500">Restock priorities</p>
                     </div>
-                    <a href="{{ route('admin.inventory.index') }}" class="text-xs font-semibold text-red-700 hover:text-red-800 transition">
-                        Inventory →
-                    </a>
+                    <a href="{{ route('admin.inventory.index') }}" class="text-xs font-semibold text-red-700 hover:text-red-800 transition">Inventory →</a>
                 </div>
 
                 @if($inventoryAlerts->isEmpty())
@@ -447,9 +337,7 @@
                             <li class="py-3 first:pt-0 last:pb-0">
                                 <div class="flex items-center justify-between">
                                     <div class="min-w-0 flex-1">
-                                        <a href="{{ route('admin.products.edit', $item) }}" class="truncate text-sm font-semibold text-zinc-900 hover:text-red-700 transition block">
-                                            {{ $item->name }}
-                                        </a>
+                                        <a href="{{ route('admin.products.edit', $item) }}" class="truncate text-sm font-semibold text-zinc-900 hover:text-red-700 transition block">{{ $item->name }}</a>
                                         <p class="text-xs text-zinc-400">SKU: {{ $item->sku ?? '—' }}</p>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -458,9 +346,7 @@
                                         @else
                                             <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">{{ $item->quantity }} remaining</span>
                                         @endif
-                                        <a href="{{ route('admin.products.edit', $item) }}" class="text-xs font-semibold text-zinc-500 hover:text-zinc-900 transition">
-                                            Edit
-                                        </a>
+                                        <a href="{{ route('admin.products.edit', $item) }}" class="text-xs font-semibold text-zinc-500 hover:text-zinc-900 transition">Edit</a>
                                     </div>
                                 </div>
                             </li>
@@ -477,9 +363,7 @@
                     <h2 class="text-base font-bold text-zinc-950">Recent Orders</h2>
                     <p class="text-xs text-zinc-500">Latest customer purchases with real-time status.</p>
                 </div>
-                <a href="{{ route('admin.orders.index') }}" class="text-xs font-semibold text-red-700 hover:text-red-800 transition">
-                    View All Orders →
-                </a>
+                <a href="{{ route('admin.orders.index') }}" class="text-xs font-semibold text-red-700 hover:text-red-800 transition">View All Orders →</a>
             </div>
 
             @if($recentOrders->isEmpty())
@@ -502,17 +386,13 @@
                             @foreach($recentOrders as $order)
                                 <tr class="transition hover:bg-zinc-50/60">
                                     <td class="py-3.5 pl-6 pr-3 text-sm font-bold text-zinc-900">
-                                        <a href="{{ route('admin.orders.show', $order) }}" class="text-zinc-900 hover:text-red-700 transition">
-                                            {{ $order->order_number }}
-                                        </a>
+                                        <a href="{{ route('admin.orders.show', $order) }}" class="text-zinc-900 hover:text-red-700 transition">{{ $order->order_number }}</a>
                                     </td>
                                     <td class="px-3 py-3.5 text-sm text-zinc-600">
                                         <div class="font-medium text-zinc-900">{{ $order->user?->name ?? 'Guest / Deleted' }}</div>
                                         <div class="text-xs text-zinc-400">{{ $order->user?->email ?? '—' }}</div>
                                     </td>
-                                    <td class="px-3 py-3.5 text-center text-xs text-zinc-500">
-                                        {{ $order->created_at->diffForHumans() }}
-                                    </td>
+                                    <td class="px-3 py-3.5 text-center text-xs text-zinc-500">{{ $order->created_at->diffForHumans() }}</td>
                                     <td class="px-3 py-3.5 text-center">
                                         @if($order->payment_status === 'paid')
                                             <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Paid</span>
@@ -533,13 +413,9 @@
                                             <span class="inline-flex items-center rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-600">{{ ucfirst($order->status) }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-3 py-3.5 text-right text-sm font-bold text-zinc-900">
-                                        ₹{{ number_format($order->total_amount, 0) }}
-                                    </td>
+                                    <td class="px-3 py-3.5 text-right text-sm font-bold text-zinc-900">₹{{ number_format($order->total_amount, 0) }}</td>
                                     <td class="py-3.5 pl-3 pr-6 text-right">
-                                        <a href="{{ route('admin.orders.show', $order) }}" class="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200">
-                                            Details →
-                                        </a>
+                                        <a href="{{ route('admin.orders.show', $order) }}" class="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200">Details →</a>
                                     </td>
                                 </tr>
                             @endforeach
@@ -550,6 +426,188 @@
         </div>
     </main>
 
-    {{-- Chart.js via CDN --}}
+    {{-- Chart.js CDN + Vanilla JS Store Pulse initialization --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        // ── Chart data from server ──
+        var data7  = @js($chartData7Days);
+        var data30 = @js($chartData30Days);
+
+        // ── Metric definitions ──
+        var metrics = [
+            { key: 'revenue',         label: 'Revenue',         color: '#b42318', bg: 'rgba(180,35,24,0.08)',  prefix: '₹', isCurrency: true  },
+            { key: 'sales',           label: 'Sales',           color: '#7c3aed', bg: 'rgba(124,58,237,0.08)', prefix: '₹', isCurrency: true  },
+            { key: 'orders',          label: 'Orders',          color: '#2563eb', bg: 'rgba(37,99,235,0.08)',  prefix: '',  isCurrency: false },
+            { key: 'products_sold',   label: 'Products Sold',   color: '#059669', bg: 'rgba(5,150,105,0.08)', prefix: '',  isCurrency: false },
+            { key: 'customers',       label: 'Customers',       color: '#0891b2', bg: 'rgba(8,145,178,0.08)', prefix: '',  isCurrency: false },
+            { key: 'avg_order_value', label: 'Avg Order Value', color: '#d97706', bg: 'rgba(217,119,6,0.08)', prefix: '₹', isCurrency: true  },
+            { key: 'discounts',       label: 'Discounts',       color: '#e11d48', bg: 'rgba(225,29,72,0.08)', prefix: '₹', isCurrency: true  },
+            { key: 'returns',         label: 'Returns',         color: '#6366f1', bg: 'rgba(99,102,241,0.08)',prefix: '',  isCurrency: false },
+        ];
+
+        var currentMetricIndex = 0;
+        var currentRange = '7';
+        var chartInstance = null;
+
+        // ── DOM references ──
+        var canvas       = document.getElementById('storePulseChart');
+        var metricDot    = document.getElementById('sp-metric-dot');
+        var metricLabel  = document.getElementById('sp-metric-label');
+        var metricTrigger= document.getElementById('sp-metric-trigger');
+        var metricMenu   = document.getElementById('sp-metric-menu');
+        var rangeBtns    = document.querySelectorAll('[data-sp-range]');
+
+        if (!canvas) return;
+
+        // ── Build metric dropdown menu ──
+        metrics.forEach(function(m, i) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sp-metric-option flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-medium transition hover:bg-zinc-50';
+            btn.dataset.index = i;
+            btn.innerHTML =
+                '<span class="h-2 w-2 shrink-0 rounded-full" style="background:' + m.color + '"></span>' +
+                '<span>' + m.label + '</span>' +
+                '<svg class="sp-check ml-auto h-3.5 w-3.5 text-emerald-600 hidden" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>';
+            btn.addEventListener('click', function() {
+                currentMetricIndex = i;
+                renderChart();
+                updateMetricUI();
+                metricMenu.classList.add('hidden');
+            });
+            metricMenu.appendChild(btn);
+        });
+
+        // ── Toggle dropdown ──
+        metricTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            metricMenu.classList.toggle('hidden');
+        });
+        document.addEventListener('click', function() {
+            metricMenu.classList.add('hidden');
+        });
+
+        // ── Range buttons ──
+        rangeBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                currentRange = btn.dataset.spRange;
+                rangeBtns.forEach(function(b) {
+                    if (b.dataset.spRange === currentRange) {
+                        b.className = 'rounded-md px-3 py-1 transition bg-white text-zinc-950 shadow-sm';
+                    } else {
+                        b.className = 'rounded-md px-3 py-1 transition text-zinc-500 hover:text-zinc-900';
+                    }
+                });
+                renderChart();
+            });
+        });
+
+        function updateMetricUI() {
+            var m = metrics[currentMetricIndex];
+            metricDot.style.background = m.color;
+            metricLabel.textContent = m.label;
+
+            metricMenu.querySelectorAll('.sp-metric-option').forEach(function(opt, i) {
+                var check = opt.querySelector('.sp-check');
+                if (i === currentMetricIndex) {
+                    opt.classList.add('text-zinc-950', 'font-semibold');
+                    opt.classList.remove('text-zinc-600');
+                    check.classList.remove('hidden');
+                } else {
+                    opt.classList.remove('text-zinc-950', 'font-semibold');
+                    opt.classList.add('text-zinc-600');
+                    check.classList.add('hidden');
+                }
+            });
+        }
+
+        function renderChart() {
+            var data = currentRange === '7' ? data7 : data30;
+            var m = metrics[currentMetricIndex];
+            var labels = data.map(function(d) { return d.date; });
+            var values = data.map(function(d) { return d[m.key] !== undefined ? d[m.key] : 0; });
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: m.label,
+                        data: values,
+                        borderColor: m.color,
+                        backgroundColor: m.bg,
+                        borderWidth: 2.5,
+                        tension: 0.35,
+                        fill: true,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: m.color,
+                        pointBorderWidth: 2,
+                        pointRadius: currentRange === '7' ? 4 : 2.5,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: m.color,
+                        pointHoverBorderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#18181b',
+                            titleColor: '#ffffff',
+                            bodyColor: '#e4e4e7',
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(item) {
+                                    var v = new Intl.NumberFormat('en-IN').format(item.raw);
+                                    return ' ' + m.label + ': ' + m.prefix + v;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f4f4f5' },
+                            ticks: {
+                                font: { size: 11 },
+                                color: '#71717a',
+                                callback: function(v) {
+                                    return m.isCurrency
+                                        ? '₹' + new Intl.NumberFormat('en-IN', { notation: 'compact' }).format(v)
+                                        : new Intl.NumberFormat('en-IN').format(v);
+                                }
+                            },
+                            border: { dash: [4, 4] }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 11 },
+                                color: '#71717a',
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: currentRange === '7' ? 7 : 10
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ── Initial render ──
+        updateMetricUI();
+        renderChart();
+    })();
+    </script>
 </x-admin.layout>

@@ -29,7 +29,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid gap-4 sm:grid-cols-2">
         <div>
             <label class="text-sm font-semibold text-zinc-800" for="category">Category</label>
             <input class="admin-input" id="category" name="category" type="text" value="{{ old('category', $product?->category) }}" placeholder="Pure spice" required>
@@ -87,7 +87,7 @@
         @error('origin') <p class="admin-error">{{ $message }}</p> @enderror
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid gap-4 sm:grid-cols-2">
         <div>
             <label class="text-sm font-semibold text-zinc-800" for="price">Selling price</label>
             <input class="admin-input" id="price" name="price" type="number" value="{{ old('price', $product?->price) }}" min="0" step="0.01" required>
@@ -100,7 +100,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid gap-4 sm:grid-cols-2">
         <div>
             <label class="text-sm font-semibold text-zinc-800" for="quantity">Quantity</label>
             <input class="admin-input" id="quantity" name="quantity" type="number" value="{{ old('quantity', $product?->quantity ?? 0) }}" min="0" max="1000000" required>
@@ -113,7 +113,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid gap-3 sm:grid-cols-3">
         <div>
             <label class="text-sm font-semibold text-zinc-800" for="rating">Rating</label>
             <input class="admin-input" id="rating" name="rating" type="number" value="{{ old('rating', $product?->rating ?? '4.5') }}" min="0" max="5" step="0.1" required>
@@ -144,7 +144,7 @@
         @endif
     </div>
 
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid gap-3 sm:grid-cols-2">
         <label class="flex min-h-12 items-center gap-3 rounded-lg border border-zinc-200 px-3 text-sm text-zinc-700">
             <input class="h-4 w-4 rounded border-zinc-300 text-red-600 focus:ring-red-500" name="is_featured" type="checkbox" value="1" @checked(old('is_featured', $product?->is_featured ?? false))>
             Hero featured

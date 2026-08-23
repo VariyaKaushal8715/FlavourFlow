@@ -124,7 +124,7 @@
                                         data-product-id="{{ $product['id'] ?? '' }}"
                                         data-product-slug="{{ $product['slug'] ?? '' }}"
                                         data-wishlisted="{{ in_array($product['id'] ?? null, $wishlistProductIds, true) ? 'true' : 'false' }}"
-                                        class="wishlist-button inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
+                                        class="wishlist-button inline-flex h-11 w-11 items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
                                         aria-label="Toggle wishlist"
                                     >
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -145,7 +145,7 @@
                         </div>
                     </a>
                     <button
-                        class="wishlist-button absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-zinc-950 shadow-sm transition hover:bg-white hover:text-red-700 data-[wishlisted=true]:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        class="wishlist-button absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-zinc-950 shadow-sm transition hover:bg-white hover:text-red-700 data-[wishlisted=true]:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                         type="button"
                         data-wishlist-button
                         data-product-id="{{ $product['id'] ?? '' }}"

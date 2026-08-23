@@ -193,7 +193,7 @@
                                         disabled
                                     >
                                 </div>
-                                <div class="grid gap-4 grid-cols-3">
+                                <div class="grid gap-4 sm:grid-cols-3">
                                     <input
                                         type="text"
                                         placeholder="Expiry MM/YY"

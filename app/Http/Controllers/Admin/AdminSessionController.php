@@ -25,7 +25,7 @@ class AdminSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.index'));
+        return redirect()->route('admin.index');
     }
 
     public function destroy(Request $request): RedirectResponse

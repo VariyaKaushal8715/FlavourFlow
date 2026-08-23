@@ -144,33 +144,22 @@
                 </aside>
 
                 <div class="min-w-0 flex-1">
-                    <header class="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur lg:px-8">
-                        <div class="flex items-center justify-between gap-4">
-                            <div class="flex items-center gap-3">
-                                <button
-                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-900 shadow-sm transition hover:border-zinc-300 lg:hidden"
-                                    type="button"
-                                    data-admin-sidebar-toggle
-                                    aria-label="Open menu"
-                                    aria-expanded="false"
-                                    aria-controls="admin-sidebar"
-                                >
-                                    <span class="flex flex-col gap-1">
-                                        <span class="h-0.5 w-4 rounded-full bg-current"></span>
-                                        <span class="h-0.5 w-4 rounded-full bg-current"></span>
-                                        <span class="h-0.5 w-4 rounded-full bg-current"></span>
-                                    </span>
-                                </button>
-                                <span class="text-xs font-medium text-zinc-500 hidden sm:inline">FlavourFlow E-Commerce Operations</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <a href="{{ route('admin.products.index') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800">
-                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                                    Add Product
-                                </a>
-                            </div>
-                        </div>
-                    </header>
+                    <div class="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+                        <button
+                            class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-900 shadow-sm transition hover:border-zinc-300"
+                            type="button"
+                            data-admin-sidebar-toggle
+                            aria-label="Open menu"
+                            aria-expanded="false"
+                            aria-controls="admin-sidebar"
+                        >
+                            <span class="flex flex-col gap-1">
+                                <span class="h-0.5 w-4 rounded-full bg-current"></span>
+                                <span class="h-0.5 w-4 rounded-full bg-current"></span>
+                                <span class="h-0.5 w-4 rounded-full bg-current"></span>
+                            </span>
+                        </button>
+                    </div>
                     {{ $slot }}
                 </div>
             </div>

@@ -250,3 +250,82 @@ test('storefront and admin pages contain the FlavourFlow favicon', function () {
         ->assertSuccessful()
         ->assertSee('flavourflow-mark.png');
 });
+
+test('opening or redirecting to /admin always shows dashboard overview and does not redirect to products', function () {
+    $admin = User::factory()->admin()->create();
+
+    // Direct open
+    $this->actingAs($admin)
+        ->get('/admin')
+        ->assertSuccessful()
+        ->assertSee('Executive Dashboard')
+        ->assertSee('Store Pulse')
+        ->assertSee('Top Selling Products')
+        ->assertDontSee('Add to catalog');
+
+    // Refresh
+    $this->actingAs($admin)
+        ->get('/admin')
+        ->assertSuccessful()
+        ->assertSee('Executive Dashboard');
+});
+
+test('admin login redirects directly to /admin dashboard overview', function () {
+    $admin = User::factory()->admin()->create([
+        'email' => 'admin-dashboard-test@flavourflow.test',
+        'password' => 'secret-password',
+    ]);
+
+    $this->post(route('admin.login'), [
+        'email' => 'admin-dashboard-test@flavourflow.test',
+        'password' => 'secret-password',
+    ])
+        ->assertRedirect(route('admin.index'))
+        ->assertRedirect('/admin');
+
+    $this->actingAs($admin)
+        ->get(route('admin.index'))
+        ->assertSuccessful()
+        ->assertSee('Executive Dashboard');
+});
+
+test('sidebar subsections open normally without redirecting to dashboard', function () {
+    $admin = User::factory()->admin()->create();
+
+    // Products
+    $this->actingAs($admin)
+        ->get(route('admin.products.index'))
+        ->assertSuccessful()
+        ->assertSee('Catalog control')
+        ->assertSee('Add to catalog');
+
+    // Orders
+    $this->actingAs($admin)
+        ->get(route('admin.orders.index'))
+        ->assertSuccessful()
+        ->assertSee('Customer Orders');
+
+    // Sales Analytics
+    $this->actingAs($admin)
+        ->get(route('admin.analytics.sales'))
+        ->assertSuccessful()
+        ->assertSee('Product Sales Leaderboard');
+
+    // Inventory
+    $this->actingAs($admin)
+        ->get(route('admin.inventory.index'))
+        ->assertSuccessful()
+        ->assertSee('Inventory Control');
+
+    // Categories
+    $this->actingAs($admin)
+        ->get(route('admin.categories.index'))
+        ->assertSuccessful()
+        ->assertSee('Categories Performance');
+
+    // Offers
+    $this->actingAs($admin)
+        ->get(route('admin.offers.index'))
+        ->assertSuccessful()
+        ->assertSee('Campaign control');
+});
