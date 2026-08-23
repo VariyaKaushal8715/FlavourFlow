@@ -93,7 +93,7 @@ Route::prefix('admin')
             ])->name('inventory.index');
 
             Route::resource('products', AdminProductController::class)
-                ->only(['store', 'edit', 'update', 'destroy']);
+                ->except(['show']);
             Route::resource('offers', AdminOfferController::class)
                 ->only(['index', 'store', 'edit', 'update', 'destroy']);
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');

@@ -36,9 +36,17 @@
                     <div class="space-y-2">
                         <a @class([
                             'flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition',
-                            'bg-white text-zinc-950 shadow-sm' => $activePage === 'dashboard',
-                            'text-white/70 hover:bg-white/5 hover:text-white' => $activePage !== 'dashboard',
+                            'bg-white text-zinc-950 shadow-sm' => $activePage === 'dashboard' && request()->routeIs('admin.index'),
+                            'text-white/70 hover:bg-white/5 hover:text-white' => ! ($activePage === 'dashboard' && request()->routeIs('admin.index')),
                         ]) href="{{ route('admin.index') }}">
+                            <span>Dashboard</span>
+                            <span class="text-xs uppercase tracking-[0.2em] text-current/60">Overview</span>
+                        </a>
+                        <a @class([
+                            'flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition',
+                            'bg-white text-zinc-950 shadow-sm' => $activePage === 'products',
+                            'text-white/70 hover:bg-white/5 hover:text-white' => $activePage !== 'products',
+                        ]) href="{{ route('admin.products.index') }}">
                             <span>Products</span>
                             <span class="text-xs uppercase tracking-[0.2em] text-current/60">Manage</span>
                         </a>
