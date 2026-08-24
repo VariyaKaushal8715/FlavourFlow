@@ -217,7 +217,7 @@
 
     <!-- Script for Rating Modal & Instant Submission Closing -->
    <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    const initRatingModal = () => {
         const modal = document.getElementById('rating-modal');
         const card = document.getElementById('rating-modal-card');
         const closeBtn = document.getElementById('close-rating-modal');
@@ -230,9 +230,9 @@
         const summaryRatingText = document.getElementById('summary-rating-text');
         const toastNotification = document.getElementById('rating-toast-notification');
 
-        const orderId = {{ $order->id }};
+        if (!modal) return;
+
         const rateUrl = "{{ route('orders.rate', $order->id) }}";
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
         const ratingLabels = {
             1: '1 STAR - NEEDS IMPROVEMENT',
@@ -242,7 +242,6 @@
             5: '5 STARS - EXCELLENT!'
         };
 
-        // Use existing rating if present, otherwise default to 5 for UI purposes
         let selectedRating = {{ $order->rating ?? 5 }};
         let hasExistingRating = {{ $order->rating !== null ? 'true' : 'false' }};
 
@@ -259,10 +258,8 @@
             }
         };
 
-        // Initialize star UI
         updateStarDisplay(selectedRating);
 
-        // Star interactions
         starBtns.forEach((btn) => {
             const starVal = parseInt(btn.dataset.starIndex, 10);
             btn.addEventListener('mouseenter', () => updateStarDisplay(starVal));
@@ -274,23 +271,31 @@
         });
 
         const openModal = () => {
-            modal.classList.remove('pointer-events-none', 'opacity-0');
-            modal.classList.add('opacity-100');
-            card.classList.remove('scale-95', 'opacity-0');
-            card.classList.add('scale-100', 'opacity-100');
+            modal.style.display = 'flex';
+            modal.classList.remove('hidden', 'pointer-events-none', 'opacity-0');
+            modal.classList.add('flex', 'opacity-100', 'pointer-events-auto');
+            if (card) {
+                card.classList.remove('scale-95', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            }
             modal.setAttribute('aria-hidden', 'false');
             document.body.classList.add('overflow-hidden');
         };
 
         const closeModal = () => {
-            card.classList.remove('scale-100', 'opacity-100');
-            card.classList.add('scale-95', 'opacity-0');
-            modal.classList.remove('opacity-100');
-            modal.classList.add('opacity-0');
+            if (card) {
+                card.classList.remove('scale-100', 'opacity-100');
+                card.classList.add('scale-95', 'opacity-0');
+            }
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('overflow-hidden');
+
             setTimeout(() => {
-                modal.classList.add('pointer-events-none');
-                modal.setAttribute('aria-hidden', 'true');
-                document.body.classList.remove('overflow-hidden');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                modal.style.display = 'none';
             }, 200);
         };
 
@@ -308,28 +313,48 @@
             }, 4000);
         };
 
-        // Event listeners
-        openBtn?.addEventListener('click', openModal);
-        closeBtn?.addEventListener('click', closeModal);
-        skipBtn?.addEventListener('click', closeModal);
-        modal?.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
+        openBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal();
         });
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !modal.classList.contains('pointer-events-none')) {
+
+        closeBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeModal();
+        });
+
+        skipBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeModal();
+        });
+
+        modal?.addEventListener('click', (e) => {
+            if (e.target === modal) {
                 closeModal();
             }
         });
 
-        // Auto‑open only when the order has no rating yet
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden') && !modal.classList.contains('pointer-events-none')) {
+                closeModal();
+            }
+        });
+
         if (!hasExistingRating) {
-            setTimeout(openModal, 500);
+            setTimeout(openModal, 400);
         }
 
-        // Submit handler
-        submitBtn?.addEventListener('click', async () => {
-            // Prevent double submission
+        submitBtn?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (submitBtn.disabled) return;
+
+            const submitBtnText = document.getElementById('submit-btn-text');
+            const originalText = submitBtnText ? submitBtnText.textContent : 'Submit Rating';
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+
             submitBtn.disabled = true;
+            if (submitBtnText) submitBtnText.textContent = 'Submitting...';
+
             const ratingToSubmit = selectedRating || 5;
             const feedbackToSubmit = feedbackText ? feedbackText.value.trim() : '';
 
@@ -345,28 +370,36 @@
                     body: JSON.stringify({ rating: ratingToSubmit, feedback: feedbackToSubmit })
                 });
 
+                const data = await response.json().catch(() => ({}));
+
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    alert(errorData.message || 'Failed to submit rating.');
+                    alert(data.message || 'Failed to submit rating. Please try again.');
                     return;
                 }
 
-                // Success handling
+                hasExistingRating = true;
                 if (summaryRatingText) {
                     summaryRatingText.textContent = `You rated this order ${ratingToSubmit}/5 stars — Thank you for your feedback!`;
                 }
                 if (openBtn) {
                     openBtn.textContent = 'Update Rating';
                 }
-                showToast();
                 closeModal();
+                showToast();
             } catch (err) {
                 console.error('Rating submission error:', err);
                 alert('Network error while submitting rating. Please try again.');
             } finally {
                 submitBtn.disabled = false;
+                if (submitBtnText) submitBtnText.textContent = originalText;
             }
         });
-    });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initRatingModal);
+    } else {
+        initRatingModal();
+    }
 </script>
 </x-site.layout>

@@ -11,14 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('orders', function (Blueprint $table) {
+        if (Schema::hasTable('orders')) {
+            return;
+        }
+
+        Schema::create('orders', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('order_id')->nullable()->unique();
             $table->string('order_number')->nullable()->unique();
             $table->string('status')->default('Confirmed');
             $table->string('payment_status')->default('pending');
-            $table->string('payment_method')->default('online');
+            $table->string('payment_method')->nullable()->default('cod');
             $table->string('name')->nullable();
             $table->string('mobile')->nullable();
             $table->string('email')->nullable();
@@ -31,6 +35,8 @@ return new class extends Migration
             $table->decimal('delivery_charge', 10, 2)->default(0);
             $table->decimal('total', 10, 2)->default(0);
             $table->decimal('total_amount', 10, 2)->default(0);
+            $table->unsignedTinyInteger('rating')->nullable();
+            $table->text('feedback')->nullable();
             $table->timestamps();
         });
     }
