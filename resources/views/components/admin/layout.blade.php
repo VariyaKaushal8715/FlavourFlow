@@ -70,6 +70,7 @@
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
                                     <span>Orders</span>
                                 </div>
+                                <span data-admin-orders-badge class="hidden rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm transition-all duration-300"></span>
                             </a>
 
                             <a @class([
@@ -161,6 +162,57 @@
                         </button>
                     </div>
                     {{ $slot }}
+
+                    <!-- Dynamic Admin Order Notification Toast -->
+                    <aside
+                        id="admin-order-notification-toast"
+                        data-admin-order-notification
+                        data-summary-url="{{ route('admin.orders.unread_summary') }}"
+                        data-mark-viewed-url="{{ route('admin.orders.mark_viewed') }}"
+                        data-orders-url="{{ route('admin.orders.index') }}"
+                        data-is-orders-page="{{ request()->routeIs('admin.orders.index') ? 'true' : 'false' }}"
+                        aria-live="polite"
+                        class="fixed bottom-6 right-6 z-50 hidden max-w-md transition-all duration-300 ease-out"
+                    >
+                        <div class="flex items-center gap-3.5 rounded-2xl border border-zinc-700/60 bg-zinc-950/95 p-4 text-white shadow-2xl backdrop-blur-md ring-1 ring-white/10 hover:border-zinc-500 transition cursor-pointer" data-admin-order-notification-card>
+                            <div class="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-600/20 text-red-400 ring-1 ring-red-500/30">
+                                <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex h-3 w-3 rounded-full bg-red-500"></span>
+                                </span>
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                </svg>
+                            </div>
+
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-red-400">New Order Alert</p>
+                                <p data-admin-order-notification-message class="mt-0.5 text-sm font-semibold text-zinc-100 leading-snug">
+                                    You have new orders. Tap to view orders.
+                                </p>
+                            </div>
+
+                            <div class="flex items-center gap-1.5 flex-shrink-0">
+                                <a
+                                    href="{{ route('admin.orders.index') }}"
+                                    data-admin-order-notification-action
+                                    class="inline-flex items-center justify-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400"
+                                >
+                                    View
+                                </a>
+                                <button
+                                    type="button"
+                                    data-admin-order-notification-close
+                                    aria-label="Dismiss notification"
+                                    class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition"
+                                >
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </aside>
                 </div>
             </div>
         @else

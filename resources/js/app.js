@@ -832,6 +832,112 @@ const initializeSiteNav = () => {
     });
 };
 
+const initializeAdminOrderNotifications = () => {
+    const toast = document.querySelector('[data-admin-order-notification]');
+    const badge = document.querySelector('[data-admin-orders-badge]');
+
+    if (!toast && !badge) {
+        return;
+    }
+
+    const summaryUrl = toast?.dataset.summaryUrl;
+    const ordersUrl = toast?.dataset.ordersUrl || '/admin/orders';
+    const messageEl = toast?.querySelector('[data-admin-order-notification-message]');
+    const closeBtn = toast?.querySelector('[data-admin-order-notification-close]');
+    const card = toast?.querySelector('[data-admin-order-notification-card]');
+
+    let dismissedCount = 0;
+    let isFetching = false;
+
+    const updateUI = (data) => {
+        const hasUnread = Boolean(data?.has_unread && data?.order_count > 0);
+        const orderCount = Number(data?.order_count) || 0;
+
+        if (badge) {
+            if (hasUnread) {
+                badge.textContent = orderCount > 99 ? '99+' : `${orderCount}`;
+                badge.classList.remove('hidden');
+            } else {
+                badge.textContent = '';
+                badge.classList.add('hidden');
+            }
+        }
+
+        if (toast && messageEl) {
+            if (hasUnread) {
+                messageEl.textContent = data.message || `You have ${orderCount} new orders. Tap to view orders.`;
+
+                if (dismissedCount !== orderCount) {
+                    toast.classList.remove('hidden');
+                }
+            } else {
+                toast.classList.add('hidden');
+                dismissedCount = 0;
+            }
+        }
+    };
+
+    const fetchSummary = async () => {
+        if (!summaryUrl || isFetching) {
+            return;
+        }
+
+        try {
+            isFetching = true;
+            const response = await fetch(summaryUrl, {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                cache: 'no-store',
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            updateUI(data);
+        } catch {
+            // Keep existing UI state if fetch fails temporarily
+        } finally {
+            isFetching = false;
+        }
+    };
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (toast) {
+                toast.classList.add('hidden');
+            }
+            if (badge && badge.textContent) {
+                dismissedCount = parseInt(badge.textContent, 10) || 0;
+            }
+        });
+    }
+
+    if (card) {
+        card.addEventListener('click', (event) => {
+            if (event.target.closest('[data-admin-order-notification-close]')) {
+                return;
+            }
+            window.location.href = ordersUrl;
+        });
+    }
+
+    fetchSummary();
+
+    const intervalId = window.setInterval(fetchSummary, 8000);
+
+    window.addEventListener('focus', fetchSummary);
+
+    window.addEventListener('beforeunload', () => {
+        window.clearInterval(intervalId);
+    });
+};
+
 restoreCachedBrandTheme();
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -842,6 +948,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initializeTrustDialog();
     initializeAdminSidebar();
     initializeSiteNav();
+    initializeAdminOrderNotifications();
     requestAnimationFrame(() => document.body.classList.add('is-ready'));
 
     document.querySelectorAll('[data-card-delay]').forEach((element) => {
