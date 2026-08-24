@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\Account\UserProfileController;
+use App\Http\Controllers\Admin\AdminAiController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminDashboardController;
@@ -121,6 +122,13 @@ Route::prefix('admin')
             // Offers
             Route::resource('offers', AdminOfferController::class)
                 ->only(['index', 'store', 'edit', 'update', 'destroy']);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Temporary AI Engine Diagnostics (Isolated Step 1 verification)
+            |--------------------------------------------------------------------------
+            */
+            Route::get('/ai-status', [AdminAiController::class, 'index'])->name('ai.index');
 
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
         });
