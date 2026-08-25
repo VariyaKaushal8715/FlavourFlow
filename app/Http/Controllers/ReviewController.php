@@ -96,10 +96,19 @@ class ReviewController extends Controller
         }
 
         // 4. Create the review
+        // 4. Retrieve names and unit details securely from database
+        $orderItem = $order->items()->where('product_id', $validated['product_id'])->first();
+        $productName = $orderItem->product_name ?? ($orderItem->product?->name ?? 'Unknown Product');
+        $unit = $orderItem->unit ?? ($orderItem->product?->unit ?? '100g');
+
+        // 5. Create the review
         $review = Review::create([
             'user_id' => $user->id,
+            'user_name' => $user->name,
             'order_id' => $validated['order_id'],
             'product_id' => $validated['product_id'],
+            'product_name' => $productName,
+            'unit' => $unit,
             'rating' => $validated['rating'],
             'review_text' => $validated['review_text'],
         ]);
