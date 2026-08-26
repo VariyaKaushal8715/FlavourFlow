@@ -35,4 +35,28 @@ return [
         'chat' => true,
         'analytics_insights' => true,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI Provider (Step 4)
+    |--------------------------------------------------------------------------
+    | Provider class for LLM reasoning. Uses NullProvider by default (deterministic).
+    | Swap to OpenRouter, Groq, Gemini, OpenAI, or Ollama when ready.
+    */
+
+    'provider' => [
+        'class' => \App\AI\Providers\NullProvider::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI Brain (Step 4)
+    |--------------------------------------------------------------------------
+    | Supported languages for multilingual reasoning output.
+    */
+
+    'brain' => [
+        'languages' => ['en', 'hi', 'gu', 'hinglish', 'gujenglish'],
+        'default_language' => 'en',
+    ],
 ];

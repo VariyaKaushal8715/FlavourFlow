@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Admin;
 use App\AI\Adapters\FlavourFlowAdapter;
 use App\AI\Contracts\AiAdapterInterface;
 use App\AI\Contracts\AiAnalyzerInterface;
+use App\AI\Contracts\AiBrainInterface;
 use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Contracts\AiEngineInterface;
 use App\AI\Contracts\AiEventTrackerInterface;
+use App\AI\Contracts\AiProviderInterface;
 use App\AI\Contracts\AiRequestInterface;
 use App\AI\Contracts\AiResponseInterface;
 use App\AI\Core\AiEngine;
 use App\AI\Core\AiRequest;
+use App\AI\Core\AiReasoningResponse;
 use App\AI\Models\AiEvent;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
@@ -49,6 +52,12 @@ class AdminAiController extends Controller
             // Step 3: Context & Analysis Layer Verification Checks
             'context_builder_service' => $this->checkContextBuilderService(),
             'analyzer_service' => $this->checkAnalyzerService(),
+
+            // Step 4: AI Brain & Reasoning Layer Verification Checks
+            'provider_interface' => $this->checkProviderInterface(),
+            'brain_service' => $this->checkBrainService(),
+            'brain_customer_reasoning' => $this->checkBrainCustomerReasoning(),
+            'brain_admin_reasoning' => $this->checkBrainAdminReasoning(),
         ];
 
         $allPassed = collect($checks)->every(fn (array $check): bool => $check['passed'] === true);
@@ -64,6 +73,7 @@ class AdminAiController extends Controller
         // Build live sample context & insights for UI inspection
         $sampleContext = [];
         $sampleAnalysis = [];
+        $sampleBrainResponse = null;
         if (app()->bound(AiContextBuilderInterface::class) && app()->bound(AiAnalyzerInterface::class)) {
             /** @var AiContextBuilderInterface $builder */
             $builder = app(AiContextBuilderInterface::class);
@@ -74,6 +84,17 @@ class AdminAiController extends Controller
             $sampleAnalysis = $analyzer->analyze($sampleContext);
         }
 
+        // Step 4: Generate a sample brain reasoning response
+        if (app()->bound(AiBrainInterface::class)) {
+            /** @var AiBrainInterface $brain */
+            $brain = app(AiBrainInterface::class);
+            $sampleBrainResponse = $brain->reasonForCustomer(
+                $sampleContext !== [] ? $sampleContext : ['total_events' => 0],
+                'What should I buy?',
+                'en'
+            );
+        }
+
         return view('admin.ai.index', [
             'checks' => $checks,
             'isReady' => $allPassed,
@@ -81,6 +102,7 @@ class AdminAiController extends Controller
             'eventCounts' => $eventCounts,
             'sampleContext' => $sampleContext,
             'sampleAnalysis' => $sampleAnalysis,
+            'sampleBrainResponse' => $sampleBrainResponse,
         ]);
     }
 
@@ -722,6 +744,174 @@ class AdminAiController extends Controller
             return [
                 'name' => 'AI Analyzer Service',
                 'description' => 'Resolves AiAnalyzerInterface from container and verifies analyze() pattern detection.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkProviderInterface(): array
+    {
+        try {
+            if (! app()->bound(AiProviderInterface::class)) {
+                return [
+                    'name' => 'AI Provider Interface',
+                    'description' => 'Resolves AiProviderInterface from container and verifies provider availability.',
+                    'passed' => false,
+                    'details' => 'AiProviderInterface is not bound in service container.',
+                ];
+            }
+
+            /** @var AiProviderInterface $provider */
+            $provider = app(AiProviderInterface::class);
+
+            if (! $provider->isAvailable()) {
+                return [
+                    'name' => 'AI Provider Interface',
+                    'description' => 'Resolves AiProviderInterface from container and verifies provider availability.',
+                    'passed' => false,
+                    'details' => "Provider '{$provider->getName()}' resolved but isAvailable() returned false.",
+                ];
+            }
+
+            $languages = $provider->getSupportedLanguages();
+
+            return [
+                'name' => 'AI Provider Interface',
+                'description' => 'Resolves AiProviderInterface from container and verifies provider availability.',
+                'passed' => true,
+                'details' => "Provider '{$provider->getName()}' available. Supports ".count($languages).' languages: '.implode(', ', $languages).'.',
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'AI Provider Interface',
+                'description' => 'Resolves AiProviderInterface from container and verifies provider availability.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkBrainService(): array
+    {
+        try {
+            if (! app()->bound(AiBrainInterface::class)) {
+                return [
+                    'name' => 'AI Brain Service',
+                    'description' => 'Resolves AiBrainInterface from container and verifies isReady() state.',
+                    'passed' => false,
+                    'details' => 'AiBrainInterface is not bound in service container.',
+                ];
+            }
+
+            /** @var AiBrainInterface $brain */
+            $brain = app(AiBrainInterface::class);
+
+            if (! $brain->isReady()) {
+                return [
+                    'name' => 'AI Brain Service',
+                    'description' => 'Resolves AiBrainInterface from container and verifies isReady() state.',
+                    'passed' => false,
+                    'details' => 'Brain resolved but isReady() returned false.',
+                ];
+            }
+
+            $languages = $brain->getSupportedLanguages();
+
+            return [
+                'name' => 'AI Brain Service',
+                'description' => 'Resolves AiBrainInterface from container and verifies isReady() state.',
+                'passed' => true,
+                'details' => 'Resolved '.get_class($brain).'. Ready. Supports '.count($languages).' languages: '.implode(', ', $languages).'.',
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'AI Brain Service',
+                'description' => 'Resolves AiBrainInterface from container and verifies isReady() state.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkBrainCustomerReasoning(): array
+    {
+        try {
+            /** @var AiBrainInterface $brain */
+            $brain = app(AiBrainInterface::class);
+            /** @var AiContextBuilderInterface $builder */
+            $builder = app(AiContextBuilderInterface::class);
+
+            $context = $builder->buildContext();
+            $response = $brain->reasonForCustomer($context, 'recommend something', 'en');
+
+            if (! $response instanceof AiReasoningResponse) {
+                return [
+                    'name' => 'Customer Reasoning Engine',
+                    'description' => 'Verifies AI Brain produces structured customer-facing reasoning from real context.',
+                    'passed' => false,
+                    'details' => 'reasonForCustomer() did not return an AiReasoningResponse.',
+                ];
+            }
+
+            return [
+                'name' => 'Customer Reasoning Engine',
+                'description' => 'Verifies AI Brain produces structured customer-facing reasoning from real context.',
+                'passed' => true,
+                'details' => "Intent: {$response->intent}, Confidence: {$response->confidence} ({$response->getConfidenceLabel()}), Provider: {$response->provider}.",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'Customer Reasoning Engine',
+                'description' => 'Verifies AI Brain produces structured customer-facing reasoning from real context.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkBrainAdminReasoning(): array
+    {
+        try {
+            /** @var AiBrainInterface $brain */
+            $brain = app(AiBrainInterface::class);
+            /** @var AiContextBuilderInterface $builder */
+            $builder = app(AiContextBuilderInterface::class);
+
+            $context = $builder->buildContext();
+            $response = $brain->reasonForAdmin($context, 'sales overview');
+
+            if (! $response instanceof AiReasoningResponse) {
+                return [
+                    'name' => 'Admin Reasoning Engine',
+                    'description' => 'Verifies AI Brain produces structured admin-facing business intelligence reasoning.',
+                    'passed' => false,
+                    'details' => 'reasonForAdmin() did not return an AiReasoningResponse.',
+                ];
+            }
+
+            return [
+                'name' => 'Admin Reasoning Engine',
+                'description' => 'Verifies AI Brain produces structured admin-facing business intelligence reasoning.',
+                'passed' => true,
+                'details' => "Intent: {$response->intent}, Confidence: {$response->confidence} ({$response->getConfidenceLabel()}), Provider: {$response->provider}.",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'Admin Reasoning Engine',
+                'description' => 'Verifies AI Brain produces structured admin-facing business intelligence reasoning.',
                 'passed' => false,
                 'details' => 'Error: '.$e->getMessage(),
             ];
