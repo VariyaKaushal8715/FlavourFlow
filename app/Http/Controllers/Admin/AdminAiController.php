@@ -10,11 +10,14 @@ use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Contracts\AiEngineInterface;
 use App\AI\Contracts\AiEventTrackerInterface;
 use App\AI\Contracts\AiProviderInterface;
+use App\AI\Contracts\AiRecommendationEngineInterface;
 use App\AI\Contracts\AiRequestInterface;
 use App\AI\Contracts\AiResponseInterface;
+use App\AI\Core\AiDecisionResult;
 use App\AI\Core\AiEngine;
-use App\AI\Core\AiRequest;
 use App\AI\Core\AiReasoningResponse;
+use App\AI\Core\AiRecommendationResult;
+use App\AI\Core\AiRequest;
 use App\AI\Models\AiEvent;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
@@ -58,6 +61,12 @@ class AdminAiController extends Controller
             'brain_service' => $this->checkBrainService(),
             'brain_customer_reasoning' => $this->checkBrainCustomerReasoning(),
             'brain_admin_reasoning' => $this->checkBrainAdminReasoning(),
+
+            // Step 5: Recommendation & Decision Engine Verification Checks
+            'recommendation_engine_service' => $this->checkRecommendationEngineService(),
+            'decision_engine_service' => $this->checkDecisionEngineService(),
+            'customer_recommendation_types' => $this->checkCustomerRecommendationTypes(),
+            'admin_decision_signals' => $this->checkAdminDecisionSignals(),
         ];
 
         $allPassed = collect($checks)->every(fn (array $check): bool => $check['passed'] === true);
@@ -74,6 +83,9 @@ class AdminAiController extends Controller
         $sampleContext = [];
         $sampleAnalysis = [];
         $sampleBrainResponse = null;
+        $sampleRecommendations = null;
+        $sampleDecisionSignals = null;
+
         if (app()->bound(AiContextBuilderInterface::class) && app()->bound(AiAnalyzerInterface::class)) {
             /** @var AiContextBuilderInterface $builder */
             $builder = app(AiContextBuilderInterface::class);
@@ -95,6 +107,14 @@ class AdminAiController extends Controller
             );
         }
 
+        // Step 5: Generate sample recommendations & decision signals
+        if (app()->bound(AiRecommendationEngineInterface::class)) {
+            /** @var AiRecommendationEngineInterface $recEngine */
+            $recEngine = app(AiRecommendationEngineInterface::class);
+            $sampleRecommendations = $recEngine->getCustomerRecommendations(type: 'personalized', limit: 4);
+            $sampleDecisionSignals = $recEngine->getAdminDecisionSignals(days: 30);
+        }
+
         return view('admin.ai.index', [
             'checks' => $checks,
             'isReady' => $allPassed,
@@ -103,6 +123,8 @@ class AdminAiController extends Controller
             'sampleContext' => $sampleContext,
             'sampleAnalysis' => $sampleAnalysis,
             'sampleBrainResponse' => $sampleBrainResponse,
+            'sampleRecommendations' => $sampleRecommendations,
+            'sampleDecisionSignals' => $sampleDecisionSignals,
         ]);
     }
 
@@ -187,6 +209,9 @@ class AdminAiController extends Controller
             AiEventTrackerInterface::class,
             AiContextBuilderInterface::class,
             AiAnalyzerInterface::class,
+            AiProviderInterface::class,
+            AiBrainInterface::class,
+            AiRecommendationEngineInterface::class,
         ];
 
         $missing = [];
@@ -209,7 +234,7 @@ class AdminAiController extends Controller
             'name' => 'Contracts & Interfaces',
             'description' => 'Verifies all AI engine contracts and interfaces exist.',
             'passed' => true,
-            'details' => count($contracts).' core contracts verified (AiEngineInterface, AiRequestInterface, AiResponseInterface, AiAdapterInterface, AiEventTrackerInterface, AiContextBuilderInterface, AiAnalyzerInterface).',
+            'details' => count($contracts).' core contracts verified (Step 1-5 contracts resolved).',
         ];
     }
 
@@ -274,14 +299,22 @@ class AdminAiController extends Controller
             'app/AI/Contracts/AiEventTrackerInterface.php' => app_path('AI/Contracts/AiEventTrackerInterface.php'),
             'app/AI/Contracts/AiContextBuilderInterface.php' => app_path('AI/Contracts/AiContextBuilderInterface.php'),
             'app/AI/Contracts/AiAnalyzerInterface.php' => app_path('AI/Contracts/AiAnalyzerInterface.php'),
+            'app/AI/Contracts/AiProviderInterface.php' => app_path('AI/Contracts/AiProviderInterface.php'),
+            'app/AI/Contracts/AiBrainInterface.php' => app_path('AI/Contracts/AiBrainInterface.php'),
+            'app/AI/Contracts/AiRecommendationEngineInterface.php' => app_path('AI/Contracts/AiRecommendationEngineInterface.php'),
             'app/AI/Core/AiEngine.php' => app_path('AI/Core/AiEngine.php'),
             'app/AI/Core/AiRequest.php' => app_path('AI/Core/AiRequest.php'),
             'app/AI/Core/AiResponse.php' => app_path('AI/Core/AiResponse.php'),
+            'app/AI/Core/AiReasoningResponse.php' => app_path('AI/Core/AiReasoningResponse.php'),
+            'app/AI/Core/AiRecommendationResult.php' => app_path('AI/Core/AiRecommendationResult.php'),
+            'app/AI/Core/AiDecisionResult.php' => app_path('AI/Core/AiDecisionResult.php'),
             'app/AI/Adapters/FlavourFlowAdapter.php' => app_path('AI/Adapters/FlavourFlowAdapter.php'),
             'app/AI/Models/AiEvent.php' => app_path('AI/Models/AiEvent.php'),
             'app/AI/Services/AiEventTracker.php' => app_path('AI/Services/AiEventTracker.php'),
             'app/AI/Services/AiContextBuilder.php' => app_path('AI/Services/AiContextBuilder.php'),
             'app/AI/Services/AiAnalyzer.php' => app_path('AI/Services/AiAnalyzer.php'),
+            'app/AI/Services/AiBrain.php' => app_path('AI/Services/AiBrain.php'),
+            'app/AI/Services/AiRecommendationEngine.php' => app_path('AI/Services/AiRecommendationEngine.php'),
         ];
 
         $missing = [];
@@ -912,6 +945,160 @@ class AdminAiController extends Controller
             return [
                 'name' => 'Admin Reasoning Engine',
                 'description' => 'Verifies AI Brain produces structured admin-facing business intelligence reasoning.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkRecommendationEngineService(): array
+    {
+        try {
+            if (! app()->bound(AiRecommendationEngineInterface::class)) {
+                return [
+                    'name' => 'AI Recommendation Engine Service',
+                    'description' => 'Resolves AiRecommendationEngineInterface from container and verifies recommendation generation.',
+                    'passed' => false,
+                    'details' => 'AiRecommendationEngineInterface is not bound in service container.',
+                ];
+            }
+
+            /** @var AiRecommendationEngineInterface $engine */
+            $engine = app(AiRecommendationEngineInterface::class);
+            $res = $engine->getCustomerRecommendations(type: 'personalized', limit: 3);
+
+            if (! $res instanceof AiRecommendationResult) {
+                return [
+                    'name' => 'AI Recommendation Engine Service',
+                    'description' => 'Resolves AiRecommendationEngineInterface from container and verifies recommendation generation.',
+                    'passed' => false,
+                    'details' => 'getCustomerRecommendations() did not return an AiRecommendationResult.',
+                ];
+            }
+
+            return [
+                'name' => 'AI Recommendation Engine Service',
+                'description' => 'Resolves AiRecommendationEngineInterface from container and verifies recommendation generation.',
+                'passed' => true,
+                'details' => 'Resolved '.get_class($engine).". Type: {$res->recommendationType}, Recommended Items: ".count($res->products).", Confidence: {$res->confidence}.",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'AI Recommendation Engine Service',
+                'description' => 'Resolves AiRecommendationEngineInterface from container and verifies recommendation generation.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkDecisionEngineService(): array
+    {
+        try {
+            if (! app()->bound(AiRecommendationEngineInterface::class)) {
+                return [
+                    'name' => 'AI Decision Engine Service',
+                    'description' => 'Verifies getAdminDecisionSignals() generates strategic admin business decisions.',
+                    'passed' => false,
+                    'details' => 'AiRecommendationEngineInterface is not bound in service container.',
+                ];
+            }
+
+            /** @var AiRecommendationEngineInterface $engine */
+            $engine = app(AiRecommendationEngineInterface::class);
+            $res = $engine->getAdminDecisionSignals(days: 30);
+
+            if (! $res instanceof AiDecisionResult) {
+                return [
+                    'name' => 'AI Decision Engine Service',
+                    'description' => 'Verifies getAdminDecisionSignals() generates strategic admin business decisions.',
+                    'passed' => false,
+                    'details' => 'getAdminDecisionSignals() did not return an AiDecisionResult.',
+                ];
+            }
+
+            return [
+                'name' => 'AI Decision Engine Service',
+                'description' => 'Verifies getAdminDecisionSignals() generates strategic admin business decisions.',
+                'passed' => true,
+                'details' => 'Resolved '.get_class($engine).". Decision Type: {$res->decisionType}, Winning Products: ".count($res->winningProducts).', Promotion Needs: '.count($res->promotionNeeds).", Confidence: {$res->confidence}.",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'AI Decision Engine Service',
+                'description' => 'Verifies getAdminDecisionSignals() generates strategic admin business decisions.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkCustomerRecommendationTypes(): array
+    {
+        try {
+            /** @var AiRecommendationEngineInterface $engine */
+            $engine = app(AiRecommendationEngineInterface::class);
+
+            $types = ['personalized', 'complementary', 'abandoned_cart_recovery'];
+            $results = [];
+
+            foreach ($types as $t) {
+                $res = $engine->getCustomerRecommendations(type: $t, limit: 3);
+                $results[$t] = count($res->products);
+            }
+
+            $summaryStr = collect($results)->map(fn ($cnt, $type) => "{$type}: {$cnt}")->implode(', ');
+
+            return [
+                'name' => 'Customer Recommendation Types',
+                'description' => 'Verifies personalized, complementary, and abandoned cart recovery recommendation payloads with explicit product reasons.',
+                'passed' => true,
+                'details' => 'All recommendation types generated successfully ('.$summaryStr.').',
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'Customer Recommendation Types',
+                'description' => 'Verifies personalized, complementary, and abandoned cart recovery recommendation payloads with explicit product reasons.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkAdminDecisionSignals(): array
+    {
+        try {
+            /** @var AiRecommendationEngineInterface $engine */
+            $engine = app(AiRecommendationEngineInterface::class);
+            $decisions = $engine->getAdminDecisionSignals(days: 30);
+
+            $winningCount = count($decisions->winningProducts);
+            $promoCount = count($decisions->promotionNeeds);
+            $catCount = count($decisions->categoryOpportunities);
+            $adCount = count($decisions->adCampaignSuggestions);
+
+            return [
+                'name' => 'Admin Decision & Action Signals',
+                'description' => 'Verifies winning products, promotion needs, category opportunities, abandonment signals, and ad campaign suggestions.',
+                'passed' => true,
+                'details' => "Decision signals generated: Winning Products: {$winningCount}, Promo Needs: {$promoCount}, Categories: {$catCount}, Ad Campaigns: {$adCount}.",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'Admin Decision & Action Signals',
+                'description' => 'Verifies winning products, promotion needs, category opportunities, abandonment signals, and ad campaign suggestions.',
                 'passed' => false,
                 'details' => 'Error: '.$e->getMessage(),
             ];

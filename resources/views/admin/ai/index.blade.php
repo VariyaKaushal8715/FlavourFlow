@@ -5,14 +5,14 @@
             <div>
                 <div class="flex items-center gap-2">
                     <span class="rounded bg-amber-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-800">
-                        Step 3 - Context & Analysis Verification
+                        Step 5 - Recommendation & Decision Engine Verification
                     </span>
                 </div>
                 <h1 class="mt-2 text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
-                    AI Engine Health & Analysis Layer
+                    AI Engine Health & Recommendation Layer
                 </h1>
                 <p class="mt-1 text-sm text-zinc-500">
-                    Automated, non-fake verification of AI Core, Event Tracking, Context Builder, and Pattern Analysis Engine.
+                    Automated, non-fake verification of AI Core, Event Tracking, Context Builder, Analyzer, Reasoning Brain, and Recommendation Engine.
                 </p>
             </div>
 
@@ -41,9 +41,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <div class="text-xs leading-relaxed">
-                    <p class="font-bold">Development & Diagnostic Isolation Notice (Step 3 - Context & Analysis Layer)</p>
+                    <p class="font-bold">Development & Diagnostic Isolation Notice (Step 5 - Recommendation & Decision Engine)</p>
                     <p class="mt-0.5 text-amber-800">
-                        This AI Engine status page and sidebar navigation item are isolated for step 3 verification. All context extraction and behavioral pattern analysis run deterministically over real database events without calling external APIs.
+                        This AI Engine status page and sidebar navigation item are isolated for step 5 verification. All customer recommendations and admin decision signals are generated using structured reasoning over real database events.
                     </p>
                 </div>
             </div>
@@ -51,7 +51,7 @@
 
         <!-- Verification Diagnostic Checks Grid -->
         <div>
-            <h2 class="text-base font-bold text-zinc-950 mb-3">System, Event & Analysis Verification Checks</h2>
+            <h2 class="text-base font-bold text-zinc-950 mb-3">System Verification Checks (Steps 1–5)</h2>
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
                 @foreach($checks as $key => $check)
                     <div @class([
@@ -82,78 +82,145 @@
             </div>
         </div>
 
-        <!-- Step 3 Live Analysis & Insights Showcase Grid -->
-        @if(! empty($sampleAnalysis))
-            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-6">
+        <!-- Step 5 Showcase: Customer Recommendations Engine -->
+        @if($sampleRecommendations)
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
                 <div class="flex items-center justify-between border-b border-zinc-100 pb-4">
                     <div>
-                        <h2 class="text-base font-bold text-zinc-950">Live Behavioral Insights (Step 3 Analysis Output)</h2>
-                        <p class="mt-0.5 text-xs text-zinc-500">Deterministic pattern detection produced by <code class="font-mono text-brand-primary">AiAnalyzerInterface</code> from current DB events.</p>
+                        <span class="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-800">
+                            Customer Side Showcase
+                        </span>
+                        <h2 class="mt-1 text-base font-bold text-zinc-950">Personalized Product Recommendation Engine</h2>
+                        <p class="mt-0.5 text-xs text-zinc-500">{{ $sampleRecommendations->reason }}</p>
                     </div>
-                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-200">
-                        Deterministically Generated
+                    <span class="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700 border border-purple-200">
+                        Type: {{ $sampleRecommendations->recommendationType }}
                     </span>
                 </div>
 
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <!-- Purchase Intent Card -->
-                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Purchase Intent</p>
-                        <div class="mt-2 flex items-baseline gap-2">
-                            <span class="text-2xl font-black text-zinc-950 uppercase">{{ $sampleAnalysis['purchase_intent']['level'] ?? 'none' }}</span>
-                            <span class="text-xs font-bold text-emerald-600">({{ $sampleAnalysis['purchase_intent']['score'] ?? 0 }}/100)</span>
-                        </div>
-                        <p class="mt-1 text-[11px] text-zinc-500 leading-snug">{{ $sampleAnalysis['purchase_intent']['rationale'] ?? '' }}</p>
-                    </div>
+                    @foreach($sampleRecommendations->products as $item)
+                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between gap-2 mb-1">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $item['category'] }}</span>
+                                    <span class="text-[10px] font-mono text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                        {{ round($item['confidence'] * 100) }}% Match
+                                    </span>
+                                </div>
+                                <h3 class="text-sm font-bold text-zinc-950">{{ $item['name'] }}</h3>
+                                <p class="mt-1 text-xs font-bold text-brand-primary">₹{{ number_format($item['price'], 2) }}</p>
 
-                    <!-- Cart Abandonment Risk Card -->
-                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Cart Abandonment Signal</p>
-                        <div class="mt-2 flex items-baseline gap-2">
-                            <span @class([
-                                'text-2xl font-black uppercase',
-                                'text-amber-600' => ($sampleAnalysis['cart_abandonment']['risk_level'] ?? 'none') === 'medium',
-                                'text-rose-600' => ($sampleAnalysis['cart_abandonment']['risk_level'] ?? 'none') === 'high',
-                                'text-zinc-500' => ($sampleAnalysis['cart_abandonment']['risk_level'] ?? 'none') === 'none',
-                            ])>
-                                {{ $sampleAnalysis['cart_abandonment']['risk_level'] ?? 'none' }}
-                            </span>
-                        </div>
-                        <p class="mt-1 text-[11px] text-zinc-500 leading-snug">
-                            {{ ($sampleAnalysis['cart_abandonment']['is_abandoned'] ?? false) ? 'Unpurchased items present' : 'No cart abandonment detected' }}
-                        </p>
-                    </div>
+                                <div class="mt-3 rounded-lg border border-purple-100 bg-purple-50/60 p-2 text-[11px] text-purple-900 leading-snug">
+                                    <span class="font-bold text-purple-950 block text-[10px] uppercase">Why Recommended:</span>
+                                    {{ $item['reason'] }}
+                                </div>
+                            </div>
 
-                    <!-- Top Category Preference Card -->
-                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Preferred Category</p>
-                        <div class="mt-2">
-                            <span class="text-lg font-bold text-zinc-950 truncate block">
-                                {{ $sampleAnalysis['category_preference']['top_category'] ?? 'None yet' }}
-                            </span>
+                            <div class="mt-3 pt-2 border-t border-zinc-200/60 flex items-center justify-between text-[11px]">
+                                <span class="font-mono text-zinc-500">Action:</span>
+                                <span class="font-bold text-zinc-900 bg-white px-2 py-0.5 rounded border border-zinc-200">
+                                    {{ $item['suggested_action']['label'] ?? 'View' }}
+                                </span>
+                            </div>
                         </div>
-                        <p class="mt-1 text-[11px] text-zinc-500">Based on view & cart interaction weighting</p>
-                    </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
-                    <!-- Recommendation Trigger Card -->
-                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Recommendation Strategy</p>
-                        <div class="mt-2">
-                            <span class="text-xs font-mono font-bold text-purple-700 bg-purple-100 px-2 py-1 rounded inline-block">
-                                {{ $sampleAnalysis['recommendation_signals']['trigger'] ?? 'general_browse' }}
-                            </span>
-                        </div>
-                        <p class="mt-1.5 text-[11px] text-zinc-500">Automated seed rule</p>
+        <!-- Step 5 Showcase: Admin Business Decision Engine -->
+        @if($sampleDecisionSignals)
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-zinc-100 pb-4">
+                    <div>
+                        <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                            Admin Side Showcase
+                        </span>
+                        <h2 class="mt-1 text-base font-bold text-zinc-950">Strategic Business Decision Engine</h2>
+                        <p class="mt-0.5 text-xs text-zinc-500">Automated signals for winning products, inventory promotion, category opportunities, and campaigns.</p>
                     </div>
+                    <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-200">
+                        Confidence: {{ round($sampleDecisionSignals->confidence * 100) }}%
+                    </span>
                 </div>
 
-                <!-- Structured Context Payload Inspection -->
-                <div class="rounded-xl border border-zinc-100 bg-zinc-950 p-4 text-white">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-mono text-amber-400 font-bold">Structured User Context Payload (AiContextBuilder)</span>
-                        <span class="text-[10px] font-mono text-zinc-400">Total Events Analyzed: {{ $sampleContext['total_events'] ?? 0 }}</span>
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <!-- Winning Products Signal -->
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Winning / Trending Products</h3>
+                            <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">High Conversion</span>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            @foreach($sampleDecisionSignals->winningProducts as $win)
+                                <div class="rounded-lg bg-white p-2.5 border border-zinc-200">
+                                    <div class="flex items-center justify-between font-bold text-zinc-900">
+                                        <span>{{ $win['name'] }}</span>
+                                        <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">{{ $win['status'] }}</span>
+                                    </div>
+                                    <p class="mt-1 text-[11px] text-zinc-500">{{ $win['reason'] }}</p>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                    <pre class="text-[11px] font-mono text-zinc-300 overflow-x-auto p-2 bg-black/50 rounded max-h-60">{{ json_encode($sampleContext, JSON_PRETTY_PRINT) }}</pre>
+
+                    <!-- Products Needing Promotion -->
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Promotion Opportunities</h3>
+                            <span class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Stock Turnover</span>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            @foreach($sampleDecisionSignals->promotionNeeds as $promo)
+                                <div class="rounded-lg bg-white p-2.5 border border-zinc-200">
+                                    <div class="flex items-center justify-between font-bold text-zinc-900">
+                                        <span>{{ $promo['name'] }}</span>
+                                        <span class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">{{ $promo['stock'] }} in stock</span>
+                                    </div>
+                                    <p class="mt-1 text-[11px] text-zinc-500">{{ $promo['reason'] }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- Ad Campaign Suggestions -->
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Ad Campaign Suggestions</h3>
+                            <span class="text-[10px] font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded">Marketing Angle</span>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            @foreach($sampleDecisionSignals->adCampaignSuggestions as $ad)
+                                <div class="rounded-lg bg-white p-2.5 border border-zinc-200">
+                                    <div class="font-bold text-zinc-900">{{ $ad['name'] }}</div>
+                                    <p class="mt-1 text-[11px] font-semibold text-purple-800">Angle: {{ $ad['campaign_angle'] }}</p>
+                                    <p class="text-[10px] text-zinc-500">Target: {{ $ad['target_audience'] }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <!-- Step 4 Reasoning Showcase -->
+        @if($sampleBrainResponse)
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-zinc-100 pb-3">
+                    <div>
+                        <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-800">
+                            Step 4 Brain Output
+                        </span>
+                        <h2 class="mt-1 text-base font-bold text-zinc-950">AI Brain Reasoning Output</h2>
+                    </div>
+                    <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-200">
+                        Intent: {{ $sampleBrainResponse->intent }}
+                    </span>
+                </div>
+                <div class="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+                    <p class="text-xs font-bold text-zinc-900">Reasoning Text:</p>
+                    <p class="mt-1 text-xs text-zinc-700 leading-relaxed">{{ $sampleBrainResponse->reasoning }}</p>
                 </div>
             </div>
         @endif

@@ -5,8 +5,11 @@ namespace App\AI\Adapters;
 use App\AI\Contracts\AiAdapterInterface;
 use App\AI\Contracts\AiAnalyzerInterface;
 use App\AI\Contracts\AiContextBuilderInterface;
+use App\AI\Contracts\AiRecommendationEngineInterface;
 use App\AI\Contracts\AiRequestInterface;
 use App\AI\Contracts\AiResponseInterface;
+use App\AI\Core\AiDecisionResult;
+use App\AI\Core\AiRecommendationResult;
 use App\AI\Core\AiResponse;
 
 class FlavourFlowAdapter implements AiAdapterInterface
@@ -70,5 +73,27 @@ class FlavourFlowAdapter implements AiAdapterInterface
         $analyzer = app(AiAnalyzerInterface::class);
 
         return $analyzer->analyze($context);
+    }
+
+    /**
+     * Get customer recommendations.
+     */
+    public function getRecommendations(?int $userId = null, ?string $sessionId = null, string $type = 'personalized', int $limit = 6): AiRecommendationResult
+    {
+        /** @var AiRecommendationEngineInterface $engine */
+        $engine = app(AiRecommendationEngineInterface::class);
+
+        return $engine->getCustomerRecommendations($userId, $sessionId, $type, $limit);
+    }
+
+    /**
+     * Get admin decision signals.
+     */
+    public function getDecisionSignals(int $days = 30): AiDecisionResult
+    {
+        /** @var AiRecommendationEngineInterface $engine */
+        $engine = app(AiRecommendationEngineInterface::class);
+
+        return $engine->getAdminDecisionSignals($days);
     }
 }
