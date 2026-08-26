@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\AI\Contracts\AiEventTrackerInterface;
 use App\Models\Product;
 use App\Support\CartState;
 use Illuminate\Contracts\View\View;
@@ -24,7 +25,7 @@ class CartController extends Controller
         return response()->json(['count' => $cart->count()]);
     }
 
-    public function store(Request $request, Product $product, CartState $cart): JsonResponse|RedirectResponse
+    public function store(Request $request, Product $product, CartState $cart, AiEventTrackerInterface $tracker): JsonResponse|RedirectResponse
     {
         abort_unless($product->is_active && $product->quantity > 0, 404);
 
@@ -33,7 +34,16 @@ class CartController extends Controller
             'selected_options' => ['nullable', 'array'],
         ]);
 
-        $cart->add($product, $validated['quantity'] ?? 1, $validated['selected_options'] ?? null);
+        $quantity = $validated['quantity'] ?? 1;
+        $cart->add($product, $quantity, $validated['selected_options'] ?? null);
+
+        $tracker->track('cart_added', 'product', $product->id, [
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'quantity' => $quantity,
+            'unit_price' => (float) $product->price,
+            'selected_options' => $validated['selected_options'] ?? null,
+        ]);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -68,9 +78,14 @@ class CartController extends Controller
         return redirect()->route('cart.index');
     }
 
-    public function destroy(Request $request, Product $product, CartState $cart): JsonResponse|RedirectResponse
+    public function destroy(Request $request, Product $product, CartState $cart, AiEventTrackerInterface $tracker): JsonResponse|RedirectResponse
     {
         $cart->remove($product);
+
+        $tracker->track('cart_removed', 'product', $product->id, [
+            'name' => $product->name,
+            'slug' => $product->slug,
+        ]);
 
         if ($request->expectsJson()) {
             return response()->json([

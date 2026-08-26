@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\AI\Contracts\AiEventTrackerInterface;
 use App\Models\Product;
 use App\Support\WishlistState;
 use Illuminate\Contracts\View\View;
@@ -27,18 +28,29 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function store(Product $product, WishlistState $wishlist): JsonResponse
+    public function store(Product $product, WishlistState $wishlist, AiEventTrackerInterface $tracker): JsonResponse
     {
         abort_unless($product->is_active, 404);
 
         $wishlist->add($product);
 
+        $tracker->track('wishlist_added', 'product', $product->id, [
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'price' => (float) $product->price,
+        ]);
+
         return response()->json(['wishlisted' => true]);
     }
 
-    public function destroy(Product $product, WishlistState $wishlist): JsonResponse
+    public function destroy(Product $product, WishlistState $wishlist, AiEventTrackerInterface $tracker): JsonResponse
     {
         $wishlist->remove($product);
+
+        $tracker->track('wishlist_removed', 'product', $product->id, [
+            'name' => $product->name,
+            'slug' => $product->slug,
+        ]);
 
         return response()->json(['wishlisted' => false]);
     }

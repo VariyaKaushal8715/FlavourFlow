@@ -5,7 +5,9 @@ namespace App\Providers;
 use App\AI\Adapters\FlavourFlowAdapter;
 use App\AI\Contracts\AiAdapterInterface;
 use App\AI\Contracts\AiEngineInterface;
+use App\AI\Contracts\AiEventTrackerInterface;
 use App\AI\Core\AiEngine;
+use App\AI\Services\AiEventTracker;
 use Illuminate\Support\ServiceProvider;
 
 class AiServiceProvider extends ServiceProvider
@@ -26,6 +28,8 @@ class AiServiceProvider extends ServiceProvider
 
             return new $engineClass($app->make(AiAdapterInterface::class));
         });
+
+        $this->app->singleton(AiEventTrackerInterface::class, AiEventTracker::class);
     }
 
     /**

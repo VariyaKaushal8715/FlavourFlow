@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\AI\Contracts\AiEventTrackerInterface;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -15,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
-    public function index(Request $request, CartState $cart): View|RedirectResponse
+    public function index(Request $request, CartState $cart, AiEventTrackerInterface $tracker): View|RedirectResponse
     {
         if ($cart->count() === 0) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
@@ -28,6 +29,13 @@ class CheckoutController extends Controller
         $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
         $total = $subtotal + $deliveryCharge;
 
+        $tracker->track('checkout_started', 'cart', null, [
+            'item_count' => $cart->count(),
+            'subtotal' => $subtotal,
+            'delivery_charge' => $deliveryCharge,
+            'total' => $total,
+        ]);
+
         return view('checkout.index', [
             'site' => config('personal_site'),
             'items' => $cart->items(),
@@ -39,7 +47,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function store(Request $request, CartState $cart): RedirectResponse
+    public function store(Request $request, CartState $cart, AiEventTrackerInterface $tracker): RedirectResponse
     {
         if ($cart->count() === 0) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
@@ -121,6 +129,13 @@ class CheckoutController extends Controller
 
                 return $order;
             });
+
+            $tracker->track('order_placed', 'order', $order->id, [
+                'order_id' => $order->order_id,
+                'total' => (float) $order->total,
+                'items_count' => $order->items()->count(),
+                'payment_method' => $order->payment_method,
+            ]);
 
             return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
         } catch (ValidationException $e) {
