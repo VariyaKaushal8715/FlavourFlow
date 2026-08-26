@@ -5,10 +5,8 @@ namespace App\AI\Providers;
 use App\AI\Contracts\AiProviderInterface;
 
 /**
- * Null provider used before any real LLM API is connected.
- *
- * Returns a structured passthrough response so the Brain can still
- * reason deterministically without any external dependency.
+ * Null provider used when no external LLM API key is configured.
+ * Returns a structured passthrough response so the AI Engine operates deterministically.
  */
 class NullProvider implements AiProviderInterface
 {
@@ -17,9 +15,26 @@ class NullProvider implements AiProviderInterface
         return 'null';
     }
 
+    public function getModel(): string
+    {
+        return 'deterministic-v1';
+    }
+
     public function isAvailable(): bool
     {
         return true;
+    }
+
+    public function testConnection(): array
+    {
+        return [
+            'success' => true,
+            'message' => 'NullProvider active (Deterministic mode).',
+            'details' => [
+                'provider' => 'null',
+                'mode' => 'deterministic',
+            ],
+        ];
     }
 
     public function generate(array $prompt): array
@@ -30,8 +45,10 @@ class NullProvider implements AiProviderInterface
             'model' => 'deterministic-v1',
             'raw' => [
                 'provider' => 'null',
-                'note' => 'No external LLM connected. Reasoning is fully deterministic.',
+                'note' => 'No external LLM connected. Fallback to deterministic AI reasoning.',
             ],
+            'success' => true,
+            'error' => null,
         ];
     }
 

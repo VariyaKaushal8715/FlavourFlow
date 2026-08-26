@@ -12,11 +12,11 @@ use App\AI\Contracts\AiEventTrackerInterface;
 use App\AI\Contracts\AiProviderInterface;
 use App\AI\Contracts\AiRecommendationEngineInterface;
 use App\AI\Core\AiEngine;
-use App\AI\Providers\NullProvider;
 use App\AI\Services\AiAnalyzer;
 use App\AI\Services\AiBrain;
 use App\AI\Services\AiContextBuilder;
 use App\AI\Services\AiEventTracker;
+use App\AI\Services\AiProviderManager;
 use App\AI\Services\AiRecommendationEngine;
 use Illuminate\Support\ServiceProvider;
 
@@ -47,13 +47,14 @@ class AiServiceProvider extends ServiceProvider
         $this->app->singleton(AiContextBuilderInterface::class, AiContextBuilder::class);
         $this->app->singleton(AiAnalyzerInterface::class, AiAnalyzer::class);
 
-        // Step 4: AI Brain & Provider
-        $this->app->singleton(AiProviderInterface::class, function () {
-            $providerClass = config('ai.provider.class', NullProvider::class);
+        // Step 6: Provider Manager & Active Provider
+        $this->app->singleton(AiProviderManager::class);
 
-            return new $providerClass;
+        $this->app->singleton(AiProviderInterface::class, function ($app) {
+            return $app->make(AiProviderManager::class)->driver();
         });
 
+        // Step 4: AI Brain & Reasoning Layer
         $this->app->singleton(AiBrainInterface::class, function ($app) {
             return new AiBrain(
                 $app->make(AiProviderInterface::class),

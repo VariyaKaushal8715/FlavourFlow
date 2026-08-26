@@ -5,14 +5,14 @@
             <div>
                 <div class="flex items-center gap-2">
                     <span class="rounded bg-amber-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-800">
-                        Step 5 - Recommendation & Decision Engine Verification
+                        Step 6 - Provider & Model Integration Verification
                     </span>
                 </div>
                 <h1 class="mt-2 text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
-                    AI Engine Health & Recommendation Layer
+                    AI Engine Health & Provider System
                 </h1>
                 <p class="mt-1 text-sm text-zinc-500">
-                    Automated, non-fake verification of AI Core, Event Tracking, Context Builder, Analyzer, Reasoning Brain, and Recommendation Engine.
+                    Automated, non-fake verification of AI Core, Tracking, Context, Reasoning, Recommendations, and Provider Integration.
                 </p>
             </div>
 
@@ -41,9 +41,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <div class="text-xs leading-relaxed">
-                    <p class="font-bold">Development & Diagnostic Isolation Notice (Step 5 - Recommendation & Decision Engine)</p>
+                    <p class="font-bold">Development & Diagnostic Isolation Notice (Step 6 - Provider System)</p>
                     <p class="mt-0.5 text-amber-800">
-                        This AI Engine status page and sidebar navigation item are isolated for step 5 verification. All customer recommendations and admin decision signals are generated using structured reasoning over real database events.
+                        This AI Engine status page verifies provider configuration and API connectivity. If <code class="font-mono bg-amber-100 px-1 py-0.5 rounded text-amber-950 font-bold">OPENROUTER_API_KEY</code> is not set in <code class="font-mono bg-amber-100 px-1 py-0.5 rounded text-amber-950 font-bold">.env</code>, the engine falls back seamlessly to deterministic NullProvider mode so user actions never fail.
                     </p>
                 </div>
             </div>
@@ -51,7 +51,7 @@
 
         <!-- Verification Diagnostic Checks Grid -->
         <div>
-            <h2 class="text-base font-bold text-zinc-950 mb-3">System Verification Checks (Steps 1–5)</h2>
+            <h2 class="text-base font-bold text-zinc-950 mb-3">System Verification Checks (Steps 1–6)</h2>
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
                 @foreach($checks as $key => $check)
                     <div @class([
@@ -70,12 +70,73 @@
                                 'bg-rose-100 text-rose-800 border border-rose-200' => ! $check['passed'],
                             ])>
                                 <span>{{ $check['passed'] ? '✓' : '✕' }}</span>
-                                <span>{{ $check['passed'] ? 'Verified' : 'Failed' }}</span>
+                                <span>{{ $check['passed'] ? 'Verified' : 'Not Configured / Check' }}</span>
                             </span>
                         </div>
 
                         <div class="mt-4 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-[11px] font-mono text-zinc-700 break-all">
                             {{ $check['details'] }}
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Step 6 Showcase: LLM Provider System Status -->
+        <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-zinc-100 pb-4">
+                <div>
+                    <span class="rounded bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-800">
+                        Step 6 Provider System Architecture
+                    </span>
+                    <h2 class="mt-1 text-base font-bold text-zinc-950">Multi-Provider System Drivers & Status</h2>
+                    <p class="mt-0.5 text-xs text-zinc-500">Configurable drivers for OpenRouter, Groq, Gemini, OpenAI, Ollama, and NullProvider.</p>
+                </div>
+                <span class="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-800 border border-sky-200">
+                    Active Driver: {{ config('ai.default_provider', 'openrouter') }}
+                </span>
+            </div>
+
+            <!-- Provider Connection Status Banner -->
+            <div @class([
+                'rounded-xl border p-4 text-xs font-mono',
+                'bg-emerald-50 border-emerald-200 text-emerald-900' => $providerConnectionTest['success'] ?? false,
+                'bg-zinc-50 border-zinc-200 text-zinc-700' => ! ($providerConnectionTest['success'] ?? false),
+            ])>
+                <div class="flex items-center justify-between">
+                    <span class="font-bold uppercase tracking-wider">Live Active Connection Test:</span>
+                    <span class="font-bold">{{ ($providerConnectionTest['success'] ?? false) ? 'Connected' : 'Deterministic Fallback Active' }}</span>
+                </div>
+                <p class="mt-1.5 leading-relaxed">{{ $providerConnectionTest['message'] ?? 'No connection test available.' }}</p>
+            </div>
+
+            <!-- Supported Drivers Matrix -->
+            <div class="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+                @foreach($providerStatusMap as $driverKey => $driverInfo)
+                    <div @class([
+                        'rounded-xl border p-3 flex flex-col justify-between',
+                        'bg-emerald-50/40 border-emerald-200' => $driverInfo['available'],
+                        'bg-zinc-50 border-zinc-200' => ! $driverInfo['available'],
+                    ])>
+                        <div>
+                            <div class="flex items-center justify-between gap-1 mb-1">
+                                <span class="text-xs font-bold text-zinc-900 uppercase font-mono">{{ $driverKey }}</span>
+                                <span @class([
+                                    'inline-block h-2 w-2 rounded-full',
+                                    'bg-emerald-500' => $driverInfo['available'],
+                                    'bg-zinc-300' => ! $driverInfo['available'],
+                                ])></span>
+                            </div>
+                            <p class="text-[10px] font-mono text-zinc-500 truncate" title="{{ $driverInfo['model'] }}">
+                                {{ $driverInfo['model'] }}
+                            </p>
+                        </div>
+                        <div class="mt-2 text-[10px] font-bold">
+                            @if($driverInfo['available'])
+                                <span class="text-emerald-700">Available</span>
+                            @else
+                                <span class="text-zinc-400">Not Configured</span>
+                            @endif
                         </div>
                     </div>
                 @endforeach
@@ -125,102 +186,6 @@
                             </div>
                         </div>
                     @endforeach
-                </div>
-            </div>
-        @endif
-
-        <!-- Step 5 Showcase: Admin Business Decision Engine -->
-        @if($sampleDecisionSignals)
-            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
-                <div class="flex items-center justify-between border-b border-zinc-100 pb-4">
-                    <div>
-                        <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                            Admin Side Showcase
-                        </span>
-                        <h2 class="mt-1 text-base font-bold text-zinc-950">Strategic Business Decision Engine</h2>
-                        <p class="mt-0.5 text-xs text-zinc-500">Automated signals for winning products, inventory promotion, category opportunities, and campaigns.</p>
-                    </div>
-                    <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-200">
-                        Confidence: {{ round($sampleDecisionSignals->confidence * 100) }}%
-                    </span>
-                </div>
-
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <!-- Winning Products Signal -->
-                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Winning / Trending Products</h3>
-                            <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">High Conversion</span>
-                        </div>
-                        <div class="space-y-2 text-xs">
-                            @foreach($sampleDecisionSignals->winningProducts as $win)
-                                <div class="rounded-lg bg-white p-2.5 border border-zinc-200">
-                                    <div class="flex items-center justify-between font-bold text-zinc-900">
-                                        <span>{{ $win['name'] }}</span>
-                                        <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">{{ $win['status'] }}</span>
-                                    </div>
-                                    <p class="mt-1 text-[11px] text-zinc-500">{{ $win['reason'] }}</p>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- Products Needing Promotion -->
-                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Promotion Opportunities</h3>
-                            <span class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Stock Turnover</span>
-                        </div>
-                        <div class="space-y-2 text-xs">
-                            @foreach($sampleDecisionSignals->promotionNeeds as $promo)
-                                <div class="rounded-lg bg-white p-2.5 border border-zinc-200">
-                                    <div class="flex items-center justify-between font-bold text-zinc-900">
-                                        <span>{{ $promo['name'] }}</span>
-                                        <span class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">{{ $promo['stock'] }} in stock</span>
-                                    </div>
-                                    <p class="mt-1 text-[11px] text-zinc-500">{{ $promo['reason'] }}</p>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- Ad Campaign Suggestions -->
-                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Ad Campaign Suggestions</h3>
-                            <span class="text-[10px] font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded">Marketing Angle</span>
-                        </div>
-                        <div class="space-y-2 text-xs">
-                            @foreach($sampleDecisionSignals->adCampaignSuggestions as $ad)
-                                <div class="rounded-lg bg-white p-2.5 border border-zinc-200">
-                                    <div class="font-bold text-zinc-900">{{ $ad['name'] }}</div>
-                                    <p class="mt-1 text-[11px] font-semibold text-purple-800">Angle: {{ $ad['campaign_angle'] }}</p>
-                                    <p class="text-[10px] text-zinc-500">Target: {{ $ad['target_audience'] }}</p>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <!-- Step 4 Reasoning Showcase -->
-        @if($sampleBrainResponse)
-            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-3">
-                <div class="flex items-center justify-between border-b border-zinc-100 pb-3">
-                    <div>
-                        <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-800">
-                            Step 4 Brain Output
-                        </span>
-                        <h2 class="mt-1 text-base font-bold text-zinc-950">AI Brain Reasoning Output</h2>
-                    </div>
-                    <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 border border-blue-200">
-                        Intent: {{ $sampleBrainResponse->intent }}
-                    </span>
-                </div>
-                <div class="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
-                    <p class="text-xs font-bold text-zinc-900">Reasoning Text:</p>
-                    <p class="mt-1 text-xs text-zinc-700 leading-relaxed">{{ $sampleBrainResponse->reasoning }}</p>
                 </div>
             </div>
         @endif

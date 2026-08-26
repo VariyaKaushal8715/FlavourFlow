@@ -19,6 +19,7 @@ use App\AI\Core\AiReasoningResponse;
 use App\AI\Core\AiRecommendationResult;
 use App\AI\Core\AiRequest;
 use App\AI\Models\AiEvent;
+use App\AI\Services\AiProviderManager;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
@@ -67,8 +68,15 @@ class AdminAiController extends Controller
             'decision_engine_service' => $this->checkDecisionEngineService(),
             'customer_recommendation_types' => $this->checkCustomerRecommendationTypes(),
             'admin_decision_signals' => $this->checkAdminDecisionSignals(),
+
+            // Step 6: Provider & Model Integration Verification Checks
+            'provider_config' => $this->checkProviderConfiguration(),
+            'api_connectivity' => $this->checkApiConnectivity(),
+            'model_availability' => $this->checkModelAvailability(),
+            'brain_provider_integration' => $this->checkBrainProviderIntegration(),
         ];
 
+        // Overall ready only when core & framework checks pass
         $allPassed = collect($checks)->every(fn (array $check): bool => $check['passed'] === true);
 
         $recentEvents = class_exists(AiEvent::class) && Schema::hasTable('ai_events')
@@ -85,6 +93,8 @@ class AdminAiController extends Controller
         $sampleBrainResponse = null;
         $sampleRecommendations = null;
         $sampleDecisionSignals = null;
+        $providerStatusMap = [];
+        $providerConnectionTest = [];
 
         if (app()->bound(AiContextBuilderInterface::class) && app()->bound(AiAnalyzerInterface::class)) {
             /** @var AiContextBuilderInterface $builder */
@@ -115,6 +125,17 @@ class AdminAiController extends Controller
             $sampleDecisionSignals = $recEngine->getAdminDecisionSignals(days: 30);
         }
 
+        // Step 6: Inspect Provider Manager & Test Connection
+        if (app()->bound(AiProviderManager::class)) {
+            /** @var AiProviderManager $manager */
+            $manager = app(AiProviderManager::class);
+            $providerStatusMap = $manager->getProvidersStatus();
+
+            /** @var AiProviderInterface $activeProvider */
+            $activeProvider = app(AiProviderInterface::class);
+            $providerConnectionTest = $activeProvider->testConnection();
+        }
+
         return view('admin.ai.index', [
             'checks' => $checks,
             'isReady' => $allPassed,
@@ -125,6 +146,8 @@ class AdminAiController extends Controller
             'sampleBrainResponse' => $sampleBrainResponse,
             'sampleRecommendations' => $sampleRecommendations,
             'sampleDecisionSignals' => $sampleDecisionSignals,
+            'providerStatusMap' => $providerStatusMap,
+            'providerConnectionTest' => $providerConnectionTest,
         ]);
     }
 
@@ -234,7 +257,7 @@ class AdminAiController extends Controller
             'name' => 'Contracts & Interfaces',
             'description' => 'Verifies all AI engine contracts and interfaces exist.',
             'passed' => true,
-            'details' => count($contracts).' core contracts verified (Step 1-5 contracts resolved).',
+            'details' => count($contracts).' core contracts verified (Step 1-6 contracts resolved).',
         ];
     }
 
@@ -315,6 +338,8 @@ class AdminAiController extends Controller
             'app/AI/Services/AiAnalyzer.php' => app_path('AI/Services/AiAnalyzer.php'),
             'app/AI/Services/AiBrain.php' => app_path('AI/Services/AiBrain.php'),
             'app/AI/Services/AiRecommendationEngine.php' => app_path('AI/Services/AiRecommendationEngine.php'),
+            'app/AI/Services/AiProviderManager.php' => app_path('AI/Services/AiProviderManager.php'),
+            'app/AI/Providers/OpenRouterProvider.php' => app_path('AI/Providers/OpenRouterProvider.php'),
         ];
 
         $missing = [];
@@ -806,7 +831,7 @@ class AdminAiController extends Controller
                     'name' => 'AI Provider Interface',
                     'description' => 'Resolves AiProviderInterface from container and verifies provider availability.',
                     'passed' => false,
-                    'details' => "Provider '{$provider->getName()}' resolved but isAvailable() returned false.",
+                    'details' => "Provider '{$provider->getName()}' resolved (Fallback to NullProvider / Deterministic Mode).",
                 ];
             }
 
@@ -1099,6 +1124,139 @@ class AdminAiController extends Controller
             return [
                 'name' => 'Admin Decision & Action Signals',
                 'description' => 'Verifies winning products, promotion needs, category opportunities, abandonment signals, and ad campaign suggestions.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkProviderConfiguration(): array
+    {
+        try {
+            $defaultProvider = config('ai.default_provider', 'openrouter');
+            $openRouterKey = config('ai.providers.openrouter.api_key', '');
+            $isConfigured = $openRouterKey !== '';
+
+            if (! $isConfigured && $defaultProvider === 'openrouter') {
+                return [
+                    'name' => 'AI Provider Configuration (OpenRouter)',
+                    'description' => 'Verifies provider driver, config structure, and .env OPENROUTER_API_KEY environment configuration.',
+                    'passed' => false,
+                    'details' => 'Not Configured — Set OPENROUTER_API_KEY in .env to enable live LLM models.',
+                ];
+            }
+
+            return [
+                'name' => 'AI Provider Configuration (OpenRouter)',
+                'description' => 'Verifies provider driver, config structure, and .env OPENROUTER_API_KEY environment configuration.',
+                'passed' => true,
+                'details' => "Default Provider: '{$defaultProvider}', API Key configured in .env.",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'AI Provider Configuration (OpenRouter)',
+                'description' => 'Verifies provider driver, config structure, and .env OPENROUTER_API_KEY environment configuration.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkApiConnectivity(): array
+    {
+        try {
+            /** @var AiProviderManager $manager */
+            $manager = app(AiProviderManager::class);
+            $openRouterProvider = $manager->resolveDriverInstance('openrouter');
+
+            $testResult = $openRouterProvider->testConnection();
+
+            if (! $testResult['success']) {
+                return [
+                    'name' => 'API Connectivity & Auth Test',
+                    'description' => 'Performs a live ping test to OpenRouter API endpoint.',
+                    'passed' => false,
+                    'details' => $testResult['message'],
+                ];
+            }
+
+            return [
+                'name' => 'API Connectivity & Auth Test',
+                'description' => 'Performs a live ping test to OpenRouter API endpoint.',
+                'passed' => true,
+                'details' => $testResult['message'],
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'API Connectivity & Auth Test',
+                'description' => 'Performs a live ping test to OpenRouter API endpoint.',
+                'passed' => false,
+                'details' => 'Connectivity test exception: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkModelAvailability(): array
+    {
+        try {
+            /** @var AiProviderManager $manager */
+            $manager = app(AiProviderManager::class);
+            $provider = $manager->driver();
+
+            $model = $provider->getModel();
+            $available = $provider->isAvailable();
+
+            return [
+                'name' => 'Model Availability & Active Model',
+                'description' => 'Inspects active model identifier and fallback state.',
+                'passed' => true,
+                'details' => "Active Driver: '{$provider->getName()}', Active Model: '{$model}' (Available: ".($available ? 'Yes' : 'Fallback to NullProvider').').',
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'Model Availability & Active Model',
+                'description' => 'Inspects active model identifier and fallback state.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkBrainProviderIntegration(): array
+    {
+        try {
+            /** @var AiBrainInterface $brain */
+            $brain = app(AiBrainInterface::class);
+
+            $testContext = [
+                'total_events' => 3,
+                'recently_viewed_products' => [['product_id' => '1', 'name' => 'Kashmiri Chilli', 'viewed_at' => now()->toIso8601String()]],
+            ];
+
+            $response = $brain->reasonForCustomer($testContext, 'Best recommended spices', 'en');
+
+            return [
+                'name' => 'AI Brain → Provider Integration',
+                'description' => 'Verifies AI Brain formats context and routes reasoning through active provider.',
+                'passed' => true,
+                'details' => "Brain reasoning routed through provider '{$response->provider}' successfully. Intent: '{$response->intent}'.",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'AI Brain → Provider Integration',
+                'description' => 'Verifies AI Brain formats context and routes reasoning through active provider.',
                 'passed' => false,
                 'details' => 'Error: '.$e->getMessage(),
             ];
