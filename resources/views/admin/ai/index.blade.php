@@ -5,14 +5,14 @@
             <div>
                 <div class="flex items-center gap-2">
                     <span class="rounded bg-amber-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-800">
-                        Step 6 - Provider & Model Integration Verification
+                        Step 7 - Multilingual Intent & Language Understanding Verification
                     </span>
                 </div>
                 <h1 class="mt-2 text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
-                    AI Engine Health & Provider System
+                    AI Engine Health & Multilingual NLU Layer
                 </h1>
                 <p class="mt-1 text-sm text-zinc-500">
-                    Automated, non-fake verification of AI Core, Tracking, Context, Reasoning, Recommendations, and Provider Integration.
+                    Automated, non-fake verification of AI Core, Tracking, Context, Reasoning, Recommendations, Provider Integration, and Multilingual Intent Understanding.
                 </p>
             </div>
 
@@ -41,9 +41,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <div class="text-xs leading-relaxed">
-                    <p class="font-bold">Development & Diagnostic Isolation Notice (Step 6 - Provider System)</p>
+                    <p class="font-bold">Development & Diagnostic Isolation Notice (Step 7 - Multilingual NLU Layer)</p>
                     <p class="mt-0.5 text-amber-800">
-                        This AI Engine status page verifies provider configuration and API connectivity. If <code class="font-mono bg-amber-100 px-1 py-0.5 rounded text-amber-950 font-bold">OPENROUTER_API_KEY</code> is not set in <code class="font-mono bg-amber-100 px-1 py-0.5 rounded text-amber-950 font-bold">.env</code>, the engine falls back seamlessly to deterministic NullProvider mode so user actions never fail.
+                        This AI Engine status page verifies automatic language detection, intent parsing, entity extraction, and multilingual response generation across Gujarati, GujEnglish, Hindi, Hinglish, and English.
                     </p>
                 </div>
             </div>
@@ -51,7 +51,7 @@
 
         <!-- Verification Diagnostic Checks Grid -->
         <div>
-            <h2 class="text-base font-bold text-zinc-950 mb-3">System Verification Checks (Steps 1–6)</h2>
+            <h2 class="text-base font-bold text-zinc-950 mb-3">System Verification Checks (Steps 1–7)</h2>
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
                 @foreach($checks as $key => $check)
                     <div @class([
@@ -81,6 +81,72 @@
                 @endforeach
             </div>
         </div>
+
+        <!-- Step 7 Showcase: Multilingual NLU Test Suite Matrix -->
+        @if(! empty($sampleMultilingualTestResults))
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-zinc-100 pb-4">
+                    <div>
+                        <span class="rounded bg-teal-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-teal-800">
+                            Step 7 Multilingual Showcase
+                        </span>
+                        <h2 class="mt-1 text-base font-bold text-zinc-950">Multilingual Query Understanding & Transliteration Matrix</h2>
+                        <p class="mt-0.5 text-xs text-zinc-500">Live NLU results for Gujarati, GujEnglish, Hindi, Hinglish, and English inputs.</p>
+                    </div>
+                    <span class="rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-800 border border-teal-200">
+                        5 Languages Supported
+                    </span>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+                    @foreach($sampleMultilingualTestResults as $item)
+                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/60 p-4 flex flex-col justify-between space-y-3">
+                            <div>
+                                <div class="flex items-center justify-between gap-2 mb-1.5">
+                                    <span @class([
+                                        'inline-flex rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                                        'bg-purple-100 text-purple-800' => $item['detected_lang'] === 'gu',
+                                        'bg-blue-100 text-blue-800' => $item['detected_lang'] === 'gujenglish',
+                                        'bg-orange-100 text-orange-800' => $item['detected_lang'] === 'hi',
+                                        'bg-amber-100 text-amber-800' => $item['detected_lang'] === 'hinglish',
+                                        'bg-emerald-100 text-emerald-800' => $item['detected_lang'] === 'en',
+                                    ])>
+                                        {{ $item['label'] }} ({{ $item['detected_lang'] }})
+                                    </span>
+                                    <span class="text-[10px] font-mono font-bold text-zinc-600 bg-white px-2 py-0.5 rounded border border-zinc-200">
+                                        {{ round($item['confidence'] * 100) }}% Confidence
+                                    </span>
+                                </div>
+
+                                <p class="text-xs font-bold text-zinc-950 bg-white p-2.5 rounded-lg border border-zinc-200/80">
+                                    "{{ $item['query'] }}"
+                                </p>
+
+                                <div class="mt-2.5 grid grid-cols-3 gap-2 text-[11px] font-mono">
+                                    <div class="bg-white p-2 rounded border border-zinc-200">
+                                        <span class="text-[9px] uppercase text-zinc-400 block font-bold">Intent:</span>
+                                        <span class="font-bold text-zinc-900 truncate block">{{ $item['intent'] }}</span>
+                                    </div>
+                                    <div class="bg-white p-2 rounded border border-zinc-200">
+                                        <span class="text-[9px] uppercase text-zinc-400 block font-bold">Entity:</span>
+                                        <span class="font-bold text-purple-800 truncate block">{{ $item['product_entity'] }}</span>
+                                    </div>
+                                    <div class="bg-white p-2 rounded border border-zinc-200">
+                                        <span class="text-[9px] uppercase text-zinc-400 block font-bold">Max Budget:</span>
+                                        <span class="font-bold text-emerald-800 truncate block">{{ $item['budget_entity'] }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rounded-lg border border-teal-100 bg-teal-50/70 p-2.5 text-[11px] text-teal-950 leading-snug">
+                                <span class="font-bold text-teal-900 block text-[9px] uppercase tracking-wider mb-0.5">Formatted Response Output:</span>
+                                {{ $item['formatted_response'] }}
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         <!-- Step 6 Showcase: LLM Provider System Status -->
         <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
@@ -142,53 +208,6 @@
                 @endforeach
             </div>
         </div>
-
-        <!-- Step 5 Showcase: Customer Recommendations Engine -->
-        @if($sampleRecommendations)
-            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
-                <div class="flex items-center justify-between border-b border-zinc-100 pb-4">
-                    <div>
-                        <span class="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-800">
-                            Customer Side Showcase
-                        </span>
-                        <h2 class="mt-1 text-base font-bold text-zinc-950">Personalized Product Recommendation Engine</h2>
-                        <p class="mt-0.5 text-xs text-zinc-500">{{ $sampleRecommendations->reason }}</p>
-                    </div>
-                    <span class="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700 border border-purple-200">
-                        Type: {{ $sampleRecommendations->recommendationType }}
-                    </span>
-                </div>
-
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    @foreach($sampleRecommendations->products as $item)
-                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 flex flex-col justify-between">
-                            <div>
-                                <div class="flex items-center justify-between gap-2 mb-1">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $item['category'] }}</span>
-                                    <span class="text-[10px] font-mono text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                                        {{ round($item['confidence'] * 100) }}% Match
-                                    </span>
-                                </div>
-                                <h3 class="text-sm font-bold text-zinc-950">{{ $item['name'] }}</h3>
-                                <p class="mt-1 text-xs font-bold text-brand-primary">₹{{ number_format($item['price'], 2) }}</p>
-
-                                <div class="mt-3 rounded-lg border border-purple-100 bg-purple-50/60 p-2 text-[11px] text-purple-900 leading-snug">
-                                    <span class="font-bold text-purple-950 block text-[10px] uppercase">Why Recommended:</span>
-                                    {{ $item['reason'] }}
-                                </div>
-                            </div>
-
-                            <div class="mt-3 pt-2 border-t border-zinc-200/60 flex items-center justify-between text-[11px]">
-                                <span class="font-mono text-zinc-500">Action:</span>
-                                <span class="font-bold text-zinc-900 bg-white px-2 py-0.5 rounded border border-zinc-200">
-                                    {{ $item['suggested_action']['label'] ?? 'View' }}
-                                </span>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
 
         <!-- Event Types Summary Grid -->
         <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">

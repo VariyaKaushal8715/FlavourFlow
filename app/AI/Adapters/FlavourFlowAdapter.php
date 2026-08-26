@@ -5,10 +5,12 @@ namespace App\AI\Adapters;
 use App\AI\Contracts\AiAdapterInterface;
 use App\AI\Contracts\AiAnalyzerInterface;
 use App\AI\Contracts\AiContextBuilderInterface;
+use App\AI\Contracts\AiLanguageUnderstandingInterface;
 use App\AI\Contracts\AiRecommendationEngineInterface;
 use App\AI\Contracts\AiRequestInterface;
 use App\AI\Contracts\AiResponseInterface;
 use App\AI\Core\AiDecisionResult;
+use App\AI\Core\AiParsedIntent;
 use App\AI\Core\AiRecommendationResult;
 use App\AI\Core\AiResponse;
 
@@ -95,5 +97,16 @@ class FlavourFlowAdapter implements AiAdapterInterface
         $engine = app(AiRecommendationEngineInterface::class);
 
         return $engine->getAdminDecisionSignals($days);
+    }
+
+    /**
+     * Understand multilingual user query.
+     */
+    public function understandQuery(string $query, array $context = []): AiParsedIntent
+    {
+        /** @var AiLanguageUnderstandingInterface $nlu */
+        $nlu = app(AiLanguageUnderstandingInterface::class);
+
+        return $nlu->understand($query, $context);
     }
 }

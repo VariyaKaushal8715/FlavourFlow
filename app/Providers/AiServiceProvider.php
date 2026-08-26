@@ -9,6 +9,7 @@ use App\AI\Contracts\AiBrainInterface;
 use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Contracts\AiEngineInterface;
 use App\AI\Contracts\AiEventTrackerInterface;
+use App\AI\Contracts\AiLanguageUnderstandingInterface;
 use App\AI\Contracts\AiProviderInterface;
 use App\AI\Contracts\AiRecommendationEngineInterface;
 use App\AI\Core\AiEngine;
@@ -16,6 +17,7 @@ use App\AI\Services\AiAnalyzer;
 use App\AI\Services\AiBrain;
 use App\AI\Services\AiContextBuilder;
 use App\AI\Services\AiEventTracker;
+use App\AI\Services\AiLanguageUnderstanding;
 use App\AI\Services\AiProviderManager;
 use App\AI\Services\AiRecommendationEngine;
 use Illuminate\Support\ServiceProvider;
@@ -65,6 +67,9 @@ class AiServiceProvider extends ServiceProvider
 
         // Step 5: Recommendation & Decision Engine
         $this->app->singleton(AiRecommendationEngineInterface::class, AiRecommendationEngine::class);
+
+        // Step 7: Multilingual Language Understanding Layer
+        $this->app->singleton(AiLanguageUnderstandingInterface::class, AiLanguageUnderstanding::class);
     }
 
     /**

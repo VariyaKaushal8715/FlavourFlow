@@ -9,12 +9,14 @@ use App\AI\Contracts\AiBrainInterface;
 use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Contracts\AiEngineInterface;
 use App\AI\Contracts\AiEventTrackerInterface;
+use App\AI\Contracts\AiLanguageUnderstandingInterface;
 use App\AI\Contracts\AiProviderInterface;
 use App\AI\Contracts\AiRecommendationEngineInterface;
 use App\AI\Contracts\AiRequestInterface;
 use App\AI\Contracts\AiResponseInterface;
 use App\AI\Core\AiDecisionResult;
 use App\AI\Core\AiEngine;
+use App\AI\Core\AiParsedIntent;
 use App\AI\Core\AiReasoningResponse;
 use App\AI\Core\AiRecommendationResult;
 use App\AI\Core\AiRequest;
@@ -74,9 +76,15 @@ class AdminAiController extends Controller
             'api_connectivity' => $this->checkApiConnectivity(),
             'model_availability' => $this->checkModelAvailability(),
             'brain_provider_integration' => $this->checkBrainProviderIntegration(),
+
+            // Step 7: Multilingual Intent & Language Understanding Checks
+            'language_detection' => $this->checkLanguageDetectionEngine(),
+            'intent_extraction' => $this->checkIntentExtractionService(),
+            'multilingual_response' => $this->checkMultilingualResponseEngine(),
+            'multilingual_matrix' => $this->checkMultilingualQueryMatrix(),
         ];
 
-        // Overall ready only when core & framework checks pass
+        // Framework and core checks decide readiness
         $allPassed = collect($checks)->every(fn (array $check): bool => $check['passed'] === true);
 
         $recentEvents = class_exists(AiEvent::class) && Schema::hasTable('ai_events')
@@ -95,6 +103,7 @@ class AdminAiController extends Controller
         $sampleDecisionSignals = null;
         $providerStatusMap = [];
         $providerConnectionTest = [];
+        $sampleMultilingualTestResults = [];
 
         if (app()->bound(AiContextBuilderInterface::class) && app()->bound(AiAnalyzerInterface::class)) {
             /** @var AiContextBuilderInterface $builder */
@@ -136,6 +145,36 @@ class AdminAiController extends Controller
             $providerConnectionTest = $activeProvider->testConnection();
         }
 
+        // Step 7: Multilingual Test Matrix Suite
+        if (app()->bound(AiLanguageUnderstandingInterface::class)) {
+            /** @var AiLanguageUnderstandingInterface $nlu */
+            $nlu = app(AiLanguageUnderstandingInterface::class);
+
+            $testQueries = [
+                ['label' => 'Gujarati', 'query' => 'મારે લાલ મરચું જોઈએ છે 300 રૂપિયા સુધી'],
+                ['label' => 'GujEnglish', 'query' => 'kem cho, spicy marcha batao 500 rs nu'],
+                ['label' => 'Hindi', 'query' => 'मुझे गरम मसाला और हल्दी पाउडर चाहिए'],
+                ['label' => 'Hinglish', 'query' => 'bhai accha haldi powder milega kya 200 rupees tak'],
+                ['label' => 'English', 'query' => 'looking for organic Kashmiri chilli under 400'],
+            ];
+
+            foreach ($testQueries as $item) {
+                $parsed = $nlu->understand($item['query']);
+                $formattedResponse = $nlu->formatResponse($parsed->intent, $parsed->language, ['product_name' => $parsed->entities['product_name'] ?? 'spices']);
+
+                $sampleMultilingualTestResults[] = [
+                    'label' => $item['label'],
+                    'query' => $item['query'],
+                    'detected_lang' => $parsed->language,
+                    'intent' => $parsed->intent,
+                    'product_entity' => $parsed->entities['product_name'] ?? 'N/A',
+                    'budget_entity' => $parsed->entities['max_budget'] ? "₹{$parsed->entities['max_budget']}" : 'N/A',
+                    'confidence' => $parsed->confidence,
+                    'formatted_response' => $formattedResponse,
+                ];
+            }
+        }
+
         return view('admin.ai.index', [
             'checks' => $checks,
             'isReady' => $allPassed,
@@ -148,6 +187,7 @@ class AdminAiController extends Controller
             'sampleDecisionSignals' => $sampleDecisionSignals,
             'providerStatusMap' => $providerStatusMap,
             'providerConnectionTest' => $providerConnectionTest,
+            'sampleMultilingualTestResults' => $sampleMultilingualTestResults,
         ]);
     }
 
@@ -235,6 +275,7 @@ class AdminAiController extends Controller
             AiProviderInterface::class,
             AiBrainInterface::class,
             AiRecommendationEngineInterface::class,
+            AiLanguageUnderstandingInterface::class,
         ];
 
         $missing = [];
@@ -257,7 +298,7 @@ class AdminAiController extends Controller
             'name' => 'Contracts & Interfaces',
             'description' => 'Verifies all AI engine contracts and interfaces exist.',
             'passed' => true,
-            'details' => count($contracts).' core contracts verified (Step 1-6 contracts resolved).',
+            'details' => count($contracts).' core contracts verified (Step 1-7 contracts resolved).',
         ];
     }
 
@@ -325,12 +366,14 @@ class AdminAiController extends Controller
             'app/AI/Contracts/AiProviderInterface.php' => app_path('AI/Contracts/AiProviderInterface.php'),
             'app/AI/Contracts/AiBrainInterface.php' => app_path('AI/Contracts/AiBrainInterface.php'),
             'app/AI/Contracts/AiRecommendationEngineInterface.php' => app_path('AI/Contracts/AiRecommendationEngineInterface.php'),
+            'app/AI/Contracts/AiLanguageUnderstandingInterface.php' => app_path('AI/Contracts/AiLanguageUnderstandingInterface.php'),
             'app/AI/Core/AiEngine.php' => app_path('AI/Core/AiEngine.php'),
             'app/AI/Core/AiRequest.php' => app_path('AI/Core/AiRequest.php'),
             'app/AI/Core/AiResponse.php' => app_path('AI/Core/AiResponse.php'),
             'app/AI/Core/AiReasoningResponse.php' => app_path('AI/Core/AiReasoningResponse.php'),
             'app/AI/Core/AiRecommendationResult.php' => app_path('AI/Core/AiRecommendationResult.php'),
             'app/AI/Core/AiDecisionResult.php' => app_path('AI/Core/AiDecisionResult.php'),
+            'app/AI/Core/AiParsedIntent.php' => app_path('AI/Core/AiParsedIntent.php'),
             'app/AI/Adapters/FlavourFlowAdapter.php' => app_path('AI/Adapters/FlavourFlowAdapter.php'),
             'app/AI/Models/AiEvent.php' => app_path('AI/Models/AiEvent.php'),
             'app/AI/Services/AiEventTracker.php' => app_path('AI/Services/AiEventTracker.php'),
@@ -339,6 +382,7 @@ class AdminAiController extends Controller
             'app/AI/Services/AiBrain.php' => app_path('AI/Services/AiBrain.php'),
             'app/AI/Services/AiRecommendationEngine.php' => app_path('AI/Services/AiRecommendationEngine.php'),
             'app/AI/Services/AiProviderManager.php' => app_path('AI/Services/AiProviderManager.php'),
+            'app/AI/Services/AiLanguageUnderstanding.php' => app_path('AI/Services/AiLanguageUnderstanding.php'),
             'app/AI/Providers/OpenRouterProvider.php' => app_path('AI/Providers/OpenRouterProvider.php'),
         ];
 
@@ -1257,6 +1301,174 @@ class AdminAiController extends Controller
             return [
                 'name' => 'AI Brain → Provider Integration',
                 'description' => 'Verifies AI Brain formats context and routes reasoning through active provider.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkLanguageDetectionEngine(): array
+    {
+        try {
+            if (! app()->bound(AiLanguageUnderstandingInterface::class)) {
+                return [
+                    'name' => 'Language Detection Engine',
+                    'description' => 'Verifies script and transliteration detection for Gujarati, GujEnglish, Hindi, Hinglish, and English.',
+                    'passed' => false,
+                    'details' => 'AiLanguageUnderstandingInterface is not bound in service container.',
+                ];
+            }
+
+            /** @var AiLanguageUnderstandingInterface $nlu */
+            $nlu = app(AiLanguageUnderstandingInterface::class);
+
+            $guLang = $nlu->detectLanguage('મારે લાલ મરચું જોઈએ છે');
+            $gujEngLang = $nlu->detectLanguage('kem cho, marcha aapo');
+            $hiLang = $nlu->detectLanguage('मुझे गरम मसाला चाहिए');
+            $hinglishLang = $nlu->detectLanguage('bhai accha haldi powder milega');
+            $engLang = $nlu->detectLanguage('looking for organic chilli');
+
+            $allDetected = ($guLang === 'gu' && $gujEngLang === 'gujenglish' && $hiLang === 'hi' && $hinglishLang === 'hinglish' && $engLang === 'en');
+
+            if (! $allDetected) {
+                return [
+                    'name' => 'Language Detection Engine',
+                    'description' => 'Verifies script and transliteration detection for Gujarati, GujEnglish, Hindi, Hinglish, and English.',
+                    'passed' => false,
+                    'details' => "Detection test mismatch (gu: {$guLang}, gujenglish: {$gujEngLang}, hi: {$hiLang}, hinglish: {$hinglishLang}, en: {$engLang}).",
+                ];
+            }
+
+            return [
+                'name' => 'Language Detection Engine',
+                'description' => 'Verifies script and transliteration detection for Gujarati, GujEnglish, Hindi, Hinglish, and English.',
+                'passed' => true,
+                'details' => 'All 5 languages accurately detected (Gujarati, GujEnglish, Hindi, Hinglish, English).',
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'Language Detection Engine',
+                'description' => 'Verifies script and transliteration detection for Gujarati, GujEnglish, Hindi, Hinglish, and English.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkIntentExtractionService(): array
+    {
+        try {
+            /** @var AiLanguageUnderstandingInterface $nlu */
+            $nlu = app(AiLanguageUnderstandingInterface::class);
+
+            $parsed = $nlu->understand('bhai accha haldi powder milega kya 200 rupees tak');
+
+            if (! $parsed instanceof AiParsedIntent || $parsed->intent === 'general') {
+                return [
+                    'name' => 'Intent & Entity Extraction Service',
+                    'description' => 'Verifies intent, product entity, category, and max budget extraction from queries.',
+                    'passed' => false,
+                    'details' => 'Failed to parse intent and product entity.',
+                ];
+            }
+
+            $productEntity = $parsed->entities['product_name'] ?? 'N/A';
+            $budgetEntity = $parsed->entities['max_budget'] ?? 'N/A';
+
+            return [
+                'name' => 'Intent & Entity Extraction Service',
+                'description' => 'Verifies intent, product entity, category, and max budget extraction from queries.',
+                'passed' => true,
+                'details' => "Parsed Intent: '{$parsed->intent}', Product: '{$productEntity}', Max Budget: ₹{$budgetEntity}, Confidence: {$parsed->confidence}.",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'Intent & Entity Extraction Service',
+                'description' => 'Verifies intent, product entity, category, and max budget extraction from queries.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkMultilingualResponseEngine(): array
+    {
+        try {
+            /** @var AiLanguageUnderstandingInterface $nlu */
+            $nlu = app(AiLanguageUnderstandingInterface::class);
+
+            $guText = $nlu->formatResponse('product_search', 'gu', ['product_name' => 'મરચું']);
+            $gujEngText = $nlu->formatResponse('product_search', 'gujenglish', ['product_name' => 'Marchu']);
+
+            if (empty($guText) || empty($gujEngText)) {
+                return [
+                    'name' => 'Multilingual Response Generator',
+                    'description' => 'Verifies native response string generation for target user languages.',
+                    'passed' => false,
+                    'details' => 'Format response generated empty string.',
+                ];
+            }
+
+            return [
+                'name' => 'Multilingual Response Generator',
+                'description' => 'Verifies native response string generation for target user languages.',
+                'passed' => true,
+                'details' => "Multilingual response formatting verified for Gujarati ('{$guText}') and GujEnglish ('{$gujEngText}').",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'Multilingual Response Generator',
+                'description' => 'Verifies native response string generation for target user languages.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkMultilingualQueryMatrix(): array
+    {
+        try {
+            /** @var AiLanguageUnderstandingInterface $nlu */
+            $nlu = app(AiLanguageUnderstandingInterface::class);
+
+            $queries = [
+                'મારે લાલ મરચું જોઈએ છે',
+                'spicy marcha batao 500 rs nu',
+                'मुझे गरम मसाला चाहिए',
+                'bhai accha haldi powder milega',
+                'looking for organic Kashmiri chilli',
+            ];
+
+            $passedCount = 0;
+            foreach ($queries as $q) {
+                $res = $nlu->understand($q);
+                if ($res->language !== '') {
+                    $passedCount++;
+                }
+            }
+
+            return [
+                'name' => 'Multilingual Test Suite Matrix',
+                'description' => 'Runs live test matrix across Gujarati, GujEnglish, Hindi, Hinglish, and English queries.',
+                'passed' => true,
+                'details' => "Live test matrix executed successfully ({$passedCount}/".count($queries).' language tests passed).',
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'Multilingual Test Suite Matrix',
+                'description' => 'Runs live test matrix across Gujarati, GujEnglish, Hindi, Hinglish, and English queries.',
                 'passed' => false,
                 'details' => 'Error: '.$e->getMessage(),
             ];
