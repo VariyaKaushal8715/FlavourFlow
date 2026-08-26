@@ -5,14 +5,14 @@
             <div>
                 <div class="flex items-center gap-2">
                     <span class="rounded bg-amber-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-800">
-                        Step 2 - Architecture & Event Tracking Verification
+                        Step 3 - Context & Analysis Verification
                     </span>
                 </div>
                 <h1 class="mt-2 text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
-                    AI Engine Health & Event Tracking
+                    AI Engine Health & Analysis Layer
                 </h1>
                 <p class="mt-1 text-sm text-zinc-500">
-                    Automated, non-fake verification of the reusable AI Core, FlavourFlow Adapter, Container Bindings, and Real User Event Tracking.
+                    Automated, non-fake verification of AI Core, Event Tracking, Context Builder, and Pattern Analysis Engine.
                 </p>
             </div>
 
@@ -41,9 +41,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <div class="text-xs leading-relaxed">
-                    <p class="font-bold">Development & Diagnostic Isolation Notice (Step 2 - Event Tracking)</p>
+                    <p class="font-bold">Development & Diagnostic Isolation Notice (Step 3 - Context & Analysis Layer)</p>
                     <p class="mt-0.5 text-amber-800">
-                        This AI Engine status page and sidebar navigation item are isolated for step 2 verification. All checks inspect actual database schema, Eloquent models, container resolution, and real event recordings on disk/DB.
+                        This AI Engine status page and sidebar navigation item are isolated for step 3 verification. All context extraction and behavioral pattern analysis run deterministically over real database events without calling external APIs.
                     </p>
                 </div>
             </div>
@@ -51,7 +51,7 @@
 
         <!-- Verification Diagnostic Checks Grid -->
         <div>
-            <h2 class="text-base font-bold text-zinc-950 mb-3">System & Event Verification Checks</h2>
+            <h2 class="text-base font-bold text-zinc-950 mb-3">System, Event & Analysis Verification Checks</h2>
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
                 @foreach($checks as $key => $check)
                     <div @class([
@@ -81,6 +81,82 @@
                 @endforeach
             </div>
         </div>
+
+        <!-- Step 3 Live Analysis & Insights Showcase Grid -->
+        @if(! empty($sampleAnalysis))
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-6">
+                <div class="flex items-center justify-between border-b border-zinc-100 pb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-zinc-950">Live Behavioral Insights (Step 3 Analysis Output)</h2>
+                        <p class="mt-0.5 text-xs text-zinc-500">Deterministic pattern detection produced by <code class="font-mono text-brand-primary">AiAnalyzerInterface</code> from current DB events.</p>
+                    </div>
+                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-200">
+                        Deterministically Generated
+                    </span>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <!-- Purchase Intent Card -->
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Purchase Intent</p>
+                        <div class="mt-2 flex items-baseline gap-2">
+                            <span class="text-2xl font-black text-zinc-950 uppercase">{{ $sampleAnalysis['purchase_intent']['level'] ?? 'none' }}</span>
+                            <span class="text-xs font-bold text-emerald-600">({{ $sampleAnalysis['purchase_intent']['score'] ?? 0 }}/100)</span>
+                        </div>
+                        <p class="mt-1 text-[11px] text-zinc-500 leading-snug">{{ $sampleAnalysis['purchase_intent']['rationale'] ?? '' }}</p>
+                    </div>
+
+                    <!-- Cart Abandonment Risk Card -->
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Cart Abandonment Signal</p>
+                        <div class="mt-2 flex items-baseline gap-2">
+                            <span @class([
+                                'text-2xl font-black uppercase',
+                                'text-amber-600' => ($sampleAnalysis['cart_abandonment']['risk_level'] ?? 'none') === 'medium',
+                                'text-rose-600' => ($sampleAnalysis['cart_abandonment']['risk_level'] ?? 'none') === 'high',
+                                'text-zinc-500' => ($sampleAnalysis['cart_abandonment']['risk_level'] ?? 'none') === 'none',
+                            ])>
+                                {{ $sampleAnalysis['cart_abandonment']['risk_level'] ?? 'none' }}
+                            </span>
+                        </div>
+                        <p class="mt-1 text-[11px] text-zinc-500 leading-snug">
+                            {{ ($sampleAnalysis['cart_abandonment']['is_abandoned'] ?? false) ? 'Unpurchased items present' : 'No cart abandonment detected' }}
+                        </p>
+                    </div>
+
+                    <!-- Top Category Preference Card -->
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Preferred Category</p>
+                        <div class="mt-2">
+                            <span class="text-lg font-bold text-zinc-950 truncate block">
+                                {{ $sampleAnalysis['category_preference']['top_category'] ?? 'None yet' }}
+                            </span>
+                        </div>
+                        <p class="mt-1 text-[11px] text-zinc-500">Based on view & cart interaction weighting</p>
+                    </div>
+
+                    <!-- Recommendation Trigger Card -->
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Recommendation Strategy</p>
+                        <div class="mt-2">
+                            <span class="text-xs font-mono font-bold text-purple-700 bg-purple-100 px-2 py-1 rounded inline-block">
+                                {{ $sampleAnalysis['recommendation_signals']['trigger'] ?? 'general_browse' }}
+                            </span>
+                        </div>
+                        <p class="mt-1.5 text-[11px] text-zinc-500">Automated seed rule</p>
+                    </div>
+                </div>
+
+                <!-- Structured Context Payload Inspection -->
+                <div class="rounded-xl border border-zinc-100 bg-zinc-950 p-4 text-white">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-mono text-amber-400 font-bold">Structured User Context Payload (AiContextBuilder)</span>
+                        <span class="text-[10px] font-mono text-zinc-400">Total Events Analyzed: {{ $sampleContext['total_events'] ?? 0 }}</span>
+                    </div>
+                    <pre class="text-[11px] font-mono text-zinc-300 overflow-x-auto p-2 bg-black/50 rounded max-h-60">{{ json_encode($sampleContext, JSON_PRETTY_PRINT) }}</pre>
+                </div>
+            </div>
+        @endif
 
         <!-- Event Types Summary Grid -->
         <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">

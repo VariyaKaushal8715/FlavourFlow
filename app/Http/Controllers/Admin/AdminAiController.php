@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\AI\Adapters\FlavourFlowAdapter;
 use App\AI\Contracts\AiAdapterInterface;
+use App\AI\Contracts\AiAnalyzerInterface;
+use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Contracts\AiEngineInterface;
 use App\AI\Contracts\AiEventTrackerInterface;
 use App\AI\Contracts\AiRequestInterface;
@@ -43,6 +45,10 @@ class AdminAiController extends Controller
             'event_model' => $this->checkEventModel(),
             'event_tracker_service' => $this->checkEventTrackerService(),
             'event_types_tracked' => $this->checkMajorEventTypes(),
+
+            // Step 3: Context & Analysis Layer Verification Checks
+            'context_builder_service' => $this->checkContextBuilderService(),
+            'analyzer_service' => $this->checkAnalyzerService(),
         ];
 
         $allPassed = collect($checks)->every(fn (array $check): bool => $check['passed'] === true);
@@ -55,11 +61,26 @@ class AdminAiController extends Controller
             ? AiEvent::query()->selectRaw('event_type, count(*) as total')->groupBy('event_type')->pluck('total', 'event_type')->toArray()
             : [];
 
+        // Build live sample context & insights for UI inspection
+        $sampleContext = [];
+        $sampleAnalysis = [];
+        if (app()->bound(AiContextBuilderInterface::class) && app()->bound(AiAnalyzerInterface::class)) {
+            /** @var AiContextBuilderInterface $builder */
+            $builder = app(AiContextBuilderInterface::class);
+            /** @var AiAnalyzerInterface $analyzer */
+            $analyzer = app(AiAnalyzerInterface::class);
+
+            $sampleContext = $builder->buildContext();
+            $sampleAnalysis = $analyzer->analyze($sampleContext);
+        }
+
         return view('admin.ai.index', [
             'checks' => $checks,
             'isReady' => $allPassed,
             'recentEvents' => $recentEvents,
             'eventCounts' => $eventCounts,
+            'sampleContext' => $sampleContext,
+            'sampleAnalysis' => $sampleAnalysis,
         ]);
     }
 
@@ -77,12 +98,12 @@ class AdminAiController extends Controller
             $tracker = app(AiEventTrackerInterface::class);
 
             $majorEvents = [
-                'product_viewed' => ['entity_type' => 'product', 'entity_id' => '1', 'meta' => ['name' => 'Kashmiri Red Chilli', 'price' => 299.0]],
+                'product_viewed' => ['entity_type' => 'product', 'entity_id' => '1', 'meta' => ['name' => 'Kashmiri Red Chilli', 'price' => 299.0, 'category' => 'Whole Spices']],
                 'product_searched' => ['entity_type' => null, 'entity_id' => null, 'meta' => ['query' => 'cardamom', 'sort' => 'featured']],
                 'category_viewed' => ['entity_type' => 'category', 'entity_id' => null, 'meta' => ['category' => 'Whole Spices']],
-                'wishlist_added' => ['entity_type' => 'product', 'entity_id' => '2', 'meta' => ['name' => 'Organic Turmeric']],
+                'wishlist_added' => ['entity_type' => 'product', 'entity_id' => '2', 'meta' => ['name' => 'Organic Turmeric', 'category' => 'Ground Spices']],
                 'wishlist_removed' => ['entity_type' => 'product', 'entity_id' => '2', 'meta' => ['name' => 'Organic Turmeric']],
-                'cart_added' => ['entity_type' => 'product', 'entity_id' => '1', 'meta' => ['name' => 'Kashmiri Red Chilli', 'quantity' => 2]],
+                'cart_added' => ['entity_type' => 'product', 'entity_id' => '1', 'meta' => ['name' => 'Kashmiri Red Chilli', 'quantity' => 2, 'category' => 'Whole Spices']],
                 'cart_removed' => ['entity_type' => 'product', 'entity_id' => '1', 'meta' => ['name' => 'Kashmiri Red Chilli']],
                 'checkout_started' => ['entity_type' => 'cart', 'entity_id' => null, 'meta' => ['item_count' => 2, 'total' => 598.0]],
                 'order_placed' => ['entity_type' => 'order', 'entity_id' => '101', 'meta' => ['order_id' => 'ORD-20260824-TEST', 'total' => 598.0]],
@@ -142,6 +163,8 @@ class AdminAiController extends Controller
             AiResponseInterface::class,
             AiAdapterInterface::class,
             AiEventTrackerInterface::class,
+            AiContextBuilderInterface::class,
+            AiAnalyzerInterface::class,
         ];
 
         $missing = [];
@@ -164,7 +187,7 @@ class AdminAiController extends Controller
             'name' => 'Contracts & Interfaces',
             'description' => 'Verifies all AI engine contracts and interfaces exist.',
             'passed' => true,
-            'details' => count($contracts).' core contracts verified (AiEngineInterface, AiRequestInterface, AiResponseInterface, AiAdapterInterface, AiEventTrackerInterface).',
+            'details' => count($contracts).' core contracts verified (AiEngineInterface, AiRequestInterface, AiResponseInterface, AiAdapterInterface, AiEventTrackerInterface, AiContextBuilderInterface, AiAnalyzerInterface).',
         ];
     }
 
@@ -227,12 +250,16 @@ class AdminAiController extends Controller
             'app/AI/Contracts/AiResponseInterface.php' => app_path('AI/Contracts/AiResponseInterface.php'),
             'app/AI/Contracts/AiAdapterInterface.php' => app_path('AI/Contracts/AiAdapterInterface.php'),
             'app/AI/Contracts/AiEventTrackerInterface.php' => app_path('AI/Contracts/AiEventTrackerInterface.php'),
+            'app/AI/Contracts/AiContextBuilderInterface.php' => app_path('AI/Contracts/AiContextBuilderInterface.php'),
+            'app/AI/Contracts/AiAnalyzerInterface.php' => app_path('AI/Contracts/AiAnalyzerInterface.php'),
             'app/AI/Core/AiEngine.php' => app_path('AI/Core/AiEngine.php'),
             'app/AI/Core/AiRequest.php' => app_path('AI/Core/AiRequest.php'),
             'app/AI/Core/AiResponse.php' => app_path('AI/Core/AiResponse.php'),
             'app/AI/Adapters/FlavourFlowAdapter.php' => app_path('AI/Adapters/FlavourFlowAdapter.php'),
             'app/AI/Models/AiEvent.php' => app_path('AI/Models/AiEvent.php'),
             'app/AI/Services/AiEventTracker.php' => app_path('AI/Services/AiEventTracker.php'),
+            'app/AI/Services/AiContextBuilder.php' => app_path('AI/Services/AiContextBuilder.php'),
+            'app/AI/Services/AiAnalyzer.php' => app_path('AI/Services/AiAnalyzer.php'),
         ];
 
         $missing = [];
@@ -590,6 +617,111 @@ class AdminAiController extends Controller
             return [
                 'name' => 'Major User Event Types',
                 'description' => 'Verifies real event tracking across product_viewed, product_searched, category_viewed, wishlist_added/removed, cart_added/removed, checkout_started, and order_placed.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkContextBuilderService(): array
+    {
+        try {
+            if (! app()->bound(AiContextBuilderInterface::class)) {
+                return [
+                    'name' => 'AI Context Builder Service',
+                    'description' => 'Resolves AiContextBuilderInterface from container and verifies buildContext() functionality.',
+                    'passed' => false,
+                    'details' => 'AiContextBuilderInterface is not bound in service container.',
+                ];
+            }
+
+            /** @var AiContextBuilderInterface $builder */
+            $builder = app(AiContextBuilderInterface::class);
+            $context = $builder->buildContext();
+
+            if (! is_array($context) || ! array_key_exists('recently_viewed_products', $context)) {
+                return [
+                    'name' => 'AI Context Builder Service',
+                    'description' => 'Resolves AiContextBuilderInterface from container and verifies buildContext() functionality.',
+                    'passed' => false,
+                    'details' => 'buildContext() returned invalid or incomplete structure.',
+                ];
+            }
+
+            $eventsCount = $context['total_events'] ?? 0;
+
+            return [
+                'name' => 'AI Context Builder Service',
+                'description' => 'Resolves AiContextBuilderInterface from container and verifies buildContext() functionality.',
+                'passed' => true,
+                'details' => 'Resolved '.get_class($builder).' and extracted structured context (Total Events: '.$eventsCount.', Viewed Products: '.count($context['recently_viewed_products']).').',
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'AI Context Builder Service',
+                'description' => 'Resolves AiContextBuilderInterface from container and verifies buildContext() functionality.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkAnalyzerService(): array
+    {
+        try {
+            if (! app()->bound(AiAnalyzerInterface::class)) {
+                return [
+                    'name' => 'AI Analyzer Service',
+                    'description' => 'Resolves AiAnalyzerInterface from container and verifies analyze() pattern detection.',
+                    'passed' => false,
+                    'details' => 'AiAnalyzerInterface is not bound in service container.',
+                ];
+            }
+
+            /** @var AiContextBuilderInterface $builder */
+            $builder = app(AiContextBuilderInterface::class);
+            /** @var AiAnalyzerInterface $analyzer */
+            $analyzer = app(AiAnalyzerInterface::class);
+
+            $context = $builder->buildContext();
+            $analysis = $analyzer->analyze($context);
+
+            $requiredKeys = ['purchase_intent', 'product_interest', 'category_preference', 'cart_abandonment', 'recommendation_signals'];
+            $missing = [];
+            foreach ($requiredKeys as $key) {
+                if (! array_key_exists($key, $analysis)) {
+                    $missing[] = $key;
+                }
+            }
+
+            if ($missing !== []) {
+                return [
+                    'name' => 'AI Analyzer Service',
+                    'description' => 'Resolves AiAnalyzerInterface from container and verifies analyze() pattern detection.',
+                    'passed' => false,
+                    'details' => 'Analysis result missing keys: '.implode(', ', $missing),
+                ];
+            }
+
+            $intentLevel = $analysis['purchase_intent']['level'] ?? 'none';
+            $recTrigger = $analysis['recommendation_signals']['trigger'] ?? 'none';
+
+            return [
+                'name' => 'AI Analyzer Service',
+                'description' => 'Resolves AiAnalyzerInterface from container and verifies analyze() pattern detection.',
+                'passed' => true,
+                'details' => 'Resolved '.get_class($analyzer).' and generated behavioral insights (Purchase Intent: '.$intentLevel.', Rec Trigger: '.$recTrigger.').',
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'AI Analyzer Service',
+                'description' => 'Resolves AiAnalyzerInterface from container and verifies analyze() pattern detection.',
                 'passed' => false,
                 'details' => 'Error: '.$e->getMessage(),
             ];

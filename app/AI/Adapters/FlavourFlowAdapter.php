@@ -3,6 +3,8 @@
 namespace App\AI\Adapters;
 
 use App\AI\Contracts\AiAdapterInterface;
+use App\AI\Contracts\AiAnalyzerInterface;
+use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Contracts\AiRequestInterface;
 use App\AI\Contracts\AiResponseInterface;
 use App\AI\Core\AiResponse;
@@ -41,5 +43,32 @@ class FlavourFlowAdapter implements AiAdapterInterface
     public function isConnected(): bool
     {
         return true;
+    }
+
+    /**
+     * Build domain context for a user or session.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildDomainContext(?int $userId = null, ?string $sessionId = null): array
+    {
+        /** @var AiContextBuilderInterface $builder */
+        $builder = app(AiContextBuilderInterface::class);
+
+        return $builder->buildContext($userId, $sessionId);
+    }
+
+    /**
+     * Analyze user context to produce domain insights.
+     *
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    public function analyzeDomainContext(array $context): array
+    {
+        /** @var AiAnalyzerInterface $analyzer */
+        $analyzer = app(AiAnalyzerInterface::class);
+
+        return $analyzer->analyze($context);
     }
 }

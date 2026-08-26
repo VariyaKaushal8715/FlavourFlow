@@ -1,6 +1,8 @@
 <?php
 
 use App\AI\Contracts\AiAdapterInterface;
+use App\AI\Contracts\AiAnalyzerInterface;
+use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Contracts\AiEngineInterface;
 use App\AI\Contracts\AiEventTrackerInterface;
 use App\Models\User;
@@ -12,6 +14,8 @@ test('ai engine contracts and services resolve from container', function () {
     expect(app()->bound(AiEngineInterface::class))->toBeTrue();
     expect(app()->bound(AiAdapterInterface::class))->toBeTrue();
     expect(app()->bound(AiEventTrackerInterface::class))->toBeTrue();
+    expect(app()->bound(AiContextBuilderInterface::class))->toBeTrue();
+    expect(app()->bound(AiAnalyzerInterface::class))->toBeTrue();
 
     $engine = app(AiEngineInterface::class);
     expect($engine->isReady())->toBeTrue();
@@ -39,7 +43,39 @@ test('event tracker records user actions into ai_events database table', functio
     ]);
 });
 
-test('admin ai status health page verifies all step 1 and step 2 checks successfully', function () {
+test('ai context builder extracts structured user context from recorded events', function () {
+    $tracker = app(AiEventTrackerInterface::class);
+    $builder = app(AiContextBuilderInterface::class);
+
+    $tracker->track('product_viewed', 'product', 10, ['name' => 'Kashmiri Chilli', 'category' => 'Spices']);
+    $tracker->track('cart_added', 'product', 10, ['name' => 'Kashmiri Chilli', 'quantity' => 2]);
+    $tracker->track('checkout_started', 'cart', null, ['total' => 598.00]);
+
+    $context = $builder->buildContext();
+
+    expect($context['total_events'])->toBeGreaterThanOrEqual(3);
+    expect($context['recently_viewed_products'])->not->toBeEmpty();
+    expect($context['cart_activity']['total_added'])->toBeGreaterThanOrEqual(1);
+    expect($context['abandoned_cart_signals']['has_abandoned_cart'])->toBeTrue();
+});
+
+test('ai analyzer produces deterministic purchase intent and pattern insights', function () {
+    $tracker = app(AiEventTrackerInterface::class);
+    $builder = app(AiContextBuilderInterface::class);
+    $analyzer = app(AiAnalyzerInterface::class);
+
+    $tracker->track('product_viewed', 'product', 5, ['name' => 'Organic Turmeric', 'category' => 'Ground Spices']);
+    $tracker->track('cart_added', 'product', 5, ['name' => 'Organic Turmeric']);
+
+    $context = $builder->buildContext();
+    $analysis = $analyzer->analyze($context);
+
+    expect($analysis)->toHaveKeys(['purchase_intent', 'product_interest', 'category_preference', 'cart_abandonment', 'recommendation_signals']);
+    expect($analysis['purchase_intent']['score'])->toBeGreaterThanOrEqual(70);
+    expect($analysis['recommendation_signals']['trigger'])->not->toBeEmpty();
+});
+
+test('admin ai status health page verifies step 1, 2 and 3 checks successfully', function () {
     $admin = User::factory()->create(['is_admin' => true]);
 
     $response = $this->actingAs($admin)->get(route('admin.ai.index'));
@@ -47,6 +83,7 @@ test('admin ai status health page verifies all step 1 and step 2 checks successf
     $response->assertOk();
     $response->assertViewHas('isReady', true);
     $response->assertSee('Ready for Operation');
-    $response->assertSee('Major User Event Types');
+    $response->assertSee('AI Context Builder Service');
+    $response->assertSee('AI Analyzer Service');
     $response->assertSee('✓ Verified');
 });
