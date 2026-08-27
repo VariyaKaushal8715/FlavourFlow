@@ -164,6 +164,27 @@
                                 <span class="text-xs font-medium text-zinc-500 hidden sm:inline">FlavourFlow E-Commerce Operations</span>
                             </div>
                             <div class="flex items-center gap-3">
+                                <!-- Live Notification Dropdown -->
+                                <div class="relative" id="admin-notification-container">
+                                    <button type="button" id="notification-bell-btn" class="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:text-zinc-900 hover:border-zinc-300">
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                                        </svg>
+                                        <span id="notification-badge" class="absolute -top-1.5 -right-1.5 hidden flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white ring-2 ring-white">0</span>
+                                    </button>
+
+                                    <!-- Dropdown menu -->
+                                    <div id="notification-dropdown" class="absolute right-0 mt-2 hidden w-80 origin-top-right rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl ring-1 ring-black/5 focus:outline-none z-50">
+                                        <div class="border-b border-zinc-100 px-4 py-2.5 flex items-center justify-between">
+                                            <span class="text-xs font-bold text-zinc-900">New Orders</span>
+                                            <button type="button" id="mark-all-read-btn" class="text-[10px] font-bold text-brand-primary hover:underline">Clear</button>
+                                        </div>
+                                        <div class="max-h-64 overflow-y-auto py-1 divide-y divide-zinc-50" id="notification-items-list">
+                                            <p class="text-xs text-zinc-500 text-center py-6">No new notifications</p>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <a href="{{ route('admin.products.index') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800">
                                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                     Add Product
@@ -174,6 +195,145 @@
                     {{ $slot }}
                 </div>
             </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const bellBtn = document.getElementById('notification-bell-btn');
+                    const dropdown = document.getElementById('notification-dropdown');
+                    const badge = document.getElementById('notification-badge');
+                    const listContainer = document.getElementById('notification-items-list');
+                    const markReadBtn = document.getElementById('mark-all-read-btn');
+                    
+                    if (!bellBtn) return;
+
+                    // Load read orders from localStorage to survive page refreshes
+                    let readOrderIds = new Set(JSON.parse(localStorage.getItem('admin_read_order_ids') || '[]'));
+                    let knownOrderIds = new Set();
+                    let isFirstLoad = true;
+
+                    const saveReadOrders = () => {
+                        localStorage.setItem('admin_read_order_ids', JSON.stringify(Array.from(readOrderIds)));
+                    };
+
+                    const renderNotifications = (orders) => {
+                        // Filter orders that have not been read yet
+                        const unreadOrders = orders.filter(order => !readOrderIds.has(order.id));
+                        
+                        // Update badge
+                        if (unreadOrders.length > 0) {
+                            badge.textContent = unreadOrders.length;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+
+                        if (orders.length === 0) {
+                            listContainer.innerHTML = '<p class="text-xs text-zinc-500 text-center py-6">No orders found</p>';
+                            return;
+                        }
+
+                        listContainer.innerHTML = '';
+                        orders.forEach(order => {
+                            const isUnread = !readOrderIds.has(order.id);
+                            const item = document.createElement('a');
+                            item.href = `/admin/orders/${order.order_number}`;
+                            item.className = `flex flex-col gap-1 p-3 text-xs transition hover:bg-zinc-50 rounded-xl ${isUnread ? 'bg-zinc-50/80 border-l-2 border-red-500 font-semibold' : ''}`;
+                            item.innerHTML = `
+                                <div class="flex justify-between items-center">
+                                    <span class="text-zinc-950 font-bold">${order.order_number}</span>
+                                    <span class="text-zinc-400 text-[10px]">${new Date(order.created_at).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</span>
+                                </div>
+                                <div class="flex justify-between items-center text-zinc-500">
+                                    <span>${order.name || 'Customer'}</span>
+                                    <span class="font-bold text-zinc-900">₹${parseFloat(order.total_amount).toFixed(0)}</span>
+                                </div>
+                            `;
+                            
+                            item.addEventListener('click', () => {
+                                readOrderIds.add(order.id);
+                                saveReadOrders();
+                            });
+                            
+                            listContainer.appendChild(item);
+                        });
+                    };
+
+                    const checkNewOrders = () => {
+                        fetch('/admin/api/new-orders')
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.orders) {
+                                    let hasNew = false;
+                                    
+                                    data.orders.forEach(order => {
+                                        // If it's a completely new order ID we haven't seen in this session
+                                        if (!knownOrderIds.has(order.id)) {
+                                            knownOrderIds.add(order.id);
+                                            if (!isFirstLoad && !readOrderIds.has(order.id)) {
+                                                hasNew = true;
+                                                showLiveToast(order);
+                                            }
+                                        }
+                                    });
+
+                                    isFirstLoad = false;
+                                    renderNotifications(data.orders);
+                                }
+                            })
+                            .catch(err => console.error("Error checking new orders:", err));
+                    };
+
+                    const showLiveToast = (order) => {
+                        const toast = document.createElement('div');
+                        toast.className = 'fixed bottom-5 right-5 z-[10000] max-w-sm rounded-2xl border border-red-200 bg-white p-4 shadow-2xl transition-all duration-300 transform translate-y-10 opacity-0 flex gap-3 items-start cursor-pointer';
+                        toast.innerHTML = `
+                            <div class="bg-red-50 p-2 rounded-xl text-red-600">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-zinc-900">New Order Placed!</p>
+                                <p class="text-[11px] text-zinc-500 truncate">Order ${order.order_number} for ₹${parseFloat(order.total_amount).toFixed(0)}</p>
+                            </div>
+                        `;
+                        
+                        toast.addEventListener('click', () => {
+                            readOrderIds.add(order.id);
+                            saveReadOrders();
+                            window.location.href = `/admin/orders/${order.order_number}`;
+                        });
+
+                        document.body.appendChild(toast);
+                        
+                        setTimeout(() => {
+                            toast.classList.remove('translate-y-10', 'opacity-0');
+                        }, 100);
+
+                        setTimeout(() => {
+                            toast.classList.add('translate-y-10', 'opacity-0');
+                            setTimeout(() => toast.remove(), 300);
+                        }, 6000);
+                    };
+
+                    bellBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        dropdown.classList.toggle('hidden');
+                    });
+
+                    document.addEventListener('click', (e) => {
+                        if (!e.target.closest('#admin-notification-container')) {
+                            dropdown.classList.add('hidden');
+                        }
+                    });
+
+                    markReadBtn.addEventListener('click', () => {
+                        knownOrderIds.forEach(id => readOrderIds.add(id));
+                        saveReadOrders();
+                        checkNewOrders();
+                    });
+
+                    checkNewOrders();
+                    setInterval(checkNewOrders, 5000);
+                });
+            </script>
         @else
             {{ $slot }}
         @endif

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -73,5 +74,46 @@ class AdminOrderController extends Controller
             'order' => $order,
         ]);
     }
-}
 
+    public function updateStatus(Request $request, Order $order)
+    {
+        Gate::authorize('access-admin');
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:Confirmed,Shipped,Out for Delivery,Delivered'],
+        ]);
+
+        $status = $validated['status'];
+        $order->status = $status;
+
+        // Set the corresponding timestamp
+        if ($status === 'Confirmed') {
+            $order->confirmed_at = now();
+        } elseif ($status === 'Shipped') {
+            $order->shipped_at = now();
+        } elseif ($status === 'Out for Delivery') {
+            $order->out_for_delivery_at = now();
+        } elseif ($status === 'Delivered') {
+            $order->delivered_at = now();
+        }
+
+        $order->save();
+
+        return redirect()->back()->with('success', 'Order status updated successfully.');
+    }
+
+    public function newOrders(Request $request): JsonResponse
+    {
+        Gate::authorize('access-admin');
+
+        // Fetch orders created recently, latest first
+        $orders = Order::query()
+            ->latest()
+            ->take(10)
+            ->get(['id', 'order_number', 'name', 'total_amount', 'status', 'created_at']);
+
+        return response()->json([
+            'orders' => $orders,
+        ]);
+    }
+}

@@ -170,23 +170,42 @@
                         <div class="flex items-center justify-between border-b border-zinc-100 pb-3">
                             <dt class="text-zinc-500">Fulfillment Status</dt>
                             <dd>
-                                @if($order->status === 'completed')
-                                    <span class="rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">Completed / Dispatched</span>
-                                @elseif($order->status === 'processing')
-                                    <span class="rounded-md bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">In Preparation</span>
-                                @elseif($order->status === 'pending')
-                                    <span class="rounded-md bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">Order Placed</span>
+                                @if($order->status === 'completed' || $order->status === 'Delivered')
+                                    <span class="rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">Delivered</span>
+                                @elseif($order->status === 'processing' || $order->status === 'Shipped' || $order->status === 'Out for Delivery')
+                                    <span class="rounded-md bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">{{ $order->status }}</span>
                                 @else
-                                    <span class="rounded-md bg-zinc-100 px-2 py-1 text-xs font-bold text-zinc-700">{{ ucfirst($order->status) }}</span>
+                                    <span class="rounded-md bg-zinc-100 px-2 py-1 text-xs font-bold text-zinc-700">{{ $order->status }}</span>
                                 @endif
                             </dd>
                         </div>
 
                         <div class="flex items-center justify-between">
                             <dt class="text-zinc-500">Payment Method</dt>
-                            <dd class="font-semibold text-zinc-900">Secure Direct Online Payment</dd>
+                            <dd class="font-semibold text-zinc-900">{{ strtoupper($order->payment_method ?? 'COD') }}</dd>
                         </div>
                     </dl>
+                </div>
+
+                {{-- Update Status Card --}}
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-base font-bold text-zinc-950">Update Order Status</h2>
+                    <form method="POST" action="{{ route('admin.orders.updateStatus', $order) }}" class="mt-4 space-y-4">
+                        @csrf
+                        @method('PATCH')
+                        <div>
+                            <label for="status" class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider">Select Status</label>
+                            <select id="status" name="status" class="mt-2 block w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-950 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900">
+                                <option value="Confirmed" {{ $order->status === 'Confirmed' ? 'selected' : '' }}>Confirmed</option>
+                                <option value="Shipped" {{ $order->status === 'Shipped' ? 'selected' : '' }}>Shipped</option>
+                                <option value="Out for Delivery" {{ $order->status === 'Out for Delivery' ? 'selected' : '' }}>Out for Delivery</option>
+                                <option value="Delivered" {{ $order->status === 'Delivered' ? 'selected' : '' }}>Delivered</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full rounded-lg bg-zinc-950 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800">
+                            Save Changes
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

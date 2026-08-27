@@ -27,12 +27,20 @@ class Order extends Model
         'subtotal',
         'delivery_charge',
         'total_amount',
+        'confirmed_at',
+        'shipped_at',
+        'out_for_delivery_at',
+        'delivered_at',
     ];
 
     protected $casts = [
         'subtotal' => 'decimal:2',
         'delivery_charge' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'confirmed_at' => 'datetime',
+        'shipped_at' => 'datetime',
+        'out_for_delivery_at' => 'datetime',
+        'delivered_at' => 'datetime',
     ];
 
     public function getRouteKeyName(): string

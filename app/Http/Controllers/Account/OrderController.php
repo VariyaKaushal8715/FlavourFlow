@@ -68,13 +68,21 @@ class OrderController extends Controller
             $currentIndex = 0;
         }
 
+        $times = [
+            'Confirmed' => $order->confirmed_at ?? $order->created_at,
+            'Shipped' => $order->shipped_at,
+            'Out for Delivery' => $order->out_for_delivery_at,
+            'Delivered' => $order->delivered_at,
+        ];
+
         foreach ($steps as $index => &$step) {
+            $stepTime = $times[$step['name']];
             if ($index < $currentIndex) {
                 $step['state'] = 'completed';
-                $step['time'] = $index === 0 ? $order->created_at : $order->updated_at;
+                $step['time'] = $stepTime ?? $order->created_at;
             } elseif ($index === $currentIndex) {
                 $step['state'] = 'active';
-                $step['time'] = $order->updated_at;
+                $step['time'] = $stepTime ?? $order->updated_at;
             } else {
                 $step['state'] = 'pending';
                 $step['time'] = null;
@@ -88,4 +96,3 @@ class OrderController extends Controller
         ]);
     }
 }
-
