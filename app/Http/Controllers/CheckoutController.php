@@ -60,8 +60,7 @@ class CheckoutController extends Controller
         try {
             $order = DB::transaction(function () use ($validated, $cart, $request) {
                 // Generate a unique Order Number
-                $orderNumber = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(6));
-
+                $orderNumber = 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
                 // Calculate checkout totals
                 $subtotal = $cart->subtotal();
                 $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;

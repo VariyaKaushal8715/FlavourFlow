@@ -12,9 +12,13 @@ test('unauthenticated guest cannot access reviews API', function () {
 
     $this->post(route('reviews.store'), [
         'order_id' => 1,
-        'product_id' => 1,
-        'rating' => 5,
-        'review_text' => 'Loved it!',
+        'reviews' => [
+            [
+                'product_id' => 1,
+                'rating' => 5,
+                'review_text' => 'Loved it!',
+            ],
+        ],
     ])->assertRedirect(route('login'));
 });
 
@@ -62,20 +66,42 @@ test('user with order has pending reviews and can submit successfully with corre
         'total_price' => 120,
     ]);
 
-    // Submit review
+    // 1. Should have pending reviews
+    $this->actingAs($user)
+        ->getJson(route('reviews.pending'))
+        ->assertSuccessful()
+        ->assertJson([
+            'has_pending' => true,
+            'products' => [
+                [
+                    'id' => $product->id,
+                    'name' => 'Kashmiri Chili Powder',
+                ],
+            ],
+            'order' => [
+                'id' => $order->id,
+                'order_number' => 'ORD-COMPLETED-999',
+            ],
+        ]);
+
+    // 2. Submit valid review
     $this->actingAs($user)
         ->postJson(route('reviews.store'), [
             'order_id' => $order->id,
-            'product_id' => $product->id,
-            'rating' => 5,
-            'review_text' => 'High quality and very red!',
+            'reviews' => [
+                [
+                    'product_id' => $product->id,
+                    'rating' => 5,
+                    'review_text' => 'High quality and very red!',
+                ],
+            ],
         ])
         ->assertSuccessful()
         ->assertJson([
             'success' => true,
         ]);
 
-    // Verify correct fields in the database
+    // 3. Verify correct fields in the database
     $this->assertDatabaseHas('reviews', [
         'user_id' => $user->id,
         'user_name' => 'Alice Tester',
@@ -125,9 +151,13 @@ test('cannot submit duplicate review for the same product and order', function (
     $this->actingAs($user)
         ->postJson(route('reviews.store'), [
             'order_id' => $order->id,
-            'product_id' => $product->id,
-            'rating' => 4,
-            'review_text' => 'Good high quality turmeric spice.',
+            'reviews' => [
+                [
+                    'product_id' => $product->id,
+                    'rating' => 4,
+                    'review_text' => 'Good high quality turmeric spice.',
+                ],
+            ],
         ])
         ->assertSuccessful();
 
@@ -135,9 +165,13 @@ test('cannot submit duplicate review for the same product and order', function (
     $this->actingAs($user)
         ->postJson(route('reviews.store'), [
             'order_id' => $order->id,
-            'product_id' => $product->id,
-            'rating' => 5,
-            'review_text' => 'Trying to submit duplicate review.',
+            'reviews' => [
+                [
+                    'product_id' => $product->id,
+                    'rating' => 5,
+                    'review_text' => 'Trying to submit duplicate review.',
+                ],
+            ],
         ])
         ->assertStatus(400);
 });
@@ -181,10 +215,13 @@ test('cannot review product that was not purchased in the order', function () {
     $this->actingAs($user)
         ->postJson(route('reviews.store'), [
             'order_id' => $order->id,
-            'product_id' => $product2->id,
-            'rating' => 4,
-            'review_text' => 'Trying to review product I did not buy.',
+            'reviews' => [
+                [
+                    'product_id' => $product2->id,
+                    'rating' => 4,
+                    'review_text' => 'Trying to review product I did not buy.',
+                ],
+            ],
         ])
         ->assertStatus(403);
 });
-

@@ -58,8 +58,7 @@
             <style>
                 /* Lock navigation when review is pending */
                 .review-pending-active a:not([data-star]),
-                .review-pending-active button:not(#review-submit-btn):not([data-star]) {
-                    pointer-events: none !important;
+                .review-pending-active button:not(#review-submit-btn):not([data-star-value]) {
                     opacity: 0.3 !important;
                 }
                 .review-pending-active [href="/"],
@@ -77,53 +76,22 @@
             <div id="mandatory-review-modal" class="hidden fixed inset-0 z-[9999] overflow-y-auto bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center p-4">
                 <div class="relative w-full max-w-md transform overflow-hidden rounded-3xl border border-amber-200/60 bg-white p-6 text-left shadow-2xl transition-all sm:p-8">
                     <div class="text-center">
-                        <h3 class="text-lg font-bold text-zinc-950">Review Your Purchased Product</h3>
-                        <p class="mt-2 text-xs text-zinc-500">You must submit a review for your recently purchased product before continuing.</p>
+                        <h3 class="text-lg font-bold text-zinc-950">Review Your Purchased Products</h3>
+                        <p class="mt-2 text-xs text-zinc-500">You must submit reviews for the items in your order before continuing.</p>
+                        <p id="review-order-number" class="mt-1 text-sm font-bold text-brand-primary"></p>
                     </div>
 
-                    <div class="mt-6 flex items-center gap-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 p-3">
-                        <img id="review-product-image" class="h-16 w-16 rounded-xl object-cover border border-zinc-200" src="" alt="Product">
-                        <div class="min-w-0 flex-1">
-                            <h4 id="review-product-name" class="text-sm font-bold text-zinc-950 truncate"></h4>
-                            <p id="review-order-number" class="mt-0.5 text-xs text-zinc-400"></p>
-                        </div>
-                    </div>
-
-                    <form id="mandatory-review-form" class="mt-6 space-y-4">
-                        <input type="hidden" id="review-product-id">
+                    <form id="mandatory-review-form" class="mt-6 space-y-6">
                         <input type="hidden" id="review-order-id">
 
-                        <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 text-center">Your Rating</label>
-                            <div class="mt-3 flex justify-center gap-2">
-                                <button type="button" data-star="1" class="text-zinc-200 hover:scale-110 transition duration-150">
-                                    <svg class="h-8 w-8 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                </button>
-                                <button type="button" data-star="2" class="text-zinc-200 hover:scale-110 transition duration-150">
-                                    <svg class="h-8 w-8 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                </button>
-                                <button type="button" data-star="3" class="text-zinc-200 hover:scale-110 transition duration-150">
-                                    <svg class="h-8 w-8 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                </button>
-                                <button type="button" data-star="4" class="text-zinc-200 hover:scale-110 transition duration-150">
-                                    <svg class="h-8 w-8 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                </button>
-                                <button type="button" data-star="5" class="text-zinc-200 hover:scale-110 transition duration-150">
-                                    <svg class="h-8 w-8 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                </button>
-                            </div>
-                            <input type="hidden" id="review-rating-value" required>
-                        </div>
-
-                        <div>
-                            <label for="review-text-input" class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Review Comments</label>
-                            <textarea id="review-text-input" rows="3" required class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-950 placeholder-zinc-400 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary focus:outline-none" placeholder="What did you like or dislike about this spice?"></textarea>
+                        <div class="space-y-6 max-h-[50vh] overflow-y-auto pr-2" id="reviews-list-container">
+                            <!-- Dynamic products list with star ratings and reviews will be built here -->
                         </div>
 
                         <div id="review-error-message" class="hidden text-xs font-semibold text-red-600 bg-red-50 p-3 rounded-xl border border-red-100"></div>
 
                         <button type="submit" id="review-submit-btn" class="w-full rounded-2xl bg-zinc-950 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-brand-primary disabled:opacity-50">
-                            Submit Review
+                            Submit Reviews
                         </button>
                     </form>
                 </div>
@@ -133,9 +101,9 @@
                 document.addEventListener('DOMContentLoaded', () => {
                     const modal = document.getElementById('mandatory-review-modal');
                     const form = document.getElementById('mandatory-review-form');
-                    const starButtons = document.querySelectorAll('[data-star]');
-                    const ratingValue = document.getElementById('review-rating-value');
-                    const textInput = document.getElementById('review-text-input');
+                    const reviewsContainer = document.getElementById('reviews-list-container');
+                    const orderIdInput = document.getElementById('review-order-id');
+                    const orderNumDisplay = document.getElementById('review-order-number');
                     const errorMsg = document.getElementById('review-error-message');
                     const submitBtn = document.getElementById('review-submit-btn');
                     let isLocked = false;
@@ -144,18 +112,46 @@
                         fetch('/reviews/pending')
                             .then(res => res.json())
                             .then(data => {
-                                if (data.has_pending) {
+                                if (data.has_pending && data.products && data.products.length > 0) {
                                     isLocked = true;
                                     document.body.classList.add('review-pending-active', 'overflow-hidden');
                                     
-                                    document.getElementById('review-product-image').src = data.product.image;
-                                    document.getElementById('review-product-name').textContent = data.product.name;
-                                    document.getElementById('review-order-number').textContent = 'From Order: ' + data.order.order_number;
-                                    document.getElementById('review-product-id').value = data.product.id;
-                                    document.getElementById('review-order-id').value = data.order.id;
+                                    orderIdInput.value = data.order.id;
+                                    orderNumDisplay.textContent = 'Order Number: ' + data.order.order_number;
                                     
-                                    setRating(0);
-                                    textInput.value = '';
+                                    // Build dynamic list of products needing reviews
+                                    reviewsContainer.innerHTML = '';
+                                    data.products.forEach(product => {
+                                        const wrapper = document.createElement('div');
+                                        wrapper.className = 'border-b border-zinc-100 pb-5 last:border-0 last:pb-0 space-y-3';
+                                        wrapper.innerHTML = `
+                                            <div class="flex items-center gap-3">
+                                                <img class="h-12 w-12 rounded-xl object-cover border border-zinc-200" src="${product.image}" alt="${product.name}">
+                                                <div class="min-w-0 flex-1">
+                                                    <h4 class="text-sm font-bold text-zinc-950 truncate">${product.name}</h4>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 text-center">Your Rating</label>
+                                                <div class="mt-2 flex justify-center gap-2" data-rating-group="${product.id}">
+                                                    ${[1,2,3,4,5].map(star => `
+                                                        <button type="button" data-star-value="${star}" data-star-product="${product.id}" class="text-zinc-200 hover:scale-110 transition duration-155">
+                                                            <svg class="h-7 w-7 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                                        </button>
+                                                    `).join('')}
+                                                </div>
+                                                <input type="hidden" id="rating-input-${product.id}" class="product-rating-input" data-product-id="${product.id}" required>
+                                            </div>
+
+                                            <div>
+                                                <label for="review-text-${product.id}" class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Review Comments</label>
+                                                <textarea id="review-text-${product.id}" rows="2" required class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-2 text-sm text-zinc-950 placeholder-zinc-400 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary focus:outline-none" placeholder="What did you like or dislike?" data-product-id="${product.id}"></textarea>
+                                            </div>
+                                        `;
+                                        reviewsContainer.appendChild(wrapper);
+                                    });
+
                                     errorMsg.classList.add('hidden');
                                     modal.classList.remove('hidden');
 
@@ -170,24 +166,28 @@
                             .catch(err => console.error("Error fetching reviews status:", err));
                     };
 
-                    const setRating = (rating) => {
-                        ratingValue.value = rating || '';
-                        starButtons.forEach(btn => {
-                            const val = parseInt(btn.dataset.star);
-                            if (val <= rating) {
-                                btn.classList.remove('text-zinc-200');
-                                btn.classList.add('text-amber-400');
-                            } else {
-                                btn.classList.remove('text-amber-400');
-                                btn.classList.add('text-zinc-200');
-                            }
-                        });
-                    };
-
-                    starButtons.forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            setRating(parseInt(btn.dataset.star));
-                        });
+                    // Handle rating star clicks
+                    reviewsContainer.addEventListener('click', (e) => {
+                        const btn = e.target.closest('[data-star-value]');
+                        if (btn) {
+                            const rating = parseInt(btn.dataset.starValue);
+                            const productId = btn.dataset.starProduct;
+                            
+                            document.getElementById(`rating-input-${productId}`).value = rating;
+                            
+                            const group = reviewsContainer.querySelector(`[data-rating-group="${productId}"]`);
+                            const stars = group.querySelectorAll('[data-star-value]');
+                            stars.forEach(star => {
+                                const val = parseInt(star.dataset.starValue);
+                                if (val <= rating) {
+                                    star.classList.remove('text-zinc-200');
+                                    star.classList.add('text-amber-400');
+                                } else {
+                                    star.classList.remove('text-amber-400');
+                                    star.classList.add('text-zinc-200');
+                                }
+                            });
+                        }
                     });
 
                     // Lock escape & prevent back button navigation
@@ -216,18 +216,37 @@
                         e.preventDefault();
                         errorMsg.classList.add('hidden');
                         
-                        const rating = ratingValue.value;
-                        const review_text = textInput.value.trim();
+                        const reviews = [];
+                        const ratingInputs = reviewsContainer.querySelectorAll('.product-rating-input');
+                        let hasValidationError = false;
 
-                        if (!rating) {
-                            errorMsg.textContent = 'Please select a rating star.';
-                            errorMsg.classList.remove('hidden');
-                            return;
-                        }
+                        ratingInputs.forEach(input => {
+                            const productId = input.dataset.productId;
+                            const rating = input.value;
+                            const comment = document.getElementById(`review-text-${productId}`).value.trim();
 
-                        if (review_text.length < 5) {
-                            errorMsg.textContent = 'Review text must be at least 5 characters long.';
-                            errorMsg.classList.remove('hidden');
+                            if (!rating) {
+                                errorMsg.textContent = 'Please select a rating star for all products.';
+                                errorMsg.classList.remove('hidden');
+                                hasValidationError = true;
+                                return;
+                            }
+
+                            if (comment.length < 5) {
+                                errorMsg.textContent = 'Each review comment must be at least 5 characters long.';
+                                errorMsg.classList.remove('hidden');
+                                hasValidationError = true;
+                                return;
+                            }
+
+                            reviews.push({
+                                product_id: parseInt(productId),
+                                rating: parseInt(rating),
+                                review_text: comment
+                            });
+                        });
+
+                        if (hasValidationError) {
                             return;
                         }
 
@@ -242,19 +261,16 @@
                                 'Accept': 'application/json'
                             },
                             body: JSON.stringify({
-                                order_id: document.getElementById('review-order-id').value,
-                                product_id: document.getElementById('review-product-id').value,
-                                rating: rating,
-                                review_text: review_text
+                                order_id: orderIdInput.value,
+                                reviews: reviews
                             })
                         })
                         .then(res => res.json())
                         .then(data => {
                             submitBtn.disabled = false;
-                            submitBtn.textContent = 'Submit Review';
+                            submitBtn.textContent = 'Submit Reviews';
 
                             if (data.success) {
-                                // Query again to check if another review is pending
                                 checkPendingReview();
                             } else {
                                 errorMsg.textContent = data.message || 'An error occurred during submission.';
@@ -263,7 +279,7 @@
                         })
                         .catch(err => {
                             submitBtn.disabled = false;
-                            submitBtn.textContent = 'Submit Review';
+                            submitBtn.textContent = 'Submit Reviews';
                             errorMsg.textContent = 'Network error. Please try again.';
                             errorMsg.classList.remove('hidden');
                             console.error(err);
