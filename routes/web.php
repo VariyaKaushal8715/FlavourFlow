@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/orders', [OrderController::class, 'index'])->name('orders');
             Route::get('/orders/{order:order_number}', [OrderController::class, 'show'])->name('orders.show');
             Route::get('/orders/{order:order_number}/track', [OrderController::class, 'track'])->name('orders.track');
+            Route::get('/orders/{order:order_number}/receipt', [OrderController::class, 'downloadReceipt'])->name('orders.receipt');
         });
 
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -76,6 +77,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout/coupon/apply', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
 
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
@@ -107,6 +109,7 @@ Route::prefix('admin')
             Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
             Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
             Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus');
+            Route::get('/orders/{order}/receipt', [AdminOrderController::class, 'downloadReceipt'])->name('orders.receipt.download');
             Route::get('/api/new-orders', [AdminOrderController::class, 'newOrders'])->name('api.newOrders');
 
             // Inventory

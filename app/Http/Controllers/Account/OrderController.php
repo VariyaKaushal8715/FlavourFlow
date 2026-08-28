@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -93,6 +94,22 @@ class OrderController extends Controller
             'site' => config('personal_site'),
             'order' => $order,
             'steps' => $steps,
+        ]);
+    }
+
+    public function downloadReceipt(Request $request, Order $order)
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        $order->load(['items.product', 'user']);
+
+        $pdfGenerator = new PdfReceiptGenerator;
+        $pdfContent = $pdfGenerator->generate($order);
+
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="Receipt_'.$order->order_number.'.pdf"',
+            'Content-Length' => strlen($pdfContent),
         ]);
     }
 }

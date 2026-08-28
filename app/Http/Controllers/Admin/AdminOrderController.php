@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -114,6 +115,22 @@ class AdminOrderController extends Controller
 
         return response()->json([
             'orders' => $orders,
+        ]);
+    }
+
+    public function downloadReceipt(Request $request, Order $order)
+    {
+        Gate::authorize('access-admin');
+
+        $order->load(['items.product', 'user']);
+
+        $pdfGenerator = new PdfReceiptGenerator;
+        $pdfContent = $pdfGenerator->generate($order);
+
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="Receipt_'.$order->order_number.'.pdf"',
+            'Content-Length' => strlen($pdfContent),
         ]);
     }
 }

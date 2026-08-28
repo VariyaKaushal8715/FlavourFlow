@@ -157,4 +157,90 @@ class Offer extends Model
 
         return Str::after($this->image_path, 'storage/');
     }
+
+    public function getDiscountType(): string
+    {
+        if (preg_match('/(\d+)\s*%/', $this->discount_label)) {
+            return 'percent';
+        }
+        if (preg_match('/(?:Rs\.?|₹|save)\s*(\d+)/i', $this->discount_label)) {
+            return 'fixed';
+        }
+
+        return 'fixed';
+    }
+
+    public function getDiscountValue(): float
+    {
+        if (preg_match('/(\d+)\s*%/', $this->discount_label, $matches)) {
+            return (float) $matches[1];
+        }
+        if (preg_match('/(?:Rs\.?|₹|save)\s*(\d+)/i', $this->discount_label, $matches)) {
+            return (float) $matches[1];
+        }
+        if (Str::contains(Str::upper($this->coupon_code), 'DAILY3')) {
+            return 30.00;
+        }
+
+        return 10.00;
+    }
+
+    public function getMinOrderAmount(): float
+    {
+        if ($this->terms && preg_match('/(?:above|min|minimum)\s+(?:Rs\.?|₹)?\s*(\d+)/i', $this->terms, $matches)) {
+            return (float) $matches[1];
+        }
+
+        return 0.00;
+    }
+
+    public function isValidFor(float $subtotal, ?string &$error = null): bool
+    {
+        if (! $this->is_active) {
+            $error = 'This coupon is inactive.';
+
+            return false;
+        }
+
+        $now = now();
+        if ($this->starts_at && $this->starts_at->isFuture()) {
+            $error = 'This coupon has not started yet.';
+
+            return false;
+        }
+
+        if ($this->ends_at && $this->ends_at->isPast()) {
+            $error = 'This coupon has expired.';
+
+            return false;
+        }
+
+        $minAmount = $this->getMinOrderAmount();
+        if ($subtotal < $minAmount) {
+            $error = 'Minimum order amount to use this coupon is Rs. '.number_format($minAmount, 2);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    public function calculateDiscount(float $subtotal): float
+    {
+        $discount = 0.0;
+        $val = $this->getDiscountValue();
+        $type = $this->getDiscountType();
+
+        if ($type === 'percent') {
+            $discount = ($subtotal * $val) / 100.0;
+        } else {
+            $discount = $val;
+        }
+
+        if ($discount > $subtotal) {
+            $discount = $subtotal;
+        }
+
+        return round($discount, 2);
+    }
 }

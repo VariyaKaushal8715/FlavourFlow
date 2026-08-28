@@ -62,6 +62,9 @@
                         <a href="{{ route('account.orders.track', $order->order_number) }}" class="mt-5 block w-full rounded-2xl bg-zinc-950 py-3 text-center text-xs font-semibold text-white transition hover:bg-brand-primary">
                             Track Order Progress
                         </a>
+                        <a href="{{ route('account.orders.receipt', $order->order_number) }}" class="mt-2 block w-full rounded-2xl border border-zinc-950 bg-white py-3 text-center text-xs font-semibold text-zinc-950 transition hover:bg-zinc-950 hover:text-white">
+                            Download Receipt (PDF)
+                        </a>
                     </div>
 
                     <div class="rounded-3xl border border-amber-200/70 bg-white/95 p-6 shadow-[0_24px_70px_rgba(120,53,15,0.06)]">
