@@ -194,23 +194,157 @@
                 {{-- Update Status Card --}}
                 <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <h2 class="text-base font-bold text-zinc-950">Update Order Status</h2>
-                    <form method="POST" action="{{ route('admin.orders.updateStatus', $order) }}" class="mt-4 space-y-4">
-                        @csrf
-                        @method('PATCH')
-                        <div>
-                            <label for="status" class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider">Select Status</label>
-                            <select id="status" name="status" class="mt-2 block w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-950 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900">
-                                <option value="Confirmed" {{ $order->status === 'Confirmed' ? 'selected' : '' }}>Confirmed</option>
-                                <option value="Shipped" {{ $order->status === 'Shipped' ? 'selected' : '' }}>Shipped</option>
-                                <option value="Out for Delivery" {{ $order->status === 'Out for Delivery' ? 'selected' : '' }}>Out for Delivery</option>
-                                <option value="Delivered" {{ $order->status === 'Delivered' ? 'selected' : '' }}>Delivered</option>
-                            </select>
+                    
+                    @php
+                        $hasAcceptedReturn = $order->returnRequest && $order->returnRequest->status === 'Approved';
+                        $hasAcceptedRefund = $order->refundRequest && $order->refundRequest->status === 'Completed';
+                        $isStatusLocked = $hasAcceptedReturn || $hasAcceptedRefund;
+                    @endphp
+
+                    @if($isStatusLocked)
+                        <div class="mt-4 rounded-xl bg-amber-50 p-4 border border-amber-100 text-xs text-amber-800 space-y-1">
+                            <p class="font-bold">Status Locked</p>
+                            <p>This order status is locked due to an accepted Return or Refund request.</p>
                         </div>
-                        <button type="submit" class="w-full rounded-lg bg-zinc-950 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800">
-                            Save Changes
-                        </button>
-                    </form>
+                    @elseif($order->status === 'Cancelled')
+                        <div class="mt-4 rounded-xl bg-red-50 p-4 border border-red-100 text-xs text-red-700 space-y-1">
+                            <p class="font-bold">This order is Cancelled.</p>
+                            <p>Reason: {{ $order->cancellation_reason }}</p>
+                            <p>Cancelled at: {{ $order->cancelled_at?->format('M d, Y H:i') }}</p>
+                        </div>
+                    @elseif($order->status === 'Pending')
+                        <div class="mt-4 space-y-3">
+                            <div class="rounded-xl bg-amber-50/70 p-3 border border-amber-100 text-xs text-amber-800">
+                                <p class="font-bold">Order is Pending Admin Acceptance.</p>
+                            </div>
+                            
+                            {{-- Accept Order Form --}}
+                            <form method="POST" action="{{ route('admin.orders.updateStatus', $order) }}">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="status" value="Confirmed">
+                                <button type="submit" class="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 py-2.5 text-xs font-semibold text-white shadow-sm transition">
+                                    Accept Order
+                                </button>
+                            </form>
+
+                            {{-- Cancel Order Form --}}
+                            <form method="POST" action="{{ route('admin.orders.updateStatus', $order) }}" class="space-y-2">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="status" value="Cancelled">
+                                <input type="text" name="cancellation_reason" placeholder="Cancellation reason..." class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-xs text-zinc-950 focus:border-zinc-900 focus:outline-none" required>
+                                <button type="submit" class="w-full rounded-lg bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white shadow-sm transition">
+                                    Cancel Order
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <form method="POST" action="{{ route('admin.orders.updateStatus', $order) }}" class="mt-4 space-y-4">
+                            @csrf
+                            @method('PATCH')
+                            <div>
+                                <label for="status" class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider">Select Status</label>
+                                <select id="status" name="status" class="mt-2 block w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-950 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900">
+                                    <option value="Confirmed" {{ $order->status === 'Confirmed' ? 'selected' : '' }}>Confirmed</option>
+                                    <option value="Shipped" {{ $order->status === 'Shipped' ? 'selected' : '' }}>Shipped</option>
+                                    <option value="Out for Delivery" {{ $order->status === 'Out for Delivery' ? 'selected' : '' }}>Out for Delivery</option>
+                                    <option value="Delivered" {{ $order->status === 'Delivered' ? 'selected' : '' }}>Delivered</option>
+                                    <option value="Cancelled" {{ $order->status === 'Cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full rounded-lg bg-zinc-950 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800">
+                                Save Changes
+                            </button>
+                        </form>
+                    @endif
                 </div>
+
+                {{-- Return Request Card --}}
+                @if($order->returnRequest)
+                    <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                        <h2 class="text-base font-bold text-zinc-950">Return Request Details</h2>
+                        <dl class="mt-3 space-y-2 text-xs">
+                            <div class="flex justify-between">
+                                <dt class="text-zinc-500">Status</dt>
+                                <dd class="font-bold text-zinc-900">{{ $order->returnRequest->status }}</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-zinc-500">Reason</dt>
+                                <dd class="font-medium text-zinc-900 text-right">{{ $order->returnRequest->reason }}</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-zinc-500">Submitted</dt>
+                                <dd class="font-medium text-zinc-900">{{ $order->returnRequest->created_at->format('M d, Y H:i') }}</dd>
+                            </div>
+                        </dl>
+                        @if($order->returnRequest->status === 'Pending')
+                            <div class="mt-4 flex gap-2">
+                                <form method="POST" action="{{ route('admin.returnRequests.updateStatus', $order->returnRequest) }}" class="flex-1">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="Approved">
+                                    <button type="submit" class="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 py-2 text-xs font-semibold text-white transition">
+                                        Approve
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.returnRequests.updateStatus', $order->returnRequest) }}" class="flex-1">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="Rejected">
+                                    <button type="submit" class="w-full rounded-lg bg-red-600 hover:bg-red-700 py-2 text-xs font-semibold text-white transition">
+                                        Deny
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                {{-- Refund Request Card --}}
+                @if($order->refundRequest)
+                    <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                        <h2 class="text-base font-bold text-zinc-950">Refund Request Details</h2>
+                        <dl class="mt-3 space-y-2 text-xs">
+                            <div class="flex justify-between">
+                                <dt class="text-zinc-500">Status</dt>
+                                <dd class="font-bold text-zinc-900">{{ $order->refundRequest->status }}</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-zinc-500">Amount</dt>
+                                <dd class="font-bold text-zinc-900">Rs. {{ number_format($order->refundRequest->amount, 2) }}</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-zinc-500">Reason</dt>
+                                <dd class="font-medium text-zinc-900 text-right">{{ $order->refundRequest->reason }}</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-zinc-500">Submitted</dt>
+                                <dd class="font-medium text-zinc-900">{{ $order->refundRequest->created_at->format('M d, Y H:i') }}</dd>
+                            </div>
+                        </dl>
+                        @if($order->refundRequest->status === 'Pending')
+                            <div class="mt-4 flex gap-2">
+                                <form method="POST" action="{{ route('admin.refundRequests.updateStatus', $order->refundRequest) }}" class="flex-1">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="Completed">
+                                    <button type="submit" class="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 py-2 text-xs font-semibold text-white transition">
+                                        Approve
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.refundRequests.updateStatus', $order->refundRequest) }}" class="flex-1">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="Rejected">
+                                    <button type="submit" class="w-full rounded-lg bg-red-600 hover:bg-red-700 py-2 text-xs font-semibold text-white transition">
+                                        Deny
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
     </main>

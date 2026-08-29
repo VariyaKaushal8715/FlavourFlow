@@ -124,7 +124,7 @@ test('successful checkout saves order, clear cart, reduces stock, and redirects'
     // Assert order inserted
     $order = Order::query()->where('user_id', $user->id)->first();
     expect($order)->not->toBeNull();
-    expect($order->status)->toBe('Confirmed');
+    expect($order->status)->toBe('Pending');
     expect($order->name)->toBe('John Doe');
 
     // Assert order items inserted

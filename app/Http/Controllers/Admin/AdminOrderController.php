@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\RefundRequest;
+use App\Models\ReturnRequest;
 use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -80,8 +82,13 @@ class AdminOrderController extends Controller
     {
         Gate::authorize('access-admin');
 
+        if ($order->status === 'Cancelled') {
+            return redirect()->back()->with('error', 'Once an order is Cancelled, its status cannot be changed.');
+        }
+
         $validated = $request->validate([
-            'status' => ['required', 'string', 'in:Confirmed,Shipped,Out for Delivery,Delivered'],
+            'status' => ['required', 'string', 'in:Confirmed,Shipped,Out for Delivery,Delivered,Cancelled'],
+            'cancellation_reason' => ['nullable', 'string', 'required_if:status,Cancelled', 'max:500'],
         ]);
 
         $status = $validated['status'];
@@ -96,6 +103,9 @@ class AdminOrderController extends Controller
             $order->out_for_delivery_at = now();
         } elseif ($status === 'Delivered') {
             $order->delivered_at = now();
+        } elseif ($status === 'Cancelled') {
+            $order->cancelled_at = now();
+            $order->cancellation_reason = $validated['cancellation_reason'] ?? 'Cancelled by administrator.';
         }
 
         $order->save();
@@ -103,18 +113,108 @@ class AdminOrderController extends Controller
         return redirect()->back()->with('success', 'Order status updated successfully.');
     }
 
+    public function updateReturnStatus(Request $request, ReturnRequest $returnRequest)
+    {
+        Gate::authorize('access-admin');
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:Approved,Rejected'],
+        ]);
+
+        $returnRequest->update([
+            'status' => $validated['status'],
+        ]);
+
+        return redirect()->back()->with('success', 'Return request status updated successfully.');
+    }
+
+    public function updateRefundStatus(Request $request, RefundRequest $refundRequest)
+    {
+        Gate::authorize('access-admin');
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:Completed,Rejected'],
+        ]);
+
+        $refundRequest->update([
+            'status' => $validated['status'],
+        ]);
+
+        return redirect()->back()->with('success', 'Refund request status updated successfully.');
+    }
+
     public function newOrders(Request $request): JsonResponse
     {
         Gate::authorize('access-admin');
 
-        // Fetch orders created recently, latest first
-        $orders = Order::query()
-            ->latest()
-            ->take(10)
-            ->get(['id', 'order_number', 'name', 'total_amount', 'status', 'created_at']);
+        $notifications = [];
+
+        // 1. Pending orders (New Orders)
+        $pendingOrders = Order::where('status', 'Pending')->latest()->take(10)->get();
+        foreach ($pendingOrders as $order) {
+            $notifications[] = [
+                'id' => 'new-'.$order->id,
+                'order_number' => $order->order_number,
+                'name' => '[New Order] Placed by '.$order->name,
+                'total_amount' => $order->total_amount,
+                'status' => 'Pending',
+                'created_at' => $order->created_at->toIso8601String(),
+            ];
+        }
+
+        // 2. Cancelled orders
+        $cancelledOrders = Order::where('status', 'Cancelled')->whereNotNull('cancelled_at')->latest()->take(10)->get();
+        foreach ($cancelledOrders as $order) {
+            $notifications[] = [
+                'id' => 'cancel-'.$order->id,
+                'order_number' => $order->order_number,
+                'name' => '[Cancelled] '.$order->name.' - '.$order->cancellation_reason,
+                'total_amount' => $order->total_amount,
+                'status' => 'Cancelled',
+                'created_at' => $order->cancelled_at->toIso8601String(),
+            ];
+        }
+
+        // 3. Return Requests
+        $returns = ReturnRequest::with('order')->latest()->take(10)->get();
+        foreach ($returns as $ret) {
+            if ($ret->order) {
+                $notifications[] = [
+                    'id' => 'return-'.$ret->id,
+                    'order_number' => $ret->order->order_number,
+                    'name' => '[Return Request] ('.$ret->status.') '.$ret->order->name.' - '.$ret->reason,
+                    'total_amount' => $ret->order->total_amount,
+                    'status' => 'Return requested',
+                    'created_at' => $ret->created_at->toIso8601String(),
+                ];
+            }
+        }
+
+        // 4. Refund Requests
+        $refunds = RefundRequest::with('order')->latest()->take(10)->get();
+        foreach ($refunds as $ref) {
+            if ($ref->order) {
+                $notifications[] = [
+                    'id' => 'refund-'.$ref->id,
+                    'order_number' => $ref->order->order_number,
+                    'name' => '[Refund Request] ('.$ref->status.') '.$ref->order->name.' - '.$ref->reason,
+                    'total_amount' => $ref->order->total_amount,
+                    'status' => 'Refund requested',
+                    'created_at' => $ref->created_at->toIso8601String(),
+                ];
+            }
+        }
+
+        // Sort notifications by created_at desc
+        usort($notifications, function ($a, $b) {
+            return strcmp($b['created_at'], $a['created_at']);
+        });
+
+        // Limit to 10
+        $notifications = array_slice($notifications, 0, 10);
 
         return response()->json([
-            'orders' => $orders,
+            'orders' => $notifications,
         ]);
     }
 

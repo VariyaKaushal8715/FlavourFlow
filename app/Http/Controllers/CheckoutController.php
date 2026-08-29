@@ -93,10 +93,8 @@ class CheckoutController extends Controller
                 $order = Order::create([
                     'order_number' => $orderNumber,
                     'user_id' => $request->user()->id,
-                    'status' => 'Confirmed',
-                    'confirmed_at' => now(),
+                    'status' => 'Pending',
                     'name' => $validated['name'],
-                    'mobile' => $validated['mobile'],
                     'email' => $validated['email'],
                     'address' => $validated['address'],
                     'city' => $validated['city'],

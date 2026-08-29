@@ -66,6 +66,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/orders/{order:order_number}', [OrderController::class, 'show'])->name('orders.show');
             Route::get('/orders/{order:order_number}/track', [OrderController::class, 'track'])->name('orders.track');
             Route::get('/orders/{order:order_number}/receipt', [OrderController::class, 'downloadReceipt'])->name('orders.receipt');
+            Route::get('/orders/notifications/sse', [OrderController::class, 'sse'])->name('orders.notifications.sse');
+            Route::post('/orders/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+            Route::post('/orders/{order:order_number}/return', [OrderController::class, 'requestReturn'])->name('orders.return');
+            Route::post('/orders/{order:order_number}/refund', [OrderController::class, 'requestRefund'])->name('orders.refund');
         });
 
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -109,6 +113,8 @@ Route::prefix('admin')
             Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
             Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
             Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus');
+            Route::patch('/return-requests/{returnRequest}/status', [AdminOrderController::class, 'updateReturnStatus'])->name('returnRequests.updateStatus');
+            Route::patch('/refund-requests/{refundRequest}/status', [AdminOrderController::class, 'updateRefundStatus'])->name('refundRequests.updateStatus');
             Route::get('/orders/{order}/receipt', [AdminOrderController::class, 'downloadReceipt'])->name('orders.receipt.download');
             Route::get('/api/new-orders', [AdminOrderController::class, 'newOrders'])->name('api.newOrders');
 
