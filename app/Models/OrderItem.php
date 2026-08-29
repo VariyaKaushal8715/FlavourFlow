@@ -4,31 +4,36 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'order_id',
+        'product_id',
+        'product_name',
+        'product_slug',
+        'sku',
+        'unit',
+        'quantity',
+        'unit_price',
+        'total_price',
+    ];
 
-    protected static function booted(): void
-    {
-        static::saving(function (OrderItem $item) {
-            if (($item->total_price === null || (float) $item->total_price == 0.0) && $item->line_total) {
-                $item->total_price = $item->line_total;
-            }
-            if (($item->line_total === null || (float) $item->line_total == 0.0) && $item->total_price) {
-                $item->line_total = $item->total_price;
-            }
-        });
-    }
+    protected $casts = [
+        'quantity' => 'integer',
+        'unit_price' => 'decimal:2',
+        'total_price' => 'decimal:2',
+    ];
 
-    public function order()
+    public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }

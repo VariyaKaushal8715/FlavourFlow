@@ -20,8 +20,8 @@ use App\Http\Controllers\ContactEmailController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OfferDetailsController;
-use App\Http\Controllers\OrderRatingController;
 use App\Http\Controllers\ProductDetailsController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Middleware\PreventAdminResponseCaching;
 use Illuminate\Support\Facades\Route;
@@ -63,8 +63,13 @@ Route::middleware('auth')->group(function () {
             Route::patch('/email-address', [UserProfileController::class, 'updateEmailAddress'])->name('profile.email.update');
             Route::delete('/', [UserProfileController::class, 'destroy'])->name('profile.destroy');
             Route::get('/orders', [OrderController::class, 'index'])->name('orders');
-            Route::get('/orders/{order:order_id}', [OrderController::class, 'show'])->name('orders.show');
-            Route::get('/orders/{order:order_id}/track', [OrderController::class, 'track'])->name('orders.track');
+            Route::get('/orders/{order:order_number}', [OrderController::class, 'show'])->name('orders.show');
+            Route::get('/orders/{order:order_number}/track', [OrderController::class, 'track'])->name('orders.track');
+            Route::get('/orders/{order:order_number}/receipt', [OrderController::class, 'downloadReceipt'])->name('orders.receipt');
+            Route::get('/orders/notifications/sse', [OrderController::class, 'sse'])->name('orders.notifications.sse');
+            Route::post('/orders/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+            Route::post('/orders/{order:order_number}/return', [OrderController::class, 'requestReturn'])->name('orders.return');
+            Route::post('/orders/{order:order_number}/refund', [OrderController::class, 'requestRefund'])->name('orders.refund');
         });
 
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -76,13 +81,16 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout/coupon/apply', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
-    Route::post('/orders/{order}/rate', [OrderRatingController::class, 'store'])->name('orders.rate');
 
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::get('/wishlist/products', [WishlistController::class, 'products'])->name('wishlist.products');
     Route::post('/wishlist/{product:slug}', [WishlistController::class, 'store'])->name('wishlist.store');
     Route::delete('/wishlist/{product:slug}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
+
+    Route::get('/reviews/pending', [ReviewController::class, 'pending'])->name('reviews.pending');
+    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 });
 
 Route::prefix('admin')
@@ -102,10 +110,13 @@ Route::prefix('admin')
             });
 
             // Orders
-            Route::get('/orders/unread-summary', [AdminOrderController::class, 'unreadSummary'])->name('orders.unread_summary');
-            Route::post('/orders/mark-viewed', [AdminOrderController::class, 'markViewed'])->name('orders.mark_viewed');
             Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
             Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+            Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus');
+            Route::patch('/return-requests/{returnRequest}/status', [AdminOrderController::class, 'updateReturnStatus'])->name('returnRequests.updateStatus');
+            Route::patch('/refund-requests/{refundRequest}/status', [AdminOrderController::class, 'updateRefundStatus'])->name('refundRequests.updateStatus');
+            Route::get('/orders/{order}/receipt', [AdminOrderController::class, 'downloadReceipt'])->name('orders.receipt.download');
+            Route::get('/api/new-orders', [AdminOrderController::class, 'newOrders'])->name('api.newOrders');
 
             // Inventory
             Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');

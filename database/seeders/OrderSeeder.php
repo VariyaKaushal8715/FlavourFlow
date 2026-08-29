@@ -29,25 +29,10 @@ class OrderSeeder extends Seeder
 
         for ($i = 0; $i < 150; $i++) {
             $date = Carbon::now()->subDays(rand(0, 30))->subHours(rand(0, 23))->subMinutes(rand(0, 59));
-            $orderCode = 'ORD-'.strtoupper(Str::random(8));
-            $user = $users->random();
             $order = Order::create([
-                'user_id' => $user->id,
-                'order_number' => $orderCode,
-                'order_id' => $orderCode,
+                'user_id' => $users->random()->id,
+                'order_number' => 'ORD-'.strtoupper(Str::random(8)),
                 'total_amount' => 0, // calculated below
-                'total' => 0,
-                'subtotal' => 0,
-                'delivery_charge' => 0,
-                'name' => $user->name,
-                'mobile' => '+91 98765 43210',
-                'email' => $user->email,
-                'address' => '101 Spice Garden Road',
-                'city' => 'Mumbai',
-                'state' => 'Maharashtra',
-                'pincode' => '400001',
-                'country' => 'India',
-                'payment_method' => 'online',
                 'status' => $this->weightedRandom($statuses),
                 'payment_status' => $this->weightedRandom($paymentStatuses),
                 'created_at' => $date,
@@ -67,24 +52,15 @@ class OrderSeeder extends Seeder
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'product_slug' => $product->slug,
-                    'sku' => $product->sku,
-                    'unit' => $product->unit ?? 'pack',
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
-                    'line_total' => $totalPrice,
                     'total_price' => $totalPrice,
                     'created_at' => $date,
                     'updated_at' => $date,
                 ]);
             }
 
-            $order->update([
-                'total_amount' => $totalAmount,
-                'total' => $totalAmount,
-                'subtotal' => $totalAmount,
-            ]);
+            $order->update(['total_amount' => $totalAmount]);
         }
     }
 

@@ -38,30 +38,6 @@ class Product extends Model
     /** @use HasFactory<ProductFactory> */
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'slug',
-        'sku',
-        'category',
-        'unit',
-        'description',
-        'long_description',
-        'highlights',
-        'ingredients',
-        'usage_instructions',
-        'origin',
-        'badge',
-        'price',
-        'compare_at_price',
-        'quantity',
-        'low_stock_threshold',
-        'rating',
-        'priority',
-        'image_path',
-        'is_featured',
-        'is_active',
-    ];
-
     protected $attributes = [
         'badge' => 'New',
         'unit' => '100 g',

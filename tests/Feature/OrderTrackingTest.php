@@ -6,7 +6,7 @@ use App\Models\User;
 test('guests are redirected to login for orders and tracking pages', function () {
     $user = User::factory()->create();
     $order = Order::create([
-        'order_id' => 'ORD-12345678',
+        'order_number' => 'ORD-12345678',
         'user_id' => $user->id,
         'status' => 'Confirmed',
         'name' => 'John Doe',
@@ -20,23 +20,23 @@ test('guests are redirected to login for orders and tracking pages', function ()
         'payment_method' => 'cod',
         'subtotal' => 200,
         'delivery_charge' => 50,
-        'total' => 250,
+        'total_amount' => 250,
     ]);
 
     $this->get(route('account.orders'))
         ->assertRedirect(route('login'));
 
-    $this->get(route('account.orders.show', $order->order_id))
+    $this->get(route('account.orders.show', $order->order_number))
         ->assertRedirect(route('login'));
 
-    $this->get(route('account.orders.track', $order->order_id))
+    $this->get(route('account.orders.track', $order->order_number))
         ->assertRedirect(route('login'));
 });
 
 test('authenticated user can view their own orders', function () {
     $user = User::factory()->create();
     $order = Order::create([
-        'order_id' => 'ORD-20260823-111111',
+        'order_number' => 'ORD-20260823-111111',
         'user_id' => $user->id,
         'status' => 'Confirmed',
         'name' => 'John Doe',
@@ -50,7 +50,7 @@ test('authenticated user can view their own orders', function () {
         'payment_method' => 'cod',
         'subtotal' => 200,
         'delivery_charge' => 50,
-        'total' => 250,
+        'total_amount' => 250,
     ]);
 
     $this->actingAs($user)
@@ -60,7 +60,7 @@ test('authenticated user can view their own orders', function () {
         ->assertSee('Rs. 250.00');
 
     $this->actingAs($user)
-        ->get(route('account.orders.show', $order->order_id))
+        ->get(route('account.orders.show', $order->order_number))
         ->assertSuccessful()
         ->assertSee('ORD-20260823-111111')
         ->assertSee('Rs. 250.00')
@@ -72,7 +72,7 @@ test('user cannot view or track another users order', function () {
     $user2 = User::factory()->create();
 
     $order = Order::create([
-        'order_id' => 'ORD-20260823-222222',
+        'order_number' => 'ORD-20260823-222222',
         'user_id' => $user1->id, // Owned by user 1
         'status' => 'Confirmed',
         'name' => 'John Doe',
@@ -86,23 +86,23 @@ test('user cannot view or track another users order', function () {
         'payment_method' => 'cod',
         'subtotal' => 200,
         'delivery_charge' => 50,
-        'total' => 250,
+        'total_amount' => 250,
     ]);
 
     // User 2 trying to show or track should be forbidden (403)
     $this->actingAs($user2)
-        ->get(route('account.orders.show', $order->order_id))
+        ->get(route('account.orders.show', $order->order_number))
         ->assertForbidden();
 
     $this->actingAs($user2)
-        ->get(route('account.orders.track', $order->order_id))
+        ->get(route('account.orders.track', $order->order_number))
         ->assertForbidden();
 });
 
 test('tracking page renders timeline statuses', function () {
     $user = User::factory()->create();
     $order = Order::create([
-        'order_id' => 'ORD-20260823-333333',
+        'order_number' => 'ORD-20260823-333333',
         'user_id' => $user->id,
         'status' => 'Shipped', // Current state
         'name' => 'John Doe',
@@ -116,11 +116,11 @@ test('tracking page renders timeline statuses', function () {
         'payment_method' => 'cod',
         'subtotal' => 200,
         'delivery_charge' => 50,
-        'total' => 250,
+        'total_amount' => 250,
     ]);
 
     $this->actingAs($user)
-        ->get(route('account.orders.track', $order->order_id))
+        ->get(route('account.orders.track', $order->order_number))
         ->assertSuccessful()
         ->assertSee('Order Confirmed')
         ->assertSee('Shipped')

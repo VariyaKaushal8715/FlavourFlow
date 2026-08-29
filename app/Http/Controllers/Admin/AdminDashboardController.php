@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
 use App\Models\WishlistItem;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -32,17 +32,28 @@ class AdminDashboardController extends Controller
             ->selectRaw('count(case when quantity > 0 and quantity <= low_stock_threshold then 1 end) as low_stock')
             ->first();
 
-        // Customers & engagement (real)
-        $wishlistCount = WishlistItem::count();
+        // Orders & revenue metrics
+        $totalOrders = Order::count();
+        $pendingOrders = Order::where('status', 'pending')->count();
+        $processingOrders = Order::where('status', 'processing')->count();
+        $completedOrders = Order::where('status', 'completed')->count();
+        $cancelledOrders = Order::where('status', 'cancelled')->count();
+        $totalRevenue = (float) Order::where('status', 'completed')->sum('total_amount');
+        $averageOrderValue = $completedOrders > 0 ? ($totalRevenue / $completedOrders) : 0;
 
-        // Low stock and out of stock alerts (real)
-        $inventoryAlerts = Product::where(function ($q) {
-            $q->where('quantity', 0)
-                ->orWhereColumn('quantity', '<=', 'low_stock_threshold');
-        })
-            ->orderBy('quantity')
-            ->take(6)
-            ->get();
+        // Today vs yesterday
+        $todayRevenue = (float) Order::where('status', 'completed')->whereDate('created_at', Carbon::today())->sum('total_amount');
+        $yesterdayRevenue = (float) Order::where('status', 'completed')->whereDate('created_at', Carbon::yesterday())->sum('total_amount');
+        $revenueGrowth = $yesterdayRevenue > 0 ? round((($todayRevenue - $yesterdayRevenue) / $yesterdayRevenue) * 100) : null;
+
+        $todayOrders = Order::whereDate('created_at', Carbon::today())->count();
+        $yesterdayOrders = Order::whereDate('created_at', Carbon::yesterday())->count();
+        $ordersGrowth = $yesterdayOrders > 0 ? round((($todayOrders - $yesterdayOrders) / $yesterdayOrders) * 100) : null;
+
+        // Customers
+        $customersCount = User::where('is_admin', false)->count();
+        $newCustomersThisWeek = User::where('is_admin', false)->where('created_at', '>=', Carbon::now()->startOfWeek())->count();
+        $wishlistCount = WishlistItem::count();
 
         // Recent orders with user
         $recentOrders = Order::with('user')->latest()->take(6)->get();
@@ -101,38 +112,40 @@ class AdminDashboardController extends Controller
 
         $maxCategoryCount = $bestCategories->max('count') ?: 1;
 
-        /*
-        |----------------------------------------------------------------------
-        | Dashboard KPI Metrics — Realistic Dummy Data
-        |----------------------------------------------------------------------
-        | Structured as plain scalars so swapping to real DB queries later is
-        | a one-line change per metric. Replace each value with its Eloquent
-        | equivalent when the orders pipeline is populated.
-        */
-        $totalOrders = 1284;
-        $pendingOrders = 23;
-        $processingOrders = 41;
-        $completedOrders = 1189;
-        $cancelledOrders = 31;
-        $totalRevenue = 847520.0;
-        $averageOrderValue = 713.0;
-        $todayRevenue = 12480.0;
-        $todayOrders = 18;
-        $revenueGrowth = 12;   // percentage vs yesterday
-        $ordersGrowth = 8;     // percentage vs yesterday
-        $customersCount = 642;
-        $newCustomersThisWeek = 27;
+        // Low stock and out of stock alerts
+        $inventoryAlerts = Product::where(function ($q) {
+            $q->where('quantity', 0)
+                ->orWhereColumn('quantity', '<=', 'low_stock_threshold');
+        })
+            ->orderBy('quantity')
+            ->take(6)
+            ->get();
 
-        /*
-        |----------------------------------------------------------------------
-        | Store Pulse — Multi-Metric Chart Data (Dummy)
-        |----------------------------------------------------------------------
-        | Each day entry contains every metric the chart can display. The view
-        | picks the active metric's key from each entry. To switch to real data,
-        | replace the arrays below with date-indexed DB aggregations.
-        */
-        $chartData7Days = $this->generateDummyChartData(7);
-        $chartData30Days = $this->generateDummyChartData(30);
+        // Chart Data (7 Days)
+        $chartData7Days = collect(range(6, 0))->map(function ($daysAgo) {
+            $date = Carbon::today()->subDays($daysAgo);
+            $revenue = (float) Order::where('status', 'completed')->whereDate('created_at', $date)->sum('total_amount');
+            $orders = Order::whereDate('created_at', $date)->count();
+
+            return [
+                'date' => $date->format('M d'),
+                'revenue' => $revenue,
+                'orders' => $orders,
+            ];
+        });
+
+        // Chart Data (30 Days)
+        $chartData30Days = collect(range(29, 0))->map(function ($daysAgo) {
+            $date = Carbon::today()->subDays($daysAgo);
+            $revenue = (float) Order::where('status', 'completed')->whereDate('created_at', $date)->sum('total_amount');
+            $orders = Order::whereDate('created_at', $date)->count();
+
+            return [
+                'date' => $date->format('M d'),
+                'revenue' => $revenue,
+                'orders' => $orders,
+            ];
+        });
 
         return view('admin.dashboard', compact(
             'inventory',
@@ -158,54 +171,5 @@ class AdminDashboardController extends Controller
             'chartData7Days',
             'chartData30Days',
         ));
-    }
-
-    /**
-     * Generate realistic dummy chart data for the given number of past days.
-     *
-     * Each entry has keys matching every metric the Store Pulse chart can display.
-     * Replace this method with real DB aggregations when order data is available.
-     *
-     * @return Collection<int, array{date: string, revenue: float, orders: int, sales: float, products_sold: int, customers: int, avg_order_value: float}>
-     */
-    private function generateDummyChartData(int $days): Collection
-    {
-        // Seed with deterministic but realistic-looking values
-        $baseRevenue = 11000;
-        $baseOrders = 16;
-        $baseCustomers = 9;
-
-        return collect(range($days - 1, 0))->map(function (int $daysAgo) use ($baseRevenue, $baseOrders, $baseCustomers) {
-            $date = Carbon::today()->subDays($daysAgo);
-            $dayOfWeek = $date->dayOfWeek;
-
-            // Weekend uplift factor (Sat/Sun get ~30% more traffic)
-            $weekendFactor = ($dayOfWeek === 0 || $dayOfWeek === 6) ? 1.3 : 1.0;
-
-            // Create organic-looking variation using the day index
-            $seed = ($daysAgo * 7 + 3) % 13;
-            $jitter = 0.75 + ($seed / 13) * 0.55; // range 0.75–1.30
-
-            $orders = max(3, (int) round($baseOrders * $jitter * $weekendFactor));
-            $revenue = round($baseRevenue * $jitter * $weekendFactor, 2);
-            $productsSold = max(4, (int) round($orders * (1.6 + ($seed % 5) * 0.15)));
-            $customers = max(2, (int) round($baseCustomers * $jitter * $weekendFactor * 0.85));
-            $avgOrderValue = $orders > 0 ? round($revenue / $orders, 2) : 0;
-            $sales = $revenue; // Sales ≈ Revenue for a single-channel store
-            $discounts = round($revenue * 0.05 * $jitter, 2); // roughly 5% discount
-            $returns = max(0, (int) round($orders * 0.02 * $jitter)); // roughly 2% return rate
-
-            return [
-                'date' => $date->format('M d'),
-                'revenue' => $revenue,
-                'orders' => $orders,
-                'sales' => $sales,
-                'products_sold' => $productsSold,
-                'customers' => $customers,
-                'avg_order_value' => $avgOrderValue,
-                'discounts' => $discounts,
-                'returns' => $returns,
-            ];
-        });
     }
 }

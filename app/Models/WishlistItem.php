@@ -22,19 +22,6 @@ class WishlistItem extends Model
 {
     use HasFactory;
 
-    /** @var array<int, string> */
-    protected $fillable = [
-        'user_id',
-        'product_id',
-        'product_name',
-        'product_slug',
-        'sku',
-        'category',
-        'unit',
-        'unit_price',
-        'image_path',
-    ];
-
     /**
      * @return array<string, string>
      */

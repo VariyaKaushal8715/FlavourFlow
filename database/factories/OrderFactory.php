@@ -18,27 +18,12 @@ class OrderFactory extends Factory
      */
     public function definition(): array
     {
-        $id = 'ORD-'.fake()->unique()->numerify('######');
-
         return [
-            'order_id' => $id,
-            'order_number' => $id,
             'user_id' => User::factory(),
+            'order_number' => 'ORD-'.fake()->unique()->numerify('##########'),
+            'total_amount' => fake()->randomFloat(2, 50, 1000),
             'status' => 'pending',
             'payment_status' => 'pending',
-            'payment_method' => 'cod',
-            'name' => fake()->name(),
-            'mobile' => fake()->numerify('##########'),
-            'email' => fake()->safeEmail(),
-            'address' => fake()->address(),
-            'city' => fake()->city(),
-            'state' => fake()->state(),
-            'pincode' => '123456',
-            'country' => 'India',
-            'subtotal' => 500.00,
-            'delivery_charge' => 0.00,
-            'total' => 500.00,
-            'total_amount' => 500.00,
         ];
     }
 }

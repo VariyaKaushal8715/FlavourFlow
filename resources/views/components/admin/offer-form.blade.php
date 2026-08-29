@@ -32,7 +32,7 @@
         @error('description') <p class="admin-error">{{ $message }}</p> @enderror
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2">
+    <div class="grid grid-cols-2 gap-4">
         <div>
             <label class="text-sm font-semibold text-zinc-800" for="discount_label">Value label</label>
             <input class="admin-input" id="discount_label" name="discount_label" type="text" value="{{ old('discount_label', $offer?->discount_label) }}" placeholder="Save 20%" required>
@@ -51,7 +51,7 @@
         @error('terms') <p class="admin-error">{{ $message }}</p> @enderror
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2">
+    <div class="grid grid-cols-2 gap-4">
         <div>
             <label class="text-sm font-semibold text-zinc-800" for="starts_at">Starts at</label>
             <input class="admin-input" id="starts_at" name="starts_at" type="datetime-local" value="{{ old('starts_at', $offer?->starts_at?->format('Y-m-d\TH:i')) }}">
@@ -64,7 +64,7 @@
         </div>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-[1fr_7rem]">
+    <div class="grid grid-cols-[1fr_7rem] gap-4">
         <div>
             <label class="text-sm font-semibold text-zinc-800" for="image">{{ $isEditing ? 'Replace offer image' : 'Offer image' }}</label>
             <input class="mt-2 block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-4 file:py-3 file:text-sm file:font-semibold file:text-zinc-800 hover:file:bg-zinc-200" id="image" name="image" type="file" accept=".jpg,.jpeg,.png,.webp">
@@ -84,7 +84,7 @@
         </div>
     @endif
 
-    <div class="grid gap-3 sm:grid-cols-2">
+    <div class="grid grid-cols-2 gap-3">
         <label class="flex min-h-12 items-center gap-3 rounded-lg border border-zinc-200 px-3 text-sm text-zinc-700">
             <input class="h-4 w-4 rounded border-zinc-300 text-red-600 focus:ring-red-500" name="is_featured" type="checkbox" value="1" @checked(old('is_featured', $offer?->is_featured ?? false))>
             Featured offer

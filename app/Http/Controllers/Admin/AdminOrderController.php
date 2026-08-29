@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\RefundRequest;
+use App\Models\ReturnRequest;
+use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,11 +17,6 @@ class AdminOrderController extends Controller
     public function index(Request $request): View
     {
         Gate::authorize('access-admin');
-
-        $user = $request->user();
-        if ($user) {
-            $user->forceFill(['admin_orders_last_viewed_at' => now()])->save();
-        }
 
         $search = $request->string('search')->trim()->limit(100)->toString();
         $status = $request->string('status')->trim()->toString();
@@ -80,60 +78,159 @@ class AdminOrderController extends Controller
         ]);
     }
 
-    public function unreadSummary(Request $request): JsonResponse
+    public function updateStatus(Request $request, Order $order)
     {
         Gate::authorize('access-admin');
 
-        $user = $request->user();
-        $lastViewedAt = $user?->admin_orders_last_viewed_at;
-
-        $query = Order::query();
-        if ($lastViewedAt) {
-            $query->where('created_at', '>', $lastViewedAt);
+        if ($order->status === 'Cancelled') {
+            return redirect()->back()->with('error', 'Once an order is Cancelled, its status cannot be changed.');
         }
 
-        $orderCount = $query->count();
-        $customerCount = (clone $query)->whereNotNull('user_id')->distinct('user_id')->count('user_id');
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:Confirmed,Shipped,Out for Delivery,Delivered,Cancelled'],
+            'cancellation_reason' => ['nullable', 'string', 'required_if:status,Cancelled', 'max:500'],
+        ]);
 
-        if ($customerCount === 0 && $orderCount > 0) {
-            $customerCount = (clone $query)->distinct('email')->count('email');
+        $status = $validated['status'];
+        $order->status = $status;
+
+        // Set the corresponding timestamp
+        if ($status === 'Confirmed') {
+            $order->confirmed_at = now();
+        } elseif ($status === 'Shipped') {
+            $order->shipped_at = now();
+        } elseif ($status === 'Out for Delivery') {
+            $order->out_for_delivery_at = now();
+        } elseif ($status === 'Delivered') {
+            $order->delivered_at = now();
+        } elseif ($status === 'Cancelled') {
+            $order->cancelled_at = now();
+            $order->cancellation_reason = $validated['cancellation_reason'] ?? 'Cancelled by administrator.';
         }
 
-        if ($orderCount === 0) {
-            return response()->json([
-                'has_unread' => false,
-                'order_count' => 0,
-                'customer_count' => 0,
-                'message' => null,
-                'orders_url' => route('admin.orders.index'),
-            ]);
+        $order->save();
+
+        return redirect()->back()->with('success', 'Order status updated successfully.');
+    }
+
+    public function updateReturnStatus(Request $request, ReturnRequest $returnRequest)
+    {
+        Gate::authorize('access-admin');
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:Approved,Rejected'],
+        ]);
+
+        $returnRequest->update([
+            'status' => $validated['status'],
+        ]);
+
+        return redirect()->back()->with('success', 'Return request status updated successfully.');
+    }
+
+    public function updateRefundStatus(Request $request, RefundRequest $refundRequest)
+    {
+        Gate::authorize('access-admin');
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:Completed,Rejected'],
+        ]);
+
+        $refundRequest->update([
+            'status' => $validated['status'],
+        ]);
+
+        return redirect()->back()->with('success', 'Refund request status updated successfully.');
+    }
+
+    public function newOrders(Request $request): JsonResponse
+    {
+        Gate::authorize('access-admin');
+
+        $notifications = [];
+
+        // 1. Pending orders (New Orders)
+        $pendingOrders = Order::where('status', 'Pending')->latest()->take(10)->get();
+        foreach ($pendingOrders as $order) {
+            $notifications[] = [
+                'id' => 'new-'.$order->id,
+                'order_number' => $order->order_number,
+                'name' => '[New Order] Placed by '.$order->name,
+                'total_amount' => $order->total_amount,
+                'status' => 'Pending',
+                'created_at' => $order->created_at->toIso8601String(),
+            ];
         }
 
-        $ordersText = $orderCount === 1 ? '1 new order' : "{$orderCount} new orders";
-        $customersText = $customerCount === 1 ? '1 customer' : "{$customerCount} customers";
-        $message = "You have {$ordersText} from {$customersText}. Tap to view orders.";
+        // 2. Cancelled orders
+        $cancelledOrders = Order::where('status', 'Cancelled')->whereNotNull('cancelled_at')->latest()->take(10)->get();
+        foreach ($cancelledOrders as $order) {
+            $notifications[] = [
+                'id' => 'cancel-'.$order->id,
+                'order_number' => $order->order_number,
+                'name' => '[Cancelled] '.$order->name.' - '.$order->cancellation_reason,
+                'total_amount' => $order->total_amount,
+                'status' => 'Cancelled',
+                'created_at' => $order->cancelled_at->toIso8601String(),
+            ];
+        }
+
+        // 3. Return Requests
+        $returns = ReturnRequest::with('order')->latest()->take(10)->get();
+        foreach ($returns as $ret) {
+            if ($ret->order) {
+                $notifications[] = [
+                    'id' => 'return-'.$ret->id,
+                    'order_number' => $ret->order->order_number,
+                    'name' => '[Return Request] ('.$ret->status.') '.$ret->order->name.' - '.$ret->reason,
+                    'total_amount' => $ret->order->total_amount,
+                    'status' => 'Return requested',
+                    'created_at' => $ret->created_at->toIso8601String(),
+                ];
+            }
+        }
+
+        // 4. Refund Requests
+        $refunds = RefundRequest::with('order')->latest()->take(10)->get();
+        foreach ($refunds as $ref) {
+            if ($ref->order) {
+                $notifications[] = [
+                    'id' => 'refund-'.$ref->id,
+                    'order_number' => $ref->order->order_number,
+                    'name' => '[Refund Request] ('.$ref->status.') '.$ref->order->name.' - '.$ref->reason,
+                    'total_amount' => $ref->order->total_amount,
+                    'status' => 'Refund requested',
+                    'created_at' => $ref->created_at->toIso8601String(),
+                ];
+            }
+        }
+
+        // Sort notifications by created_at desc
+        usort($notifications, function ($a, $b) {
+            return strcmp($b['created_at'], $a['created_at']);
+        });
+
+        // Limit to 10
+        $notifications = array_slice($notifications, 0, 10);
 
         return response()->json([
-            'has_unread' => true,
-            'order_count' => $orderCount,
-            'customer_count' => $customerCount,
-            'message' => $message,
-            'orders_url' => route('admin.orders.index'),
+            'orders' => $notifications,
         ]);
     }
 
-    public function markViewed(Request $request): JsonResponse
+    public function downloadReceipt(Request $request, Order $order)
     {
         Gate::authorize('access-admin');
 
-        $user = $request->user();
-        if ($user) {
-            $user->forceFill(['admin_orders_last_viewed_at' => now()])->save();
-        }
+        $order->load(['items.product', 'user']);
 
-        return response()->json([
-            'success' => true,
-            'marked_at' => now()->toIso8601String(),
+        $pdfGenerator = new PdfReceiptGenerator;
+        $pdfContent = $pdfGenerator->generate($order);
+
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="Receipt_'.$order->order_number.'.pdf"',
+            'Content-Length' => strlen($pdfContent),
         ]);
     }
 }
