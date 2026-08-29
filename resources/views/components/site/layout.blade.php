@@ -53,5 +53,7 @@
         @if ($showFooter)
             <x-site.footer :site="$site" />
         @endif
+
+        <x-site.ai-assistant />
     </body>
 </html>

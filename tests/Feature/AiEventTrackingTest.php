@@ -11,9 +11,6 @@ use App\AI\Contracts\AiProviderInterface;
 use App\AI\Contracts\AiRecommendationEngineInterface;
 use App\AI\Core\AiParsedIntent;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 test('ai engine contracts and services resolve from container (steps 1-7)', function () {
     expect(app()->bound(AiEngineInterface::class))->toBeTrue();

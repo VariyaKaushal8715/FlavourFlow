@@ -69,8 +69,7 @@
                                 'bg-emerald-100 text-emerald-800 border border-emerald-200' => $check['passed'],
                                 'bg-rose-100 text-rose-800 border border-rose-200' => ! $check['passed'],
                             ])>
-                                <span>{{ $check['passed'] ? '✓' : '✕' }}</span>
-                                <span>{{ $check['passed'] ? 'Verified' : 'Not Configured / Check' }}</span>
+                                <span>{{ $check['passed'] ? '✓ Verified' : '✕ Not Configured / Check' }}</span>
                             </span>
                         </div>
 

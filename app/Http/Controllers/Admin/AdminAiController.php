@@ -22,6 +22,7 @@ use App\AI\Core\AiRecommendationResult;
 use App\AI\Core\AiRequest;
 use App\AI\Models\AiEvent;
 use App\AI\Services\AiProviderManager;
+use App\AI\Services\CustomerAiAssistantService;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
@@ -82,6 +83,9 @@ class AdminAiController extends Controller
             'intent_extraction' => $this->checkIntentExtractionService(),
             'multilingual_response' => $this->checkMultilingualResponseEngine(),
             'multilingual_matrix' => $this->checkMultilingualQueryMatrix(),
+
+            // Step 8: Customer AI Assistant Verification
+            'customer_assistant_integration' => $this->checkCustomerAssistantIntegration(),
         ];
 
         // Framework and core checks decide readiness
@@ -1469,6 +1473,54 @@ class AdminAiController extends Controller
             return [
                 'name' => 'Multilingual Test Suite Matrix',
                 'description' => 'Runs live test matrix across Gujarati, GujEnglish, Hindi, Hinglish, and English queries.',
+                'passed' => false,
+                'details' => 'Error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkCustomerAssistantIntegration(): array
+    {
+        try {
+            if (! class_exists(CustomerAiAssistantService::class)) {
+                return [
+                    'name' => 'Customer AI Assistant Integration',
+                    'description' => 'Verifies the shopping assistant integration with NLU, Brain, Recommendation, and Multilingual Layer.',
+                    'passed' => false,
+                    'details' => 'CustomerAiAssistantService class not found.',
+                ];
+            }
+
+            /** @var CustomerAiAssistantService $service */
+            $service = app(CustomerAiAssistantService::class);
+
+            // Run a test chat query to verify NLU, context builder, and response formatting
+            $response = $service->processMessage('Recommend best spices under 500 rupees');
+
+            if (empty($response) || empty($response['message'])) {
+                return [
+                    'name' => 'Customer AI Shopping Assistant',
+                    'description' => 'Verifies the shopping assistant integration with NLU, Brain, Recommendation, and Multilingual Layer.',
+                    'passed' => false,
+                    'details' => 'Assistant returned an empty or invalid response payload.',
+                ];
+            }
+
+            $productsCount = count($response['products'] ?? []);
+
+            return [
+                'name' => 'Customer AI Shopping Assistant',
+                'description' => 'Verifies the shopping assistant integration with NLU, Brain, Recommendation, and Multilingual Layer.',
+                'passed' => true,
+                'details' => "Success: NLU Parsed language: '{$response['language']}', Intent: '{$response['intent']}', Products found: {$productsCount}.",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'Customer AI Shopping Assistant',
+                'description' => 'Verifies the shopping assistant integration with NLU, Brain, Recommendation, and Multilingual Layer.',
                 'passed' => false,
                 'details' => 'Error: '.$e->getMessage(),
             ];

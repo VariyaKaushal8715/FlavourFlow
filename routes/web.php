@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminSessionController;
+use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -52,6 +53,13 @@ Route::get('/language/{locale}', LocaleController::class)->name('language.switch
 
 Route::get('/products/{product:slug}', ProductDetailsController::class)->name('products.show');
 Route::get('/offers/{offer}', OfferDetailsController::class)->name('offers.show');
+
+// Step 8: Customer AI Assistant Routes
+Route::prefix('ai')->name('ai.')->group(function () {
+    Route::post('/chat', [AiAssistantController::class, 'chat'])->name('chat');
+    Route::get('/chat/history', [AiAssistantController::class, 'history'])->name('chat.history');
+    Route::delete('/chat/clear', [AiAssistantController::class, 'clear'])->name('chat.clear');
+});
 
 Route::middleware('auth')->group(function () {
     Route::prefix('account')
