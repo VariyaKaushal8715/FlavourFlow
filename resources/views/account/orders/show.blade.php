@@ -17,25 +17,60 @@
 
     <section class="bg-[linear-gradient(180deg,#fff_0%,#fff9ed_48%,#fff_100%)] py-12 sm:py-16">
         <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
-            <div class="grid gap-8 lg:grid-cols-[1fr_24rem]" data-reveal>
+            <div class="grid gap-8 lg:grid-cols-[1fr_24rem] items-start" data-reveal>
                 <div class="rounded-3xl border border-amber-200/70 bg-white/95 p-6 shadow-[0_24px_70px_rgba(120,53,15,0.06)] sm:p-8">
                     <h2 class="text-lg font-semibold text-zinc-950 border-b border-zinc-100 pb-4">Ordered Items</h2>
 
-                    <div class="divide-y divide-zinc-100">
-                        @foreach ($order->items as $item)
-                            <article class="flex gap-4 py-4 items-center">
-                                @if($item->product && $item->product->image_path)
-                                    <img class="aspect-square w-16 rounded-lg object-cover border border-zinc-200" src="{{ asset($item->product->image_path) }}" alt="{{ $item->product_name }}">
-                                @endif
-                                <div class="min-w-0 flex-1">
-                                    <h3 class="text-sm font-semibold text-zinc-950 truncate">{{ $item->product_name }}</h3>
-                                    <p class="mt-0.5 text-xs text-zinc-500">{{ $item->quantity }} × {{ $item->unit }}</p>
-                                    <p class="mt-1 text-xs font-bold text-zinc-950">Rs. {{ number_format($item->unit_price, 2) }}</p>
-                                </div>
-                                <span class="text-sm font-semibold text-zinc-950">Rs. {{ number_format($item->total_price, 2) }}</span>
-                            </article>
-                        @endforeach
-                    </div>
+<div class="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+    @foreach ($order->items as $item)
+    <div class="border rounded-lg p-4 flex items-start bg-white">
+    @if($item->product && $item->product->image_path)
+        <a href="{{ route('products.show', $item->product->slug) }}" class="mr-4 flex-shrink-0">
+            <img class="w-20 h-20 object-cover rounded" src="{{ asset($item->product->image_path) }}" alt="{{ $item->product_name }}" />
+        </a>
+    @endif
+    <div class="flex-1">
+        <a href="{{ route('products.show', $item->product->slug) }}" class="font-semibold text-sm text-zinc-950 hover:underline">{{ $item->product_name }}</a>
+        @if(isset($item->product->category))
+            <div class="text-xs text-gray-500">{{ $item->product->category }}</div>
+        @endif
+        @if(isset($item->product->sku))
+            <div class="text-xs text-gray-500">SKU: {{ $item->product->sku }}</div>
+        @endif
+        @if(isset($item->product->unit))
+            <div class="text-xs text-gray-500">Pack/Size: {{ $item->product->unit }}</div>
+        @endif
+        <div class="mt-1 text-xs">Qty: {{ $item->quantity }} {{ $item->unit }}</div>
+        <div class="mt-1 text-xs">Unit Price: Rs. {{ number_format($item->unit_price, 2) }}</div>
+        <div class="mt-1 font-medium text-sm">Total: Rs. {{ number_format($item->total_price, 2) }}</div>
+        @if(isset($item->review))
+            <div class="mt-1 flex items-center text-sm text-yellow-600">
+                @for ($i = 0; $i < $item->review->rating; $i++)
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L0.49 6.91l6.562-.954L10 0l2.948 5.956 6.562.954-4.755 4.635 1.123 6.545z"/></svg>
+                @endfor
+                <span class="ml-1">({{ $item->review->rating }}/5)</span>
+            </div>
+        @elseif($order->status === 'Delivered')
+            <a href="{{ route('reviews.pending') }}" class="mt-2 inline-block text-sm text-blue-600 hover:underline">Leave Review</a>
+        @endif
+        <a href="{{ route('products.show', $item->product->slug) }}" class="mt-2 inline-block bg-brand-primary text-white text-xs px-3 py-1 rounded hover:bg-brand-primary/80">View Product</a>
+    </div>
+</div>
+    @endforeach
+</div>
+
+<div class="mt-6 border-t pt-4">
+    <h3 class="text-lg font-semibold mb-2">Order Summary</h3>
+    <div class="flex justify-between"><span>Subtotal</span><span>Rs. {{ number_format($order->subtotal, 2) }}</span></div>
+    @if($order->delivery_charge > 0)
+        <div class="flex justify-between"><span>Delivery</span><span>Rs. {{ number_format($order->delivery_charge, 2) }}</span></div>
+    @endif
+    @if($order->discount_amount > 0)
+        <div class="flex justify-between"><span>Discount ({{ $order->coupon_code }})</span><span>- Rs. {{ number_format($order->discount_amount, 2) }}</span></div>
+    @endif
+    <div class="flex justify-between font-bold mt-2"><span>Total</span><span>Rs. {{ number_format($order->total_amount, 2) }}</span></div>
+    <div class="flex justify-between"><span>Payment Method</span><span>{{ $order->payment_method }}</span></div>
+</div>
                 </div>
 
                 <aside class="space-y-6">
