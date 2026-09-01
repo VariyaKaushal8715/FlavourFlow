@@ -20,6 +20,19 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected $fillable = [
+        'name',
+        'username',
+        'email',
+        'password',
+        'is_admin',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -42,6 +55,11 @@ class User extends Authenticatable
     public function profile(): HasOne
     {
         return $this->hasOne(UserProfile::class);
+    }
+
+    public function adminProfile(): HasOne
+    {
+        return $this->hasOne(AdminProfile::class);
     }
 
     public function wishlistProducts(): BelongsToMany

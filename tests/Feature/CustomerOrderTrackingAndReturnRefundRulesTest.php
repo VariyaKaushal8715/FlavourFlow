@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Order;
-use App\Models\User;
-use App\Models\ReturnRequest;
 use App\Models\RefundRequest;
+use App\Models\ReturnRequest;
+use App\Models\User;
 
 test('cancelled order track page displays cancelled state and stops timeline', function () {
     $user = User::factory()->create();
@@ -93,4 +93,3 @@ test('accepted return or refund locks order status', function () {
     $order->refresh();
     expect($order->status)->toBe('Delivered');
 });
-
