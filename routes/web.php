@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdminInventoryController;
 use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -132,6 +133,10 @@ Route::prefix('admin')
             // Offers
             Route::resource('offers', AdminOfferController::class)
                 ->only(['index', 'store', 'edit', 'update', 'destroy']);
+
+            // Profile
+            Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
+            Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
 
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
         });
