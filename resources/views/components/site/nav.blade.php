@@ -171,6 +171,10 @@
                     <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ $item['href'] }}">{{ $navLabels[$item['label']] ?? $item['label'] }}</a>
                 @endforeach
                 <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('wishlist.index') }}">{{ __('ui.wishlist') }}</a>
+                <a class="flex items-center justify-between rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('cart.index') }}">
+                    <span>{{ __('ui.cart') }}</span>
+                    <span class="text-sm font-medium" data-cart-count>{{ app(\App\Support\CartState::class)->count() }}</span>
+                </a>
                 @auth
                     <a class="rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('account.orders') }}">My Orders</a>
                     <details class="group rounded-xl transition hover:bg-white/5 hover:text-white">

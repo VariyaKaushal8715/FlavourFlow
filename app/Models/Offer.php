@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Database\Factories\OfferFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -23,20 +25,8 @@ use Illuminate\Support\Str;
 ])]
 class Offer extends Model
 {
-    protected $fillable = [
-        'eyebrow',
-        'title',
-        'description',
-        'discount_label',
-        'coupon_code',
-        'terms',
-        'starts_at',
-        'ends_at',
-        'priority',
-        'image_path',
-        'is_featured',
-        'is_active',
-    ];
+    /** @use HasFactory<OfferFactory> */
+    use HasFactory;
 
     protected $attributes = [
         'eyebrow' => 'Limited-time offer',

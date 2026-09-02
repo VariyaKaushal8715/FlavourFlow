@@ -86,6 +86,14 @@ class AdminOrderController extends Controller
             return redirect()->back()->with('error', 'Once an order is Cancelled, its status cannot be changed.');
         }
 
+        if ($order->returnRequest?->status === 'Approved') {
+            return redirect()->back()->with('error', 'Once a return request is Approved, the order status cannot be changed.');
+        }
+
+        if ($order->refundRequest?->status === 'Completed') {
+            return redirect()->back()->with('error', 'Once a refund is Completed, the order status cannot be changed.');
+        }
+
         $validated = $request->validate([
             'status' => ['required', 'string', 'in:Confirmed,Shipped,Out for Delivery,Delivered,Cancelled'],
             'cancellation_reason' => ['nullable', 'string', 'required_if:status,Cancelled', 'max:500'],
