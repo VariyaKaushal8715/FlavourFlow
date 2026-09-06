@@ -27,7 +27,7 @@ class CheckoutController extends Controller
         $profile = $user ? $user->profile()->first() : null;
 
         $subtotal = $cart->subtotal();
-        $deliveryCharge = 0.0;
+        $deliveryCharge = ($subtotal < 300.00) ? 30.00 : 0.00;
         $total = $subtotal + $deliveryCharge;
 
         return view('checkout.index', [
@@ -68,7 +68,7 @@ class CheckoutController extends Controller
                 // Calculate checkout totals based on selected delivery option
                 $subtotal = $cart->subtotal();
                 $deliveryOption = $validated['delivery_option'] ?? 'standard';
-                $deliveryCharge = $deliveryOption === 'express' ? 99.00 : 0.00;
+                $deliveryCharge = $deliveryOption === 'express' ? 99.00 : ($subtotal < 300.00 ? 30.00 : 0.00);
                 $deliveryDays = $deliveryOption === 'express' ? '1-2 days' : '4-5 days';
 
                 $couponCode = $validated['coupon_code'] ?? null;
@@ -203,7 +203,7 @@ class CheckoutController extends Controller
 
         $discount = $coupon->calculateDiscount($subtotal);
         $deliveryOption = $validated['delivery_option'] ?? 'standard';
-        $deliveryCharge = $deliveryOption === 'express' ? 99.00 : 0.00;
+        $deliveryCharge = $deliveryOption === 'express' ? 99.00 : ($subtotal < 300.00 ? 30.00 : 0.00);
         $total = max(0.0, $subtotal - $discount + $deliveryCharge);
 
         return response()->json([

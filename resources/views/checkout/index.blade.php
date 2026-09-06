@@ -165,7 +165,11 @@
                                             <p class="text-xs text-zinc-500">Regular shipping</p>
                                         </div>
                                     </div>
-                                    <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">FREE (₹0)</span>
+                                    @if ($subtotal < 300)
+                                        <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-900">+ ₹30</span>
+                                    @else
+                                        <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">FREE (₹0)</span>
+                                    @endif
                                 </div>
                                 <div class="mt-3 flex items-center justify-between border-t border-amber-200/60 pt-2.5 text-xs">
                                     <span class="text-zinc-500">Estimated Delivery:</span>
@@ -331,7 +335,7 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <span>Delivery Charges</span>
-                            <span id="delivery-charge-value">FREE</span>
+                            <span id="delivery-charge-value">{{ $deliveryCharge > 0 ? 'Rs. '.number_format($deliveryCharge, 2) : 'FREE' }}</span>
                         </div>
                         <div class="flex items-center justify-between border-t border-zinc-200 pt-4 text-lg font-semibold text-zinc-950">
                             <span>Total</span>
@@ -363,7 +367,8 @@
                         const totalVal = document.getElementById('grand-total-value');
                         
                         const subtotal = parseFloat("{{ $subtotal }}");
-                        let currentDeliveryCharge = 0.0;
+                        const standardDeliveryCharge = subtotal < 300 ? 30.0 : 0.0;
+                        let currentDeliveryCharge = standardDeliveryCharge;
                         let currentDiscount = 0.0;
                         
                         const standardRadio = document.getElementById('delivery-standard-radio');
@@ -386,8 +391,8 @@
                                 standardCard.className = "relative flex cursor-pointer flex-col rounded-2xl border-2 border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20 hover:border-amber-300";
                             } else {
                                 standardRadio.checked = true;
-                                currentDeliveryCharge = 0.0;
-                                deliveryVal.textContent = 'FREE';
+                                currentDeliveryCharge = standardDeliveryCharge;
+                                deliveryVal.textContent = standardDeliveryCharge > 0 ? ('Rs. ' + standardDeliveryCharge.toFixed(2)) : 'FREE';
                                 
                                 standardCard.className = "relative flex cursor-pointer flex-col rounded-2xl border-2 border-brand-primary bg-amber-50/20 p-4 transition shadow-sm hover:border-brand-primary";
                                 expressCard.className = "relative flex cursor-pointer flex-col rounded-2xl border-2 border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20 hover:border-amber-300";
