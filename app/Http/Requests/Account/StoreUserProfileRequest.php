@@ -21,7 +21,22 @@ class StoreUserProfileRequest extends FormRequest
             'city' => ['required', 'string', 'max:120'],
             'state' => ['required', 'string', 'max:120'],
             'country' => ['required', 'string', 'max:120'],
-            'postal_code' => ['required', 'string', 'max:20'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
+            'pincode' => ['nullable', 'string', 'max:20'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('pincode') && ! $this->has('postal_code')) {
+            $this->merge(['postal_code' => $this->input('pincode')]);
+        } elseif ($this->has('postal_code') && ! $this->has('pincode')) {
+            $this->merge(['pincode' => $this->input('postal_code')]);
+        }
+    }
+
+    public function messages(): array
+    {
+        return [];
     }
 }

@@ -60,8 +60,46 @@ class OrderController extends Controller
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
+        $steps = $this->getTrackingSteps($order);
+
+        return view('account.orders.track', [
+            'site' => config('personal_site'),
+            'order' => $order,
+            'steps' => $steps,
+        ]);
+    }
+
+    public function trackSigned(Request $request, Order $order): View
+    {
+        // Must have valid cryptographic signature unless authenticated owner
+        if (! $request->hasValidSignature()) {
+            if (! $request->user() || $order->user_id !== $request->user()->id) {
+                abort(403, 'Invalid or expired tracking link.');
+            }
+        }
+
+        $order->load(['items.product', 'user']);
+
+        if ($request->user() && $order->user_id === $request->user()->id) {
+            $request->user()->orderNotifications()
+                ->where('order_id', $order->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+        }
+
+        $steps = $this->getTrackingSteps($order);
+
+        return view('account.orders.track', [
+            'site' => config('personal_site'),
+            'order' => $order,
+            'steps' => $steps,
+        ]);
+    }
+
+    protected function getTrackingSteps(Order $order): array
+    {
         if ($order->status === 'Cancelled') {
-            $steps = [
+            return [
                 [
                     'name' => 'Confirmed',
                     'label' => 'Order Confirmed',
@@ -77,70 +115,66 @@ class OrderController extends Controller
                     'time' => $order->cancelled_at ?? $order->updated_at,
                 ],
             ];
-        } else {
-            $steps = [
-                [
-                    'name' => 'Confirmed',
-                    'label' => 'Order Confirmed',
-                    'description' => 'Your order has been placed and confirmed.',
-                ],
-                [
-                    'name' => 'Shipped',
-                    'label' => 'Shipped',
-                    'description' => 'Your package has been handed over to our courier partner.',
-                ],
-                [
-                    'name' => 'Out for Delivery',
-                    'label' => 'Out for Delivery',
-                    'description' => 'Our delivery partner is on the way to your address.',
-                ],
-                [
-                    'name' => 'Delivered',
-                    'label' => 'Delivered',
-                    'description' => 'The package has been successfully delivered.',
-                ],
-            ];
+        }
 
-            $statusList = array_column($steps, 'name');
-            $currentIndex = array_search($order->status, $statusList);
-            if ($currentIndex === false) {
-                $currentIndex = 0;
+        $steps = [
+            [
+                'name' => 'Confirmed',
+                'label' => 'Order Confirmed',
+                'description' => 'Your order has been placed and confirmed.',
+            ],
+            [
+                'name' => 'Shipped',
+                'label' => 'Shipped',
+                'description' => 'Your package has been handed over to our courier partner.',
+            ],
+            [
+                'name' => 'Out for Delivery',
+                'label' => 'Out for Delivery',
+                'description' => 'Our delivery partner is on the way to your address.',
+            ],
+            [
+                'name' => 'Delivered',
+                'label' => 'Delivered',
+                'description' => 'The package has been successfully delivered.',
+            ],
+        ];
+
+        $statusList = array_column($steps, 'name');
+        $currentIndex = array_search($order->status, $statusList);
+        if ($currentIndex === false) {
+            $currentIndex = 0;
+        }
+
+        $times = [
+            'Confirmed' => $order->confirmed_at ?? $order->created_at,
+            'Shipped' => $order->shipped_at,
+            'Out for Delivery' => $order->out_for_delivery_at,
+            'Delivered' => $order->delivered_at,
+        ];
+
+        if ($order->status === 'Delivered') {
+            foreach ($steps as &$step) {
+                $step['state'] = 'completed';
+                $step['time'] = $times[$step['name']] ?? $order->delivered_at;
             }
-
-            $times = [
-                'Confirmed' => $order->confirmed_at ?? $order->created_at,
-                'Shipped' => $order->shipped_at,
-                'Out for Delivery' => $order->out_for_delivery_at,
-                'Delivered' => $order->delivered_at,
-            ];
-
-            if ($order->status === 'Delivered') {
-                foreach ($steps as &$step) {
+        } else {
+            foreach ($steps as $index => &$step) {
+                $stepTime = $times[$step['name']] ?? null;
+                if ($index < $currentIndex) {
                     $step['state'] = 'completed';
-                    $step['time'] = $times[$step['name']] ?? $order->delivered_at;
-                }
-            } else {
-                foreach ($steps as $index => &$step) {
-                    $stepTime = $times[$step['name']];
-                    if ($index < $currentIndex) {
-                        $step['state'] = 'completed';
-                        $step['time'] = $stepTime ?? $order->created_at;
-                    } elseif ($index === $currentIndex) {
-                        $step['state'] = 'active';
-                        $step['time'] = $stepTime ?? $order->updated_at;
-                    } else {
-                        $step['state'] = 'pending';
-                        $step['time'] = null;
-                    }
+                    $step['time'] = $stepTime ?? $order->created_at;
+                } elseif ($index === $currentIndex) {
+                    $step['state'] = 'active';
+                    $step['time'] = $stepTime ?? $order->updated_at;
+                } else {
+                    $step['state'] = 'pending';
+                    $step['time'] = null;
                 }
             }
         }
 
-        return view('account.orders.track', [
-            'site' => config('personal_site'),
-            'order' => $order,
-            'steps' => $steps,
-        ]);
+        return $steps;
     }
 
     public function downloadReceipt(Request $request, Order $order)

@@ -6,6 +6,7 @@ use App\Models\Offer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+
 use App\Support\CartState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -47,18 +48,29 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'mobile' => ['required', 'string', 'regex:/^[0-9+\s-]{10,15}$/'],
-            'email' => ['required', 'email', 'max:255'],
-            'address' => ['required', 'string', 'max:500'],
-            'city' => ['required', 'string', 'max:100'],
-            'state' => ['required', 'string', 'max:100'],
-            'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
-            'country' => ['required', 'string', 'max:100'],
-            'payment_method' => ['required', 'string', 'in:cod,online'],
-            'coupon_code' => ['nullable', 'string', 'max:50'],
-        ]);
+        $validated = $request->validate(
+    [
+        // Basic customer details validation
+        'name' => ['required', 'string', 'max:255'],
+        'mobile' => ['required', 'string', 'regex:/^[0-9+\s-]{10,15}$/'],
+        'email' => ['required', 'email', 'max:255'],
+        'address' => ['required', 'string', 'max:500'],
+        'city' => ['required', 'string', 'max:100'],
+        'state' => ['required', 'string', 'max:100'],
+        // PIN must be 5-6 digits and match state prefixes
+            'pincode' => ['required', 'string', 'max:20'],
+        // Delivery limited to India only
+        'country' => ['required', 'in:India'],
+        'payment_method' => ['required', 'string', 'in:cod,online'],
+        'coupon_code' => ['nullable', 'string', 'max:50'],
+    ],
+    [
+        'country.in' => 'Currently, FlavourFlow delivery is available only within India.',
+        'state.in' => 'Please select a valid Indian state/UT.',
+        'pincode.regex' => 'Please enter a valid 6-digit Indian PIN code.',
+        'address.required' => 'Please check your address details and try again.',
+    ]
+);
 
         try {
             $order = DB::transaction(function () use ($validated, $cart, $request) {
@@ -90,11 +102,20 @@ class CheckoutController extends Controller
 
                 $totalAmount = max(0.00, $subtotal - $discountAmount + $deliveryCharge);
 
+                // Additional address validation using the new service
+                $addressResult = \App\Services\AddressValidationService::validate($validated);
+                if ($addressResult !== \App\Services\AddressValidationService::VALID) {
+                    throw ValidationException::withMessages([
+                        'address' => \App\Services\AddressValidationService::message($addressResult),
+                    ]);
+                }
+
                 $order = Order::create([
                     'order_number' => $orderNumber,
                     'user_id' => $request->user()->id,
                     'status' => 'Pending',
                     'name' => $validated['name'],
+                    'mobile' => $validated['mobile'],
                     'email' => $validated['email'],
                     'address' => $validated['address'],
                     'city' => $validated['city'],
@@ -141,6 +162,13 @@ class CheckoutController extends Controller
 
                 return $order;
             });
+
+            // Dispatch Order Confirmation Notifications (WhatsApp + Email for Customer and Admin)
+            try {
+                \App\Events\OrderPlaced::dispatch($order);
+            } catch (\Throwable $notificationException) {
+                \Illuminate\Support\Facades\Log::error('OrderPlaced event error: ' . $notificationException->getMessage());
+            }
 
             return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
         } catch (ValidationException $e) {

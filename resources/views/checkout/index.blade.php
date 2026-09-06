@@ -16,6 +16,16 @@
     <section class="bg-[linear-gradient(180deg,#fff_0%,#fff9ed_48%,#fff_100%)] py-12 sm:py-16">
         <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
             <form action="{{ route('checkout.store') }}" method="POST" class="grid gap-8 lg:grid-cols-[1fr_24rem]">
+        @if ($errors->any())
+            <div class="mt-4 rounded-xl bg-red-100 border border-red-200 p-4 text-red-800">
+                <p class="font-semibold">Please check your address details and try again.</p>
+                <ul class="mt-2 list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
                 @csrf
 
                 <div class="rounded-3xl border border-amber-200/70 bg-white/95 p-6 shadow-[0_24px_70px_rgba(120,53,15,0.10)] ring-1 ring-white sm:p-8" data-reveal>

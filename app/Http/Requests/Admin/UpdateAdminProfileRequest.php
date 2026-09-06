@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\User;
+
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -39,6 +40,7 @@ class UpdateAdminProfileRequest extends FormRequest
             'state' => ['nullable', 'string', 'max:120'],
             'country' => ['nullable', 'string', 'max:120'],
             'postal_code' => ['nullable', 'string', 'max:20'],
+            'pincode' => ['nullable', 'string', 'max:20'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', 'string', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],
         ];
@@ -51,14 +53,7 @@ class UpdateAdminProfileRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [
-            'full_name.required' => 'Please enter your full name.',
-            'email.required' => 'Please enter your email address.',
-            'email.email' => 'Please enter a valid email address.',
-            'email.unique' => 'This email address is already in use by another account.',
-            'mobile_number.regex' => 'Please enter a valid mobile phone number format (e.g. +91 98765 43210).',
-            'date_of_birth.before' => 'Date of birth must be a date in the past.',
-        ];
+        return [];
     }
 
     protected function prepareForValidation(): void
@@ -67,6 +62,12 @@ class UpdateAdminProfileRequest extends FormRequest
             $this->merge([
                 'full_name' => trim((string) $this->input('full_name')),
             ]);
+        }
+
+        if ($this->has('pincode') && ! $this->has('postal_code')) {
+            $this->merge(['postal_code' => $this->input('pincode')]);
+        } elseif ($this->has('postal_code') && ! $this->has('pincode')) {
+            $this->merge(['pincode' => $this->input('postal_code')]);
         }
 
         if ($this->has('email')) {
