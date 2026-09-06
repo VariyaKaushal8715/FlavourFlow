@@ -143,6 +143,67 @@
                         </div>
                     </div>
 
+                    {{-- Delivery Options Section --}}
+                    <div class="mt-8 border-t border-zinc-100 pt-6">
+                        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-brand-primary">Delivery Method</p>
+                        <h3 class="mt-1 text-xl font-semibold text-zinc-950">Select Delivery Option</h3>
+
+                        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                            <label id="delivery-card-standard" class="relative flex cursor-pointer flex-col rounded-2xl border-2 border-brand-primary bg-amber-50/20 p-4 transition shadow-sm hover:border-brand-primary">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <input
+                                            type="radio"
+                                            name="delivery_option"
+                                            value="standard"
+                                            class="h-4 w-4 text-brand-primary focus:ring-brand-primary"
+                                            checked
+                                            id="delivery-standard-radio"
+                                        >
+                                        <div>
+                                            <p class="text-sm font-semibold text-zinc-950">Standard Delivery</p>
+                                            <p class="text-xs text-zinc-500">Regular shipping</p>
+                                        </div>
+                                    </div>
+                                    <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">FREE (₹0)</span>
+                                </div>
+                                <div class="mt-3 flex items-center justify-between border-t border-amber-200/60 pt-2.5 text-xs">
+                                    <span class="text-zinc-500">Estimated Delivery:</span>
+                                    <span class="font-bold text-zinc-900 flex items-center gap-1">
+                                        <svg class="h-3.5 w-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        4–5 Days
+                                    </span>
+                                </div>
+                            </label>
+
+                            <label id="delivery-card-express" class="relative flex cursor-pointer flex-col rounded-2xl border-2 border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20 hover:border-amber-300">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <input
+                                            type="radio"
+                                            name="delivery_option"
+                                            value="express"
+                                            class="h-4 w-4 text-brand-primary focus:ring-brand-primary"
+                                            id="delivery-express-radio"
+                                        >
+                                        <div>
+                                            <p class="text-sm font-semibold text-zinc-950">Express Delivery</p>
+                                            <p class="text-xs text-zinc-500">Priority fast dispatch</p>
+                                        </div>
+                                    </div>
+                                    <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-900">+ ₹99</span>
+                                </div>
+                                <div class="mt-3 flex items-center justify-between border-t border-amber-200/60 pt-2.5 text-xs">
+                                    <span class="text-zinc-500">Estimated Delivery:</span>
+                                    <span class="font-bold text-brand-primary flex items-center gap-1">
+                                        <svg class="h-3.5 w-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                                        1–2 Days
+                                    </span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="mt-8 border-t border-zinc-100 pt-6">
                         <p class="text-sm font-semibold uppercase tracking-[0.24em] text-brand-primary">Payment Options</p>
                         <h3 class="mt-1 text-xl font-semibold text-zinc-950">Select Payment Method</h3>
@@ -270,7 +331,7 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <span>Delivery Charges</span>
-                            <span>{{ $deliveryCharge > 0 ? 'Rs. '.number_format($deliveryCharge, 2) : 'FREE' }}</span>
+                            <span id="delivery-charge-value">FREE</span>
                         </div>
                         <div class="flex items-center justify-between border-t border-zinc-200 pt-4 text-lg font-semibold text-zinc-950">
                             <span>Total</span>
@@ -298,10 +359,45 @@
                         
                         const discountRow = document.getElementById('coupon-discount-row');
                         const discountVal = document.getElementById('coupon-discount-value');
+                        const deliveryVal = document.getElementById('delivery-charge-value');
                         const totalVal = document.getElementById('grand-total-value');
                         
-                        const originalTotal = parseFloat("{{ $total }}");
+                        const subtotal = parseFloat("{{ $subtotal }}");
+                        let currentDeliveryCharge = 0.0;
+                        let currentDiscount = 0.0;
                         
+                        const standardRadio = document.getElementById('delivery-standard-radio');
+                        const expressRadio = document.getElementById('delivery-express-radio');
+                        const standardCard = document.getElementById('delivery-card-standard');
+                        const expressCard = document.getElementById('delivery-card-express');
+
+                        const updateTotals = () => {
+                            const total = Math.max(0, subtotal - currentDiscount + currentDeliveryCharge);
+                            totalVal.textContent = 'Rs. ' + total.toFixed(2);
+                        };
+
+                        const setDeliveryOption = (option) => {
+                            if (option === 'express') {
+                                expressRadio.checked = true;
+                                currentDeliveryCharge = 99.0;
+                                deliveryVal.textContent = 'Rs. 99.00';
+                                
+                                expressCard.className = "relative flex cursor-pointer flex-col rounded-2xl border-2 border-brand-primary bg-amber-50/20 p-4 transition shadow-sm hover:border-brand-primary";
+                                standardCard.className = "relative flex cursor-pointer flex-col rounded-2xl border-2 border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20 hover:border-amber-300";
+                            } else {
+                                standardRadio.checked = true;
+                                currentDeliveryCharge = 0.0;
+                                deliveryVal.textContent = 'FREE';
+                                
+                                standardCard.className = "relative flex cursor-pointer flex-col rounded-2xl border-2 border-brand-primary bg-amber-50/20 p-4 transition shadow-sm hover:border-brand-primary";
+                                expressCard.className = "relative flex cursor-pointer flex-col rounded-2xl border-2 border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20 hover:border-amber-300";
+                            }
+                            updateTotals();
+                        };
+
+                        standardRadio?.addEventListener('change', () => setDeliveryOption('standard'));
+                        expressRadio?.addEventListener('change', () => setDeliveryOption('express'));
+
                         const showFeedback = (text, isSuccess) => {
                             feedback.textContent = text;
                             feedback.className = `mt-1.5 text-xs font-semibold ${isSuccess ? 'text-emerald-600' : 'text-red-600'}`;
@@ -323,6 +419,8 @@
                             applyBtn.disabled = true;
                             applyBtn.textContent = 'Applying...';
 
+                            const selectedDelivery = expressRadio.checked ? 'express' : 'standard';
+
                             fetch("{{ route('checkout.coupon.apply') }}", {
                                 method: 'POST',
                                 headers: {
@@ -330,7 +428,10 @@
                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                                     'Accept': 'application/json'
                                 },
-                                body: JSON.stringify({ coupon_code: code })
+                                body: JSON.stringify({
+                                    coupon_code: code,
+                                    delivery_option: selectedDelivery
+                                })
                             })
                             .then(res => res.json())
                             .then(data => {
@@ -338,9 +439,9 @@
                                 applyBtn.textContent = 'Apply';
 
                                 if (data.success) {
-                                    discountVal.textContent = 'Rs. -' + parseFloat(data.discount).toFixed(2);
+                                    currentDiscount = parseFloat(data.discount);
+                                    discountVal.textContent = 'Rs. -' + currentDiscount.toFixed(2);
                                     discountRow.classList.remove('hidden');
-                                    totalVal.textContent = 'Rs. ' + parseFloat(data.total).toFixed(2);
                                     
                                     pillText.textContent = `Applied: ${data.coupon.code}`;
                                     pill.classList.remove('hidden');
@@ -350,6 +451,7 @@
                                     input.disabled = true;
                                     applyBtn.disabled = true;
                                     
+                                    updateTotals();
                                     showFeedback(data.message, true);
                                 } else {
                                     showFeedback(data.message || 'Error applying coupon.', false);
@@ -365,7 +467,8 @@
 
                         removeBtn.addEventListener('click', () => {
                             discountRow.classList.add('hidden');
-                            totalVal.textContent = 'Rs. ' + originalTotal.toFixed(2);
+                            currentDiscount = 0.0;
+                            updateTotals();
                             
                             pill.classList.add('hidden');
                             pill.classList.remove('flex');

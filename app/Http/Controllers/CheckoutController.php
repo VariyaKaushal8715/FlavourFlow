@@ -27,7 +27,7 @@ class CheckoutController extends Controller
         $profile = $user ? $user->profile()->first() : null;
 
         $subtotal = $cart->subtotal();
-        $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
+        $deliveryCharge = 0.0;
         $total = $subtotal + $deliveryCharge;
 
         return view('checkout.index', [
@@ -57,6 +57,7 @@ class CheckoutController extends Controller
             'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
             'country' => ['required', 'string', 'max:100'],
             'payment_method' => ['required', 'string', 'in:cod,online'],
+            'delivery_option' => ['nullable', 'string', 'in:standard,express'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
 
@@ -64,9 +65,11 @@ class CheckoutController extends Controller
             $order = DB::transaction(function () use ($validated, $cart, $request) {
                 // Generate a unique Order Number
                 $orderNumber = 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
-                // Calculate checkout totals
+                // Calculate checkout totals based on selected delivery option
                 $subtotal = $cart->subtotal();
-                $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
+                $deliveryOption = $validated['delivery_option'] ?? 'standard';
+                $deliveryCharge = $deliveryOption === 'express' ? 99.00 : 0.00;
+                $deliveryDays = $deliveryOption === 'express' ? '1-2 days' : '4-5 days';
 
                 $couponCode = $validated['coupon_code'] ?? null;
                 $discountAmount = 0.00;
@@ -95,6 +98,7 @@ class CheckoutController extends Controller
                     'user_id' => $request->user()->id,
                     'status' => 'Pending',
                     'name' => $validated['name'],
+                    'mobile' => $validated['mobile'],
                     'email' => $validated['email'],
                     'address' => $validated['address'],
                     'city' => $validated['city'],
@@ -102,6 +106,8 @@ class CheckoutController extends Controller
                     'pincode' => $validated['pincode'],
                     'country' => $validated['country'],
                     'payment_method' => $validated['payment_method'],
+                    'delivery_option' => $deliveryOption,
+                    'delivery_days' => $deliveryDays,
                     'coupon_code' => $couponCode,
                     'discount_amount' => $discountAmount,
                     'subtotal' => $subtotal,
@@ -168,6 +174,7 @@ class CheckoutController extends Controller
     {
         $validated = $request->validate([
             'coupon_code' => ['required', 'string', 'max:50'],
+            'delivery_option' => ['nullable', 'string', 'in:standard,express'],
         ]);
 
         $code = $validated['coupon_code'];
@@ -195,7 +202,8 @@ class CheckoutController extends Controller
         }
 
         $discount = $coupon->calculateDiscount($subtotal);
-        $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
+        $deliveryOption = $validated['delivery_option'] ?? 'standard';
+        $deliveryCharge = $deliveryOption === 'express' ? 99.00 : 0.00;
         $total = max(0.0, $subtotal - $discount + $deliveryCharge);
 
         return response()->json([
