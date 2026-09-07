@@ -5,6 +5,7 @@ use App\Http\Controllers\Account\UserProfileController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminDeliveryController;
 use App\Http\Controllers\Admin\AdminInventoryController;
 use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminOrderController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Auth\UserSessionController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactEmailController;
+use App\Http\Controllers\DeliveryCheckController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OfferDetailsController;
@@ -49,6 +51,7 @@ Route::post('/logout', [UserSessionController::class, 'destroy'])
     ->name('logout');
 
 Route::get('/language/{locale}', LocaleController::class)->name('language.switch');
+Route::post('/delivery/check', [DeliveryCheckController::class, 'check'])->name('delivery.check');
 
 Route::get('/products/{product:slug}', ProductDetailsController::class)->name('products.show');
 Route::get('/offers/{offer}', OfferDetailsController::class)->name('offers.show');
@@ -137,6 +140,10 @@ Route::prefix('admin')
             // Profile
             Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
             Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
+
+            // Delivery Control
+            Route::get('/delivery', [AdminDeliveryController::class, 'index'])->name('delivery.index');
+            Route::put('/delivery', [AdminDeliveryController::class, 'update'])->name('delivery.update');
 
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
         });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DeliverySetting;
 use App\Models\Offer;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -60,6 +61,13 @@ class CheckoutController extends Controller
             'delivery_option' => ['nullable', 'string', 'in:standard,express'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
+
+        $deliverySetting = DeliverySetting::current();
+        if (! $deliverySetting->isDeliverable($validated['country'], $validated['state'], $validated['city'])) {
+            return back()->withInput()->withErrors([
+                'country' => 'Sorry, we don’t deliver to this location.',
+            ]);
+        }
 
         try {
             $order = DB::transaction(function () use ($validated, $cart, $request) {
@@ -150,7 +158,11 @@ class CheckoutController extends Controller
 
             return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
         } catch (ValidationException $e) {
-            return redirect()->route('cart.index')->withErrors($e->errors());
+            if (isset($e->errors()['cart'])) {
+                return redirect()->route('cart.index')->withErrors($e->errors());
+            }
+
+            return back()->withInput()->withErrors($e->errors());
         }
     }
 

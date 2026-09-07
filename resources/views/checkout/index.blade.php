@@ -91,6 +91,7 @@
                                     class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                     type="text"
                                     name="city"
+                                    id="checkout-city"
                                     value="{{ old('city', $profile?->city) }}"
                                     required
                                 >
@@ -105,6 +106,7 @@
                                     class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                     type="text"
                                     name="state"
+                                    id="checkout-state"
                                     value="{{ old('state', $profile?->state) }}"
                                     required
                                 >
@@ -133,6 +135,7 @@
                                     class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                     type="text"
                                     name="country"
+                                    id="checkout-country"
                                     value="{{ old('country', $profile?->country ?? 'India') }}"
                                     required
                                 >
@@ -140,6 +143,11 @@
                                     <p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>
                                 @enderror
                             </label>
+                        </div>
+
+                        {{-- Real-time Delivery Status Feedback --}}
+                        <div id="checkout-delivery-feedback" class="mt-4 hidden rounded-2xl p-3.5 text-xs font-semibold transition-all">
+                            {{-- Populated dynamically --}}
                         </div>
                     </div>
 
@@ -345,7 +353,8 @@
 
                     <button
                         type="submit"
-                        class="mt-6 block w-full rounded-2xl bg-zinc-950 py-3.5 text-center text-sm font-semibold text-white shadow-lg transition hover:bg-brand-primary"
+                        id="checkout-submit-btn"
+                        class="mt-6 block w-full rounded-2xl bg-zinc-950 py-3.5 text-center text-sm font-semibold text-white shadow-lg transition hover:bg-brand-primary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Confirm and Place Order
                     </button>
@@ -375,6 +384,93 @@
                         const expressRadio = document.getElementById('delivery-express-radio');
                         const standardCard = document.getElementById('delivery-card-standard');
                         const expressCard = document.getElementById('delivery-card-express');
+
+                        // Delivery Check Variables
+                        const countryInput = document.getElementById('checkout-country');
+                        const stateInput = document.getElementById('checkout-state');
+                        const cityInput = document.getElementById('checkout-city');
+                        const deliveryFeedback = document.getElementById('checkout-delivery-feedback');
+                        const submitBtn = document.getElementById('checkout-submit-btn');
+                        let isLocationDeliverable = true;
+                        let checkTimeout = null;
+
+                        async function checkCheckoutDelivery() {
+                            const country = (countryInput?.value || '').trim();
+                            const state = (stateInput?.value || '').trim();
+                            const city = (cityInput?.value || '').trim();
+
+                            if (!country) return;
+
+                            try {
+                                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                                const res = await fetch("{{ route('delivery.check') }}", {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'X-CSRF-TOKEN': token
+                                    },
+                                    body: JSON.stringify({ country, state, city })
+                                });
+
+                                const data = await res.json();
+                                deliveryFeedback.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-900', 'border-emerald-200', 'bg-red-50', 'text-red-900', 'border-red-200', 'border');
+                                deliveryFeedback.classList.add('border');
+
+                                if (data.deliverable) {
+                                    isLocationDeliverable = true;
+                                    deliveryFeedback.classList.add('bg-emerald-50', 'text-emerald-900', 'border-emerald-200');
+                                    deliveryFeedback.innerHTML = `
+                                        <div class="flex items-center gap-2">
+                                            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold">&check;</span>
+                                            <div>
+                                                <p class="font-bold text-emerald-950">${data.message || 'Deliverable to this location!'}</p>
+                                                <p class="text-[11px] text-emerald-700 font-normal">Shipping available for your order.</p>
+                                            </div>
+                                        </div>
+                                    `;
+                                    if (submitBtn) {
+                                        submitBtn.disabled = false;
+                                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                    }
+                                } else {
+                                    isLocationDeliverable = false;
+                                    deliveryFeedback.classList.add('bg-red-50', 'text-red-900', 'border-red-200');
+                                    deliveryFeedback.innerHTML = `
+                                        <div class="flex items-center gap-2">
+                                            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-700 font-bold">&times;</span>
+                                            <div>
+                                                <p class="font-bold text-red-950">Sorry, we don’t deliver to this location.</p>
+                                                <p class="text-[11px] text-red-700 font-normal">Please adjust your shipping country, state, or city to proceed.</p>
+                                            </div>
+                                        </div>
+                                    `;
+                                    if (submitBtn) {
+                                        submitBtn.disabled = true;
+                                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Checkout delivery check failed:', e);
+                            }
+                        }
+
+                        function debounceDeliveryCheck() {
+                            clearTimeout(checkTimeout);
+                            checkTimeout = setTimeout(checkCheckoutDelivery, 350);
+                        }
+
+                        [countryInput, stateInput, cityInput].forEach(el => {
+                            if (el) {
+                                el.addEventListener('input', debounceDeliveryCheck);
+                                el.addEventListener('change', debounceDeliveryCheck);
+                            }
+                        });
+
+                        // Initial check on page load
+                        if (countryInput && countryInput.value) {
+                            checkCheckoutDelivery();
+                        }
 
                         const updateTotals = () => {
                             const total = Math.max(0, subtotal - currentDiscount + currentDeliveryCharge);
@@ -413,7 +509,7 @@
                             feedback.classList.add('hidden');
                         };
 
-                        applyBtn.addEventListener('click', () => {
+                        applyBtn?.addEventListener('click', () => {
                             const code = input.value.trim();
                             if (!code) {
                                 showFeedback('Please enter a coupon code.', false);
@@ -470,7 +566,7 @@
                             });
                         });
 
-                        removeBtn.addEventListener('click', () => {
+                        removeBtn?.addEventListener('click', () => {
                             discountRow.classList.add('hidden');
                             currentDiscount = 0.0;
                             updateTotals();

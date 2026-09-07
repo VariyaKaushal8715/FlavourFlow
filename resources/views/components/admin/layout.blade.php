@@ -116,6 +116,19 @@
                                 </div>
                             </a>
 
+                            <p class="pt-4 px-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Admin Controls</p>
+
+                            <a @class([
+                                'flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition',
+                                'bg-white text-zinc-950 shadow-sm' => request()->routeIs('admin.delivery*'),
+                                'text-zinc-400 hover:bg-white/5 hover:text-white' => ! request()->routeIs('admin.delivery*'),
+                            ]) href="{{ route('admin.delivery.index') }}">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.215-9.13A2.25 2.25 0 0016.5 7.5h-3.75V3.75a1.125 1.125 0 00-1.125-1.125H3.375A1.125 1.125 0 002.25 3.75v10.5m17.25 4.5v-3.75a2.25 2.25 0 00-2.25-2.25h-3.75m0 0V7.5" /></svg>
+                                    <span>Delivery Control</span>
+                                </div>
+                            </a>
+
                             <p class="pt-4 px-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Settings</p>
 
                             <a @class([

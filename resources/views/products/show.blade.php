@@ -95,6 +95,7 @@
                             data-add-to-cart
                             data-product-slug="{{ $product->slug }}"
                             data-selected-weight="100g"
+                            id="btn-product-add-to-cart"
                             @disabled($product->quantity === 0)
                         >{{ $product->quantity > 0 ? __('ui.add_to_cart') : __('ui.out_of_stock') }}</button>
 
@@ -115,6 +116,75 @@
                         </button>
                     </div>
 
+                    {{-- Customer Delivery Availability Checker --}}
+                    <div class="mt-8 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4 sm:p-5">
+                        <div class="flex items-center gap-2.5 text-zinc-900">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.215-9.13A2.25 2.25 0 0016.5 7.5h-3.75V3.75a1.125 1.125 0 00-1.125-1.125H3.375A1.125 1.125 0 002.25 3.75v10.5m17.25 4.5v-3.75a2.25 2.25 0 00-2.25-2.25h-3.75m0 0V7.5" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900">Check Delivery Availability</h3>
+                                <p class="text-[11px] text-zinc-500">Enter your location to verify shipping availability & speed</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3.5 space-y-2.5">
+                            <div class="grid gap-2 sm:grid-cols-3">
+                                <div>
+                                    <select
+                                        id="prod-check-country"
+                                        class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-900 shadow-sm focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                                    >
+                                        <option value="India" selected>India</option>
+                                        <option value="United States">United States</option>
+                                        <option value="Canada">Canada</option>
+                                        <option value="United Kingdom">United Kingdom</option>
+                                        <option value="Australia">Australia</option>
+                                        <option value="Germany">Germany</option>
+                                        <option value="France">France</option>
+                                        <option value="United Arab Emirates">United Arab Emirates</option>
+                                        <option value="Singapore">Singapore</option>
+                                        <option value="Japan">Japan</option>
+                                    </select>
+                                </div>
+                                <div id="prod-check-state-wrapper" class="transition-all duration-200">
+                                    <input
+                                        type="text"
+                                        id="prod-check-state"
+                                        placeholder="State (e.g. Gujarat)"
+                                        class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-900 shadow-sm focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                                    />
+                                </div>
+                                <div id="prod-check-city-wrapper" class="transition-all duration-200">
+                                    <input
+                                        type="text"
+                                        id="prod-check-city"
+                                        placeholder="City (e.g. Surat)"
+                                        class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-900 shadow-sm focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-3 pt-1">
+                                <span class="text-[11px] text-zinc-400" id="prod-delivery-hint">Fast dispatch & secure shipping</span>
+                                <button
+                                    type="button"
+                                    id="btn-check-delivery-prod"
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-950 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-zinc-800 active:scale-95"
+                                >
+                                    <span id="prod-check-spinner" class="hidden h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                                    <span>Check</span>
+                                </button>
+                            </div>
+
+                            {{-- Result Message Box --}}
+                            <div id="prod-delivery-result" class="hidden rounded-xl p-3 text-xs font-semibold transition-all">
+                                {{-- Populated dynamically --}}
+                            </div>
+                        </div>
+                    </div>
 
                     @if ($product->highlights)
                         <div class="mt-8">
@@ -187,4 +257,150 @@
             description="Explore related products selected from the same category."
         />
     @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const countrySelect = document.getElementById('prod-check-country');
+            const stateWrapper = document.getElementById('prod-check-state-wrapper');
+            const stateInput = document.getElementById('prod-check-state');
+            const cityWrapper = document.getElementById('prod-check-city-wrapper');
+            const cityInput = document.getElementById('prod-check-city');
+            const btnCheck = document.getElementById('btn-check-delivery-prod');
+            const spinner = document.getElementById('prod-check-spinner');
+            const resultBox = document.getElementById('prod-delivery-result');
+            const btnAddToCart = document.getElementById('btn-product-add-to-cart');
+            const originalAddToCartText = btnAddToCart ? btnAddToCart.innerText : '';
+
+            function updateCountryFields() {
+                const country = (countrySelect ? countrySelect.value : '').toLowerCase();
+                const isIndia = country === 'india';
+
+                if (isIndia) {
+                    stateWrapper.style.display = 'block';
+                    cityWrapper.style.display = 'block';
+                } else {
+                    stateWrapper.style.display = 'none';
+                    cityWrapper.style.display = 'none';
+                }
+            }
+
+            if (countrySelect) {
+                countrySelect.addEventListener('change', () => {
+                    updateCountryFields();
+                    if (resultBox) resultBox.classList.add('hidden');
+                });
+            }
+
+            async function performDeliveryCheck() {
+                const country = countrySelect ? countrySelect.value.trim() : '';
+                const isIndia = country.toLowerCase() === 'india';
+                const state = isIndia && stateInput ? stateInput.value.trim() : '';
+                const city = isIndia && cityInput ? cityInput.value.trim() : '';
+
+                if (!country) return;
+
+                if (spinner) spinner.classList.remove('hidden');
+                if (btnCheck) btnCheck.disabled = true;
+
+                try {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                    const response = await fetch('{{ route('delivery.check') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({ country, state, city })
+                    });
+
+                    const data = await response.json();
+
+                    resultBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-900', 'border-emerald-200', 'bg-red-50', 'text-red-900', 'border-red-200', 'border');
+                    resultBox.classList.add('border');
+
+                    if (data.deliverable) {
+                        resultBox.classList.add('bg-emerald-50', 'text-emerald-900', 'border-emerald-200');
+                        resultBox.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold">&check;</span>
+                                <div>
+                                    <p class="font-bold text-emerald-950">${data.message || 'Deliverable to this location!'}</p>
+                                    <p class="text-[11px] text-emerald-700 font-normal">Standard delivery available (2-4 business days).</p>
+                                </div>
+                            </div>
+                        `;
+
+                        if (btnAddToCart && {{ $product->quantity > 0 ? 'true' : 'false' }}) {
+                            btnAddToCart.disabled = false;
+                            btnAddToCart.innerText = originalAddToCartText;
+                            btnAddToCart.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+
+                        // Store in localStorage
+                        localStorage.setItem('flavourflow_delivery_location', JSON.stringify({ country, state, city, deliverable: true }));
+                    } else {
+                        resultBox.classList.add('bg-red-50', 'text-red-900', 'border-red-200');
+                        resultBox.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-700 font-bold">&times;</span>
+                                <div>
+                                    <p class="font-bold text-red-950">Sorry, we don’t deliver to this location.</p>
+                                    <p class="text-[11px] text-red-700 font-normal">Please choose another shipping location.</p>
+                                </div>
+                            </div>
+                        `;
+
+                        if (btnAddToCart) {
+                            btnAddToCart.disabled = true;
+                            btnAddToCart.innerText = 'Unavailable for this location';
+                            btnAddToCart.classList.add('opacity-50', 'cursor-not-allowed');
+                        }
+
+                        localStorage.setItem('flavourflow_delivery_location', JSON.stringify({ country, state, city, deliverable: false }));
+                    }
+                } catch (err) {
+                    console.error('Delivery check error:', err);
+                } finally {
+                    if (spinner) spinner.classList.add('hidden');
+                    if (btnCheck) btnCheck.disabled = false;
+                }
+            }
+
+            if (btnCheck) {
+                btnCheck.addEventListener('click', performDeliveryCheck);
+            }
+
+            [stateInput, cityInput].forEach(inp => {
+                if (inp) {
+                    inp.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            performDeliveryCheck();
+                        }
+                    });
+                }
+            });
+
+            // Restore from localStorage if exists
+            const savedLocationStr = localStorage.getItem('flavourflow_delivery_location');
+            if (savedLocationStr) {
+                try {
+                    const saved = JSON.parse(savedLocationStr);
+                    if (saved.country && countrySelect) {
+                        countrySelect.value = saved.country;
+                    }
+                    if (saved.state && stateInput) {
+                        stateInput.value = saved.state;
+                    }
+                    if (saved.city && cityInput) {
+                        cityInput.value = saved.city;
+                    }
+                    updateCountryFields();
+                } catch (e) {}
+            } else {
+                updateCountryFields();
+            }
+        });
+    </script>
 </x-site.layout>

@@ -163,11 +163,11 @@
                                     </div>
 
                                     <!-- Dual range bar container -->
-                                    <div class="relative w-full py-3">
+                                    <div class="relative w-full h-8 flex items-center my-1">
                                         <!-- Base Track -->
-                                        <div class="relative h-2 w-full rounded-full bg-zinc-200">
+                                        <div class="relative h-2.5 w-full rounded-full bg-amber-100/90 border border-amber-200/80 shadow-inner">
                                             <!-- Highlight Track -->
-                                            <div id="slider-highlight-bar" class="absolute h-2 rounded-full bg-brand-primary transition-all duration-75"></div>
+                                            <div id="slider-highlight-bar" class="absolute inset-y-0 rounded-full bg-gradient-to-r from-red-600 via-amber-600 to-red-600 shadow-sm transition-all duration-75"></div>
                                         </div>
 
                                         <!-- Min Handle Input -->
@@ -349,45 +349,58 @@
             .dual-range-input {
                 pointer-events: none;
                 position: absolute;
-                height: 0;
-                width: 100%;
-                outline: none;
-                top: 15px;
+                top: 50%;
+                transform: translateY(-50%);
                 left: 0;
+                width: 100%;
+                height: 24px;
+                margin: 0;
+                outline: none;
                 appearance: none;
                 -webkit-appearance: none;
                 background: transparent;
-                z-index: 2;
+                z-index: 20;
+            }
+            .dual-range-input::-webkit-slider-runnable-track {
+                background: transparent;
+                border: none;
+                height: 100%;
+            }
+            .dual-range-input::-moz-range-track {
+                background: transparent;
+                border: none;
+                height: 100%;
             }
             .dual-range-input::-webkit-slider-thumb {
                 pointer-events: auto;
                 appearance: none;
                 -webkit-appearance: none;
-                width: 18px;
-                height: 18px;
+                width: 20px;
+                height: 20px;
                 border-radius: 50%;
-                background: #b45309;
+                background: linear-gradient(135deg, #b42318 0%, #d97706 100%);
                 border: 2px solid #ffffff;
-                box-shadow: 0 1px 4px rgba(0,0,0,0.35);
-                cursor: pointer;
-                transition: transform 0.15s ease, background-color 0.15s ease;
+                box-shadow: 0 2px 6px rgba(180, 35, 24, 0.4), 0 0 0 1px rgba(180, 35, 24, 0.15);
+                cursor: grab;
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
             }
             .dual-range-input::-webkit-slider-thumb:hover {
                 transform: scale(1.15);
-                background: #92400e;
+                box-shadow: 0 4px 10px rgba(180, 35, 24, 0.5), 0 0 0 1px rgba(180, 35, 24, 0.3);
             }
             .dual-range-input::-webkit-slider-thumb:active {
+                cursor: grabbing;
                 transform: scale(1.2);
             }
             .dual-range-input::-moz-range-thumb {
                 pointer-events: auto;
-                width: 18px;
-                height: 18px;
+                width: 20px;
+                height: 20px;
                 border-radius: 50%;
-                background: #b45309;
+                background: linear-gradient(135deg, #b42318 0%, #d97706 100%);
                 border: 2px solid #ffffff;
-                box-shadow: 0 1px 4px rgba(0,0,0,0.35);
-                cursor: pointer;
+                box-shadow: 0 2px 6px rgba(180, 35, 24, 0.4), 0 0 0 1px rgba(180, 35, 24, 0.15);
+                cursor: grab;
             }
         </style>
 
@@ -430,11 +443,12 @@
                     }
 
                     const range = Math.max(1, highestBound - lowestBound);
-                    const leftPercent = ((v1 - lowestBound) / range) * 100;
-                    const rightPercent = ((v2 - lowestBound) / range) * 100;
+                    const leftPercent = Math.max(0, Math.min(100, ((v1 - lowestBound) / range) * 100));
+                    const rightPercent = Math.max(0, Math.min(100, ((v2 - lowestBound) / range) * 100));
+                    const widthPercent = Math.max(0, rightPercent - leftPercent);
 
                     highlightBar.style.left = leftPercent + '%';
-                    highlightBar.style.width = (rightPercent - leftPercent) + '%';
+                    highlightBar.style.width = widthPercent + '%';
 
                     if (minText) minText.textContent = v1;
                     if (maxText) maxText.textContent = v2;
@@ -450,6 +464,8 @@
                     if (parseInt(minSlider.value) > parseInt(maxSlider.value) - 5) {
                         minSlider.value = parseInt(maxSlider.value) - 5;
                     }
+                    minSlider.style.zIndex = '25';
+                    if (maxSlider) maxSlider.style.zIndex = '20';
                     updateSliderTrack();
                 });
 
@@ -457,6 +473,8 @@
                     if (parseInt(maxSlider.value) < parseInt(minSlider.value) + 5) {
                         maxSlider.value = parseInt(minSlider.value) + 5;
                     }
+                    maxSlider.style.zIndex = '25';
+                    if (minSlider) minSlider.style.zIndex = '20';
                     updateSliderTrack();
                 });
 
