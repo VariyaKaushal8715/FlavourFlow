@@ -103,4 +103,9 @@ class Order extends Model
     {
         return $this->hasOne(RefundRequest::class);
     }
+
+    public function deliveryNotifications(): HasMany
+    {
+        return $this->hasMany(OrderDeliveryNotification::class);
+    }
 }

@@ -7,6 +7,7 @@ use App\Models\Offer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+
 use App\Support\CartState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -58,16 +59,8 @@ class CheckoutController extends Controller
             'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
             'country' => ['required', 'string', 'max:100'],
             'payment_method' => ['required', 'string', 'in:cod,online'],
-            'delivery_option' => ['nullable', 'string', 'in:standard,express'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
-
-        $deliverySetting = DeliverySetting::current();
-        if (! $deliverySetting->isDeliverable($validated['country'], $validated['state'], $validated['city'])) {
-            return back()->withInput()->withErrors([
-                'country' => 'Sorry, we don’t deliver to this location.',
-            ]);
-        }
 
         try {
             $order = DB::transaction(function () use ($validated, $cart, $request) {
@@ -100,6 +93,14 @@ class CheckoutController extends Controller
                 }
 
                 $totalAmount = max(0.00, $subtotal - $discountAmount + $deliveryCharge);
+
+                // Additional address validation using the new service
+                $addressResult = \App\Services\AddressValidationService::validate($validated);
+                if ($addressResult !== \App\Services\AddressValidationService::VALID) {
+                    throw ValidationException::withMessages([
+                        'address' => \App\Services\AddressValidationService::message($addressResult),
+                    ]);
+                }
 
                 $order = Order::create([
                     'order_number' => $orderNumber,
@@ -155,6 +156,13 @@ class CheckoutController extends Controller
 
                 return $order;
             });
+
+            // Dispatch Order Confirmation Notifications (WhatsApp + Email for Customer and Admin)
+            try {
+                \App\Events\OrderPlaced::dispatch($order);
+            } catch (\Throwable $notificationException) {
+                \Illuminate\Support\Facades\Log::error('OrderPlaced event error: ' . $notificationException->getMessage());
+            }
 
             return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
         } catch (ValidationException $e) {

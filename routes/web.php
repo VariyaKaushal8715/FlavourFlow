@@ -55,6 +55,7 @@ Route::post('/delivery/check', [DeliveryCheckController::class, 'check'])->name(
 
 Route::get('/products/{product:slug}', ProductDetailsController::class)->name('products.show');
 Route::get('/offers/{offer}', OfferDetailsController::class)->name('offers.show');
+Route::get('/orders/{order:order_number}/track/secure', [OrderController::class, 'trackSigned'])->name('orders.track.signed');
 
 Route::middleware('auth')->group(function () {
     Route::prefix('account')

@@ -265,7 +265,7 @@
 
                     {{-- PIN / ZIP Code --}}
                     <div>
-                        <label for="postal_code" class="block text-xs font-semibold text-zinc-800">
+                        <label for="pincode" class="block text-xs font-semibold text-zinc-800">
                             PIN / ZIP Code
                         </label>
                         <input
