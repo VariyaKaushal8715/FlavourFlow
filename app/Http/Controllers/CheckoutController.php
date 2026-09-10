@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DeliverySetting;
 use App\Models\Offer;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -28,7 +29,7 @@ class CheckoutController extends Controller
         $profile = $user ? $user->profile()->first() : null;
 
         $subtotal = $cart->subtotal();
-        $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
+        $deliveryCharge = ($subtotal < 300.00) ? 30.00 : 0.00;
         $total = $subtotal + $deliveryCharge;
 
         return view('checkout.index', [
@@ -48,37 +49,28 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-        $validated = $request->validate(
-    [
-        // Basic customer details validation
-        'name' => ['required', 'string', 'max:255'],
-        'mobile' => ['required', 'string', 'regex:/^[0-9+\s-]{10,15}$/'],
-        'email' => ['required', 'email', 'max:255'],
-        'address' => ['required', 'string', 'max:500'],
-        'city' => ['required', 'string', 'max:100'],
-        'state' => ['required', 'string', 'max:100'],
-        // PIN must be 5-6 digits and match state prefixes
-            'pincode' => ['required', 'string', 'max:20'],
-        // Delivery limited to India only
-        'country' => ['required', 'in:India'],
-        'payment_method' => ['required', 'string', 'in:cod,online'],
-        'coupon_code' => ['nullable', 'string', 'max:50'],
-    ],
-    [
-        'country.in' => 'Currently, FlavourFlow delivery is available only within India.',
-        'state.in' => 'Please select a valid Indian state/UT.',
-        'pincode.regex' => 'Please enter a valid 6-digit Indian PIN code.',
-        'address.required' => 'Please check your address details and try again.',
-    ]
-);
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'mobile' => ['required', 'string', 'regex:/^[0-9+\s-]{10,15}$/'],
+            'email' => ['required', 'email', 'max:255'],
+            'address' => ['required', 'string', 'max:500'],
+            'city' => ['required', 'string', 'max:100'],
+            'state' => ['required', 'string', 'max:100'],
+            'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
+            'country' => ['required', 'string', 'max:100'],
+            'payment_method' => ['required', 'string', 'in:cod,online'],
+            'coupon_code' => ['nullable', 'string', 'max:50'],
+        ]);
 
         try {
             $order = DB::transaction(function () use ($validated, $cart, $request) {
                 // Generate a unique Order Number
                 $orderNumber = 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
-                // Calculate checkout totals
+                // Calculate checkout totals based on selected delivery option
                 $subtotal = $cart->subtotal();
-                $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
+                $deliveryOption = $validated['delivery_option'] ?? 'standard';
+                $deliveryCharge = $deliveryOption === 'express' ? 99.00 : ($subtotal < 300.00 ? 30.00 : 0.00);
+                $deliveryDays = $deliveryOption === 'express' ? '1-2 days' : '4-5 days';
 
                 $couponCode = $validated['coupon_code'] ?? null;
                 $discountAmount = 0.00;
@@ -123,6 +115,8 @@ class CheckoutController extends Controller
                     'pincode' => $validated['pincode'],
                     'country' => $validated['country'],
                     'payment_method' => $validated['payment_method'],
+                    'delivery_option' => $deliveryOption,
+                    'delivery_days' => $deliveryDays,
                     'coupon_code' => $couponCode,
                     'discount_amount' => $discountAmount,
                     'subtotal' => $subtotal,
@@ -172,7 +166,11 @@ class CheckoutController extends Controller
 
             return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
         } catch (ValidationException $e) {
-            return redirect()->route('cart.index')->withErrors($e->errors());
+            if (isset($e->errors()['cart'])) {
+                return redirect()->route('cart.index')->withErrors($e->errors());
+            }
+
+            return back()->withInput()->withErrors($e->errors());
         }
     }
 
@@ -196,6 +194,7 @@ class CheckoutController extends Controller
     {
         $validated = $request->validate([
             'coupon_code' => ['required', 'string', 'max:50'],
+            'delivery_option' => ['nullable', 'string', 'in:standard,express'],
         ]);
 
         $code = $validated['coupon_code'];
@@ -223,7 +222,8 @@ class CheckoutController extends Controller
         }
 
         $discount = $coupon->calculateDiscount($subtotal);
-        $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
+        $deliveryOption = $validated['delivery_option'] ?? 'standard';
+        $deliveryCharge = $deliveryOption === 'express' ? 99.00 : ($subtotal < 300.00 ? 30.00 : 0.00);
         $total = max(0.0, $subtotal - $discount + $deliveryCharge);
 
         return response()->json([

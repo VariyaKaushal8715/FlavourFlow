@@ -25,6 +25,8 @@ class Order extends Model
         'pincode',
         'country',
         'payment_method',
+        'delivery_option',
+        'delivery_days',
         'subtotal',
         'delivery_charge',
         'total_amount',

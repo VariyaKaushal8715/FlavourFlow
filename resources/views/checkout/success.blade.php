@@ -44,6 +44,13 @@
                             {{ $order->payment_method === 'cod' ? 'Cash on Delivery (COD)' : 'Online Payment' }}
                         </p>
                     </div>
+                    <div>
+                        <p class="font-medium text-zinc-400">Delivery Option</p>
+                        <p class="mt-1 font-semibold text-zinc-950">
+                            {{ ucfirst($order->delivery_option ?? 'standard') }} Delivery 
+                            <span class="text-xs font-medium text-zinc-500">({{ $order->delivery_days ?? '4-5 days' }})</span>
+                        </p>
+                    </div>
                 </div>
 
                 <div class="mt-6">

@@ -191,6 +191,10 @@
                                 <span class="text-zinc-500">Payment:</span>
                                 <span class="font-semibold text-zinc-950">{{ $order->payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment' }}</span>
                             </div>
+                            <div class="flex justify-between">
+                                <span class="text-zinc-500">Delivery Option:</span>
+                                <span class="font-semibold text-zinc-950">{{ ucfirst($order->delivery_option ?? 'standard') }} ({{ $order->delivery_days ?? '4-5 days' }})</span>
+                            </div>
                         </div>
                         <a href="{{ route('account.orders.track', $order->order_number) }}" class="mt-5 block w-full rounded-2xl bg-zinc-950 py-3 text-center text-xs font-semibold text-white transition hover:bg-brand-primary">
                             Track Order Progress
@@ -224,6 +228,10 @@
                                     <span>-Rs. {{ number_format($order->discount_amount, 2) }}</span>
                                 </div>
                             @endif
+                            <div class="flex justify-between">
+                                <span class="text-zinc-500">Delivery Option:</span>
+                                <span class="font-medium text-zinc-900">{{ ucfirst($order->delivery_option ?? 'standard') }} Delivery</span>
+                            </div>
                             <div class="flex justify-between">
                                 <span class="text-zinc-500">Delivery Charge:</span>
                                 <span>{{ $order->delivery_charge > 0 ? 'Rs. '.number_format($order->delivery_charge, 2) : 'FREE' }}</span>
