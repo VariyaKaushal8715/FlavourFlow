@@ -115,6 +115,12 @@ class AiRecommendationEngine implements AiRecommendationEngineInterface
         // Fill remaining with active catalog products if needed
         if (count($recommended) < $limit) {
             $fallbacks = Product::query()->active()->whereNotIn('id', array_keys($usedIds))->take($limit - count($recommended))->get();
+            // First, try active catalog products not already used
+            $fallbacks = Product::query()
+                ->active()
+                ->whereNotIn('id', array_keys($usedIds))
+                ->take($limit - count($recommended))
+                ->get();
             foreach ($fallbacks as $product) {
                 $recommended[] = [
                     'product_id' => (string) $product->id,
@@ -126,6 +132,35 @@ class AiRecommendationEngine implements AiRecommendationEngineInterface
                     'confidence' => 0.50,
                     'suggested_action' => ['action' => 'view_product', 'label' => 'Explore Product'],
                 ];
+                $usedIds[$product->id] = true;
+            }
+
+            // If still short, supplement from personalization profile
+            if (count($recommended) < $limit && isset($context['personalization_profile']['preferred_products'])) {
+                foreach ($context['personalization_profile']['preferred_products'] as $p) {
+                    $pid = $p['product_id'] ?? null;
+                    if (!$pid || isset($usedIds[$pid])) {
+                        continue;
+                    }
+                    $product = Product::find($pid);
+                    if (!$product || ($product->stock ?? 0) <= 0) {
+                        continue;
+                    }
+                    $recommended[] = [
+                        'product_id' => (string) $product->id,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'price' => (float) $product->price,
+                        'category' => $product->category,
+                        'reason' => 'Matches your preferred products.',
+                        'confidence' => 0.70,
+                        'suggested_action' => ['action' => 'add_to_cart', 'label' => 'Add to Cart'],
+                    ];
+                    $usedIds[$product->id] = true;
+                    if (count($recommended) >= $limit) {
+                        break;
+                    }
+                }
             }
         }
 

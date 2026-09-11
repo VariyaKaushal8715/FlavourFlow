@@ -4,6 +4,7 @@ namespace App\AI\Services;
 
 use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Models\AiEvent;
+use App\AI\Services\CustomerPersonalizationService;
 use Illuminate\Support\Collection;
 use Throwable;
 
@@ -16,6 +17,7 @@ class AiContextBuilder implements AiContextBuilderInterface
             $effectiveSessionId = $sessionId ?? (session()->isStarted() ? session()->getId() : null);
 
             $events = $this->fetchEvents($effectiveUserId, $effectiveSessionId, $limit);
+            $profile = $effectiveUserId ? (new CustomerPersonalizationService())->getProfile($effectiveUserId) : [];
 
             if ($events->isEmpty()) {
                 return $this->emptyContext($effectiveUserId, $effectiveSessionId);
@@ -34,6 +36,7 @@ class AiContextBuilder implements AiContextBuilderInterface
                 'cart_activity' => $this->extractCartActivity($events),
                 'checkout_activity' => $this->extractCheckoutActivity($events),
                 'orders' => $this->extractOrders($events),
+                'personalization_profile' => $profile ?? [],
 
                 'preferred_categories' => $this->extractPreferredCategories($events),
                 'frequently_interacted_products' => $this->extractFrequentlyInteractedProducts($events),
