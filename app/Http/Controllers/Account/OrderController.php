@@ -279,18 +279,31 @@ class OrderController extends Controller
         abort_unless($user, 401);
 
         return response()->stream(function () use ($user) {
+            if (function_exists('set_time_limit')) {
+                @set_time_limit(0);
+            }
+            @ini_set('max_execution_time', '0');
+
             $lastId = OrderNotification::where('user_id', $user->id)->max('id') ?? 0;
-            // Send initial connection message
+            // Send retry interval and initial connection message
+            echo "retry: 3000\n\n";
             echo "event: connected\ndata: {}\n\n";
-            ob_flush();
+            if (ob_get_level() > 0) {
+                ob_flush();
+            }
             flush();
 
-            while (true) {
+            // Run stream cycle safely for up to 25 seconds before closing cleanly,
+            // allowing the browser EventSource to auto-reconnect seamlessly
+            $startTime = time();
+
+            while (time() - $startTime < 25) {
                 if (connection_aborted()) {
                     break;
                 }
 
-                $newNotifications = OrderNotification::where('user_id', $user->id)
+                $newNotifications = OrderNotification::with('order')
+                    ->where('user_id', $user->id)
                     ->where('id', '>', $lastId)
                     ->orderBy('id', 'asc')
                     ->get();
@@ -301,18 +314,27 @@ class OrderController extends Controller
 
                         $payload = json_encode([
                             'id' => $notif->id,
-                            'order_number' => $notif->order->order_number,
+                            'order_number' => $notif->order?->order_number,
                             'message' => $notif->message,
                             'status' => $notif->status,
-                            'created_at' => $notif->created_at->diffForHumans(),
-                            'url' => route('account.orders.show', $notif->order->order_number),
+                            'created_at' => $notif->created_at?->diffForHumans(),
+                            'url' => $notif->order ? route('account.orders.show', $notif->order->order_number) : '#',
                             'unread_count' => OrderNotification::where('user_id', $user->id)->whereNull('read_at')->count(),
                         ]);
 
                         echo "data: {$payload}\n\n";
-                        ob_flush();
+                        if (ob_get_level() > 0) {
+                            ob_flush();
+                        }
                         flush();
                     }
+                } else {
+                    // Send a keep-alive heartbeat comment
+                    echo ": keepalive\n\n";
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
                 }
 
                 sleep(1);
