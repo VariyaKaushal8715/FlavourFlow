@@ -38,6 +38,7 @@
         data-cart-update-url="{{ route('cart.update', ['product' => '__product__']) }}"
         data-cart-destroy-url="{{ route('cart.destroy', ['product' => '__product__']) }}"
         data-cart-clear-url="{{ route('cart.clear') }}"
+        data-chatbot-endpoint="{{ route('api.chatbot') }}"
         data-login-url="{{ route('login') }}"
         style="
             --brand-primary: {{ $site['theme']['primary'] ?? '#b42318' }};
@@ -49,6 +50,8 @@
         <main>
             {{ $slot }}
         </main>
+
+        <x-site.chatbot :site="$site" />
 
         @if ($showFooter)
             <x-site.footer :site="$site" />

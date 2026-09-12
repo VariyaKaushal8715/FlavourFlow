@@ -1009,14 +1009,93 @@ window.addEventListener('DOMContentLoaded', () => {
             });
         };
 
-        backToTop.addEventListener('click', () => {
-            window.scrollTo({
-                top: 0,
-                behavior: prefersReducedMotion ? 'auto' : 'smooth',
-            });
-        });
-
         toggleBackToTop();
         window.addEventListener('scroll', onScroll, { passive: true });
+    }
+
+    // Chatbot Widget Client Logic
+    const chatbotToggleBtn = document.getElementById('chatbot-toggle-btn');
+    const chatbotCloseBtn = document.getElementById('chatbot-close-btn');
+    const chatbotWindow = document.getElementById('chatbot-window');
+    const chatbotIconOpen = document.getElementById('chatbot-icon-open');
+    const chatbotIconClose = document.getElementById('chatbot-icon-close');
+    const chatbotForm = document.getElementById('chatbot-form');
+    const chatbotInput = document.getElementById('chatbot-input');
+    const chatbotMessages = document.getElementById('chatbot-messages');
+    const chatbotLoading = document.getElementById('chatbot-loading');
+    const chatbotEndpoint = document.body.dataset.chatbotEndpoint || '/api/chatbot';
+
+    if (chatbotToggleBtn && chatbotWindow) {
+        const toggleChatbot = () => {
+            const isHidden = chatbotWindow.classList.contains('hidden');
+            if (isHidden) {
+                chatbotWindow.classList.remove('hidden');
+                if (chatbotIconOpen) chatbotIconOpen.classList.add('hidden');
+                if (chatbotIconClose) chatbotIconClose.classList.remove('hidden');
+                if (chatbotInput) chatbotInput.focus();
+            } else {
+                chatbotWindow.classList.add('hidden');
+                if (chatbotIconOpen) chatbotIconOpen.classList.remove('hidden');
+                if (chatbotIconClose) chatbotIconClose.classList.add('hidden');
+            }
+        };
+
+        chatbotToggleBtn.addEventListener('click', toggleChatbot);
+        if (chatbotCloseBtn) chatbotCloseBtn.addEventListener('click', toggleChatbot);
+
+        if (chatbotForm) {
+            chatbotForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const userMsg = chatbotInput.value.trim();
+                if (!userMsg) return;
+
+                // Append User Message
+                const userDiv = document.createElement('div');
+                userDiv.className = 'self-end max-w-[85%] rounded-2xl rounded-tr-none bg-brand-primary p-3 text-white shadow-sm';
+                userDiv.textContent = userMsg;
+                chatbotMessages.appendChild(userDiv);
+                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+
+                chatbotInput.value = '';
+                chatbotInput.disabled = true;
+                if (chatbotLoading) chatbotLoading.classList.remove('hidden');
+
+                try {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                    const response = await fetch(chatbotEndpoint, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                        },
+                        body: JSON.stringify({ message: userMsg }),
+                    });
+
+                    const data = await response.json();
+                    const aiDiv = document.createElement('div');
+                    aiDiv.className = 'self-start max-w-[85%] rounded-2xl rounded-tl-none bg-white p-3 text-zinc-800 shadow-sm border border-zinc-100 whitespace-pre-line';
+
+                    if (response.ok && data.success) {
+                        aiDiv.textContent = data.reply;
+                    } else {
+                        aiDiv.textContent = data.message || 'Sorry, I am having trouble processing your request right now. Please try again.';
+                    }
+
+                    chatbotMessages.appendChild(aiDiv);
+                } catch {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'self-start max-w-[85%] rounded-2xl rounded-tl-none bg-red-50 p-3 text-red-700 shadow-sm border border-red-100';
+                    errorDiv.textContent = 'Connection error. Please check your internet connection and try again.';
+                    chatbotMessages.appendChild(errorDiv);
+                } finally {
+                    chatbotInput.disabled = false;
+                    if (chatbotLoading) chatbotLoading.classList.add('hidden');
+                    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+                    chatbotInput.focus();
+                }
+            });
+        }
     }
 });

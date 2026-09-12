@@ -19,6 +19,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\UserSessionController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CashfreeWebhookController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactEmailController;
 use App\Http\Controllers\HomeController;
@@ -36,6 +37,10 @@ Route::post('/api/webhooks/cashfree', [CashfreeWebhookController::class, 'handle
 Route::post('/contact-email', ContactEmailController::class)
     ->middleware(['web', 'throttle:10,1'])
     ->name('contact.email');
+
+Route::post('/api/chatbot', [ChatbotController::class, 'message'])
+    ->middleware(['web', 'throttle:20,1'])
+    ->name('api.chatbot');
 Route::middleware(['guest', PreventAdminResponseCaching::class])->group(function () {
     Route::get('/login', [UserSessionController::class, 'create'])->name('login');
     Route::post('/login', [UserSessionController::class, 'store'])
