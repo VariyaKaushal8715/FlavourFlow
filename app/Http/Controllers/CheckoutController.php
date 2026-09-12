@@ -71,12 +71,24 @@ class CheckoutController extends Controller
             'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
 
-        // Validate delivery location settings
+        // Validate global delivery location settings
         $deliverySetting = DeliverySetting::current();
         if (! $deliverySetting->isDeliverable($validated['country'], $validated['state'], $validated['city'])) {
             throw ValidationException::withMessages([
                 'country' => 'Sorry, we don’t deliver to this location.',
             ]);
+        }
+
+        // Validate per-product deliverable locations
+        foreach ($cart->items() as $item) {
+            /** @var Product $itemProduct */
+            $itemProduct = $item['product'];
+            if (! $itemProduct->isDeliverableTo($validated['country'], $validated['state'], $validated['city'])) {
+                $locationStr = implode(', ', array_filter([$validated['city'], $validated['state'], $validated['country']]));
+                throw ValidationException::withMessages([
+                    'country' => "Sorry, '{$itemProduct->name}' cannot be delivered to {$locationStr}.",
+                ]);
+            }
         }
 
         // Additional address validation using the address validation service

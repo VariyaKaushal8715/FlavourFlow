@@ -26,13 +26,19 @@ class OrderDeliveryNotification extends Model
     ];
 
     public const CHANNEL_CUSTOMER_WHATSAPP = 'customer_whatsapp';
+
     public const CHANNEL_CUSTOMER_EMAIL = 'customer_email';
+
     public const CHANNEL_ADMIN_WHATSAPP = 'admin_whatsapp';
+
     public const CHANNEL_ADMIN_EMAIL = 'admin_email';
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_SENT = 'sent';
+
     public const STATUS_FAILED = 'failed';
+
     public const STATUS_SKIPPED = 'skipped';
 
     public function order(): BelongsTo

@@ -503,7 +503,7 @@
                                         <div class="flex items-center gap-2">
                                             <span class="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-700 font-bold">&times;</span>
                                             <div>
-                                                <p class="font-bold text-red-950">Sorry, we don’t deliver to this location.</p>
+                                                <p class="font-bold text-red-950">${data.message || 'Sorry, we don’t deliver to this location.'}</p>
                                                 <p class="text-[11px] text-red-700 font-normal">Please adjust your shipping country, state, or city to proceed.</p>
                                             </div>
                                         </div>

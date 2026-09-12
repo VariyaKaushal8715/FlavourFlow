@@ -11,8 +11,11 @@ use Throwable;
 class TwilioWhatsAppProvider implements WhatsAppProviderInterface
 {
     protected ?string $sid;
+
     protected ?string $token;
+
     protected ?string $from;
+
     protected int $timeout;
 
     public function __construct(array $config = [])
@@ -28,16 +31,17 @@ class TwilioWhatsAppProvider implements WhatsAppProviderInterface
         if (empty($this->sid) || empty($this->token) || empty($this->from)) {
             $error = 'Twilio WhatsApp credentials not fully configured.';
             Log::warning($error);
+
             return WhatsAppSendResult::failure($error);
         }
 
         // Format recipient to WhatsApp international E.164
         $cleanTo = preg_replace('/[^\d+]/', '', $to);
         if (! str_starts_with($cleanTo, '+')) {
-            $cleanTo = '+' . $cleanTo;
+            $cleanTo = '+'.$cleanTo;
         }
-        $formattedTo = 'whatsapp:' . $cleanTo;
-        $formattedFrom = str_starts_with($this->from, 'whatsapp:') ? $this->from : 'whatsapp:' . $this->from;
+        $formattedTo = 'whatsapp:'.$cleanTo;
+        $formattedFrom = str_starts_with($this->from, 'whatsapp:') ? $this->from : 'whatsapp:'.$this->from;
 
         try {
             $url = "https://api.twilio.com/2010-04-01/Accounts/{$this->sid}/Messages.json";
@@ -53,15 +57,18 @@ class TwilioWhatsAppProvider implements WhatsAppProviderInterface
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return WhatsAppSendResult::success($data['sid'] ?? null, $data);
             }
 
-            $errorMsg = 'Twilio error: ' . ($response->json()['message'] ?? $response->body());
+            $errorMsg = 'Twilio error: '.($response->json()['message'] ?? $response->body());
             Log::error($errorMsg);
+
             return WhatsAppSendResult::failure($errorMsg, $response->json() ?? []);
         } catch (Throwable $e) {
-            Log::error('Twilio WhatsApp dispatch exception: ' . $e->getMessage(), ['exception' => $e]);
-            return WhatsAppSendResult::failure('Twilio connection exception: ' . $e->getMessage());
+            Log::error('Twilio WhatsApp dispatch exception: '.$e->getMessage(), ['exception' => $e]);
+
+            return WhatsAppSendResult::failure('Twilio connection exception: '.$e->getMessage());
         }
     }
 }

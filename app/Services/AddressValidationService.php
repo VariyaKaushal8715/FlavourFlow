@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
@@ -7,10 +8,15 @@ class AddressValidationService
 {
     // Validation result constants
     public const VALID = 'VALID';
+
     public const INVALID_FORMAT = 'INVALID_FORMAT';
+
     public const INVALID_PIN = 'INVALID_PIN';
+
     public const LOCATION_MISMATCH = 'LOCATION_MISMATCH';
+
     public const ADDRESS_NOT_FOUND = 'ADDRESS_NOT_FOUND';
+
     public const VERIFICATION_UNAVAILABLE = 'VERIFICATION_UNAVAILABLE';
 
     /**
@@ -33,7 +39,7 @@ class AddressValidationService
         }
 
         // PIN code format validation
-        if (!preg_match(config('address.pincode_regex'), $data['pincode'])) {
+        if (! preg_match(config('address.pincode_regex'), $data['pincode'])) {
             return self::INVALID_PIN;
         }
 
@@ -47,6 +53,7 @@ class AddressValidationService
                 if (isset($info['state']) && strcasecmp($info['state'], $data['state']) !== 0) {
                     return self::LOCATION_MISMATCH;
                 }
+
                 return self::VALID;
             }
         }
@@ -63,9 +70,11 @@ class AddressValidationService
                     'country' => $data['country'],
                     'pincode' => $data['pincode'],
                 ]);
+
                 return $verified ? self::VALID : self::ADDRESS_NOT_FOUND;
             } catch (\Exception $e) {
-                Log::error('Address verification provider error: ' . $e->getMessage());
+                Log::error('Address verification provider error: '.$e->getMessage());
+
                 return self::VERIFICATION_UNAVAILABLE;
             }
         }

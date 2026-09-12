@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Rules\ValidStatePincode;
 use Illuminate\Support\Facades\Validator as ValidatorFacade;
 use Illuminate\Validation\Rule;
-use App\Rules\ValidStatePincode;
 
 class LocationValidator
 {
@@ -28,9 +28,9 @@ class LocationValidator
 
         return [
             'country' => ['required', 'in:India'],
-            'state'   => ['required', Rule::in(self::states())],
-            'city'    => ['required', 'string', 'max:120'],
-            'pincode' => ['required', 'regex:' . config('location.pincode_regex'), new \App\Rules\ValidStatePincode()],
+            'state' => ['required', Rule::in(self::states())],
+            'city' => ['required', 'string', 'max:120'],
+            'pincode' => ['required', 'regex:'.config('location.pincode_regex'), new ValidStatePincode],
         ];
     }
 
@@ -40,8 +40,8 @@ class LocationValidator
     public static function messages(): array
     {
         return [
-            'country.in'    => 'Currently, FlavourFlow delivery is available only within India.',
-            'state.in'      => 'Please select a valid Indian state/UT.',
+            'country.in' => 'Currently, FlavourFlow delivery is available only within India.',
+            'state.in' => 'Please select a valid Indian state/UT.',
             'pincode.regex' => 'Please enter a valid 6-digit Indian PIN code.',
             'address.required' => 'Please check your address details and try again.',
         ];
