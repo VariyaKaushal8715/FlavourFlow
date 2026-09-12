@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\User;
+use App\Support\GujaratLocation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -34,9 +35,30 @@ class UpdateAdminProfileRequest extends FormRequest
                 Rule::unique(User::class, 'email')->ignore($this->user()?->id),
             ],
             'mobile_number' => ['nullable', 'string', 'max:25', 'regex:/^[0-9+\-\s()]{7,25}$/'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'city' => ['nullable', 'string', 'max:120'],
-            'state' => ['nullable', 'string', 'max:120'],
+            'address' => [
+                'nullable', 'string', 'max:1000',
+                function ($attribute, $value, $fail) {
+                    if ($value && ! GujaratLocation::isValidAddress($value)) {
+                        $fail('Only Gujarat addresses are supported.');
+                    }
+                },
+            ],
+            'city' => [
+                'nullable', 'string', 'max:120',
+                function ($attribute, $value, $fail) {
+                    if ($value && ! GujaratLocation::isGujaratCity($value)) {
+                        $fail('Only Gujarat cities are supported.');
+                    }
+                },
+            ],
+            'state' => [
+                'nullable', 'string', 'max:120',
+                function ($attribute, $value, $fail) {
+                    if ($value && ! GujaratLocation::isGujaratState($value)) {
+                        $fail('Only Gujarat state is supported.');
+                    }
+                },
+            ],
             'country' => ['nullable', 'string', 'max:120'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],

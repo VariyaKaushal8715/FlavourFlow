@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderNotification;
 use App\Models\RefundRequest;
 use App\Models\ReturnRequest;
+use App\Services\WhatsAppService;
 use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -177,6 +178,13 @@ class OrderController extends Controller
             'cancellation_reason' => $validated['reason'],
         ]);
 
+        $waService = app(WhatsAppService::class);
+        $adminPhones = WhatsAppService::getAdminPhoneNumbers();
+        $adminMsg = "⚠️ *Customer Cancelled Order*\nOrder #: {$order->order_number}\nCustomer: {$order->name}\nReason: {$validated['reason']}";
+        foreach ($adminPhones as $adminPhone) {
+            $waService->sendTextMessage($adminPhone, 'customer_order_cancelled', $adminMsg, 'admin');
+        }
+
         return redirect()->back()->with('success', 'Order cancelled successfully.');
     }
 
@@ -200,11 +208,24 @@ class OrderController extends Controller
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
-        ReturnRequest::create([
+        $returnRequest = ReturnRequest::create([
             'order_id' => $order->id,
             'reason' => $validated['reason'],
             'status' => 'Pending',
         ]);
+
+        $waService = app(WhatsAppService::class);
+        $customerPhone = $order->mobile ?? $order->user?->profile?->mobile_number;
+        if ($customerPhone) {
+            $customerMsg = "Hi {$order->name}, we have received your Return Request for Order #{$order->order_number}. Reason: {$validated['reason']}. We will notify you once reviewed.";
+            $waService->sendTextMessage($customerPhone, 'return_requested', $customerMsg, 'customer');
+        }
+
+        $adminPhones = WhatsAppService::getAdminPhoneNumbers();
+        $adminMsg = "📦 *Return Request Received*\nOrder #: {$order->order_number}\nCustomer: {$order->name}\nReason: {$validated['reason']}";
+        foreach ($adminPhones as $adminPhone) {
+            $waService->sendTextMessage($adminPhone, 'return_request_received', $adminMsg, 'admin');
+        }
 
         return redirect()->back()->with('success', 'Return request submitted successfully.');
     }
@@ -229,12 +250,25 @@ class OrderController extends Controller
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
-        RefundRequest::create([
+        $refundRequest = RefundRequest::create([
             'order_id' => $order->id,
             'amount' => $order->total_amount,
             'reason' => $validated['reason'],
             'status' => 'Pending',
         ]);
+
+        $waService = app(WhatsAppService::class);
+        $customerPhone = $order->mobile ?? $order->user?->profile?->mobile_number;
+        if ($customerPhone) {
+            $customerMsg = "Hi {$order->name}, your Refund Request for Order #{$order->order_number} (Amount: Rs. {$order->total_amount}) has been submitted. Reason: {$validated['reason']}.";
+            $waService->sendTextMessage($customerPhone, 'refund_requested', $customerMsg, 'customer');
+        }
+
+        $adminPhones = WhatsAppService::getAdminPhoneNumbers();
+        $adminMsg = "💰 *Refund Request Received*\nOrder #: {$order->order_number}\nCustomer: {$order->name}\nAmount: Rs. {$order->total_amount}\nReason: {$validated['reason']}";
+        foreach ($adminPhones as $adminPhone) {
+            $waService->sendTextMessage($adminPhone, 'refund_request_received', $adminMsg, 'admin');
+        }
 
         return redirect()->back()->with('success', 'Refund request submitted successfully.');
     }

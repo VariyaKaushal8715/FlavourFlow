@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->appendToGroup('web', SetLocale::class);
+        $middleware->validateCsrfTokens(except: [
+            'api/webhooks/cashfree',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

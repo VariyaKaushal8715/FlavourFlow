@@ -236,8 +236,9 @@
                             type="text"
                             id="state"
                             name="state"
-                            value="{{ old('state', $profile->state) }}"
-                            placeholder="e.g. Gujarat"
+                            value="{{ old('state', $profile->state ?: 'Gujarat') }}"
+                            placeholder="Gujarat"
+                            readonly
                             class="mt-1.5 w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-950 focus:outline-none focus:ring-2 focus:ring-zinc-950/10 transition"
                         >
                         @error('state')

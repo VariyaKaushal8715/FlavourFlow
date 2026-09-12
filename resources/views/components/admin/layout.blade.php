@@ -74,6 +74,18 @@
 
                             <a @class([
                                 'flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition',
+                                'bg-white text-zinc-950 shadow-sm' => request()->routeIs('admin.payments*'),
+                                'text-zinc-400 hover:bg-white/5 hover:text-white' => ! request()->routeIs('admin.payments*'),
+                            ]) href="{{ route('admin.payments.index') }}">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                                    <span>Payments</span>
+                                </div>
+                                <span class="rounded bg-amber-400/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-300">TEST</span>
+                            </a>
+
+                            <a @class([
+                                'flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition',
                                 'bg-white text-zinc-950 shadow-sm' => request()->routeIs('admin.products*'),
                                 'text-zinc-400 hover:bg-white/5 hover:text-white' => ! request()->routeIs('admin.products*'),
                             ]) href="{{ route('admin.products.index') }}">

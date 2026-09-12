@@ -428,7 +428,10 @@ const initializeCart = () => {
     });
 
     document.querySelectorAll('[data-add-to-cart]').forEach((button) => {
-        button.addEventListener('click', async () => {
+        button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
             if (!storeTemplate) {
                 return;
             }
@@ -467,7 +470,7 @@ const initializeCart = () => {
                 }
                 const data = await response.json();
                 updateCartCount(data.count);
-                showCartMessage(data.message || 'Added to your cart.');
+                window.location.assign(data.cart_url || '/cart');
             } catch {
                 window.alert('We could not add this product to your cart. Please try again.');
             } finally {

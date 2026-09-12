@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\WhatsAppService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -72,6 +73,29 @@ class Order extends Model
                         'status' => $status,
                         'message' => $messages[$status],
                     ]);
+
+                    // Send Queued WhatsApp Customer Notification
+                    $customerPhone = $order->mobile ?? $order->user?->profile?->mobile_number;
+                    if ($customerPhone) {
+                        $waService = app(WhatsAppService::class);
+                        $eventMap = [
+                            'Confirmed' => 'order_confirmed',
+                            'Cancelled' => 'order_cancelled',
+                            'Shipped' => 'order_shipped',
+                            'Out for Delivery' => 'out_for_delivery',
+                            'Delivered' => 'order_delivered',
+                        ];
+                        $eventKey = $eventMap[$status] ?? 'order_status_update';
+                        $waMessage = "Hi {$order->name}, update on your FlavourFlow Order #{$orderNumber}: {$messages[$status]} Total: Rs. {$order->total_amount}";
+
+                        $waService->dispatchNotification(
+                            recipientPhone: $customerPhone,
+                            event: $eventKey,
+                            parameters: [$order->name, $orderNumber, $status, "Rs. {$order->total_amount}"],
+                            fallbackMessage: $waMessage,
+                            recipientType: 'customer'
+                        );
+                    }
                 }
             }
         });
@@ -100,5 +124,10 @@ class Order extends Model
     public function refundRequest(): HasOne
     {
         return $this->hasOne(RefundRequest::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 }

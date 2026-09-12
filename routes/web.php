@@ -8,14 +8,17 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminInventoryController;
 use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminPaymentController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminSessionController;
+use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\UserSessionController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CashfreeWebhookController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactEmailController;
 use App\Http\Controllers\HomeController;
@@ -28,6 +31,8 @@ use App\Http\Middleware\PreventAdminResponseCaching;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/api/location/gujarat-autocomplete', [LocationController::class, 'autocomplete'])->name('api.location.autocomplete');
+Route::post('/api/webhooks/cashfree', [CashfreeWebhookController::class, 'handleWebhook'])->name('api.webhooks.cashfree');
 Route::post('/contact-email', ContactEmailController::class)
     ->middleware(['web', 'throttle:10,1'])
     ->name('contact.email');
@@ -82,6 +87,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout/razorpay/verify', [CheckoutController::class, 'verifyRazorpayPayment'])->name('checkout.razorpay.verify');
     Route::post('/checkout/coupon/apply', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
 
@@ -118,6 +124,9 @@ Route::prefix('admin')
             Route::patch('/refund-requests/{refundRequest}/status', [AdminOrderController::class, 'updateRefundStatus'])->name('refundRequests.updateStatus');
             Route::get('/orders/{order}/receipt', [AdminOrderController::class, 'downloadReceipt'])->name('orders.receipt.download');
             Route::get('/api/new-orders', [AdminOrderController::class, 'newOrders'])->name('api.newOrders');
+
+            // Payments
+            Route::get('/payments', [AdminPaymentController::class, 'index'])->name('payments.index');
 
             // Inventory
             Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');

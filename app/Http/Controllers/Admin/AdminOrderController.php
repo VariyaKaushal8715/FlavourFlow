@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\RefundRequest;
 use App\Models\ReturnRequest;
+use App\Services\CashfreeService;
+use App\Services\WhatsAppService;
 use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -133,6 +136,36 @@ class AdminOrderController extends Controller
             'status' => $validated['status'],
         ]);
 
+        $order = $returnRequest->order;
+        if ($order) {
+            $waService = app(WhatsAppService::class);
+            $customerPhone = $order->mobile ?? $order->user?->profile?->mobile_number;
+
+            if ($customerPhone) {
+                $statusText = $validated['status'] === 'Approved' ? 'ACCEPTED' : 'REJECTED';
+                $customerMsg = "Hi {$order->name}, your Return Request for Order #{$order->order_number} has been {$statusText} by our team.";
+                $waService->dispatchNotification(
+                    recipientPhone: $customerPhone,
+                    event: 'return_status_update',
+                    parameters: [$order->name, $order->order_number, $statusText],
+                    fallbackMessage: $customerMsg,
+                    recipientType: 'customer'
+                );
+            }
+
+            $adminPhones = WhatsAppService::getAdminPhoneNumbers();
+            $adminMsg = "📦 *Return Request {$validated['status']}*\nOrder #: {$order->order_number}\nCustomer: {$order->name}";
+            foreach ($adminPhones as $adminPhone) {
+                $waService->dispatchNotification(
+                    recipientPhone: $adminPhone,
+                    event: 'return_status_admin',
+                    parameters: [$order->order_number, $order->name, $validated['status']],
+                    fallbackMessage: $adminMsg,
+                    recipientType: 'admin'
+                );
+            }
+        }
+
         return redirect()->back()->with('success', 'Return request status updated successfully.');
     }
 
@@ -147,6 +180,53 @@ class AdminOrderController extends Controller
         $refundRequest->update([
             'status' => $validated['status'],
         ]);
+
+        $order = $refundRequest->order;
+        if ($order) {
+            // Trigger Cashfree API Refund if payment was completed via Cashfree
+            if ($validated['status'] === 'Completed') {
+                $payment = Payment::where('order_id', $order->id)->whereNotNull('cashfree_order_id')->first();
+                if ($payment && $payment->status === 'captured') {
+                    $cashfreeService = app(CashfreeService::class);
+                    $refundRes = $cashfreeService->initiateRefund($payment, (float) $refundRequest->amount, $refundRequest->reason);
+
+                    if ($refundRes['success'] ?? false) {
+                        $payment->update([
+                            'cashfree_refund_id' => $refundRes['refund_id'] ?? null,
+                            'refund_status' => $refundRes['refund_status'] ?? 'SUCCESS',
+                            'refunded_amount' => $refundRes['refund_amount'] ?? $refundRequest->amount,
+                        ]);
+                    }
+                }
+            }
+
+            $waService = app(WhatsAppService::class);
+            $customerPhone = $order->mobile ?? $order->user?->profile?->mobile_number;
+
+            if ($customerPhone) {
+                $statusText = $validated['status'] === 'Completed' ? 'COMPLETED / ACCEPTED' : 'REJECTED';
+                $customerMsg = "Hi {$order->name}, your Refund Request for Order #{$order->order_number} (Rs. {$refundRequest->amount}) is now {$statusText}.";
+                $waService->dispatchNotification(
+                    recipientPhone: $customerPhone,
+                    event: 'refund_status_update',
+                    parameters: [$order->name, $order->order_number, "Rs. {$refundRequest->amount}", $statusText],
+                    fallbackMessage: $customerMsg,
+                    recipientType: 'customer'
+                );
+            }
+
+            $adminPhones = WhatsAppService::getAdminPhoneNumbers();
+            $adminMsg = "💰 *Refund Request {$validated['status']}*\nOrder #: {$order->order_number}\nAmount: Rs. {$refundRequest->amount}";
+            foreach ($adminPhones as $adminPhone) {
+                $waService->dispatchNotification(
+                    recipientPhone: $adminPhone,
+                    event: 'refund_status_admin',
+                    parameters: [$order->order_number, "Rs. {$refundRequest->amount}", $validated['status']],
+                    fallbackMessage: $adminMsg,
+                    recipientType: 'admin'
+                );
+            }
+        }
 
         return redirect()->back()->with('success', 'Refund request status updated successfully.');
     }

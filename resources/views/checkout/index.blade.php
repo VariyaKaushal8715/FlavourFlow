@@ -15,7 +15,7 @@
 
     <section class="bg-[linear-gradient(180deg,#fff_0%,#fff9ed_48%,#fff_100%)] py-12 sm:py-16">
         <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
-            <form action="{{ route('checkout.store') }}" method="POST" class="grid gap-8 lg:grid-cols-[1fr_24rem]">
+            <form action="{{ route('checkout.store') }}" method="POST" id="checkout-form" class="grid gap-8 lg:grid-cols-[1fr_24rem]">
                 @csrf
 
                 <div class="rounded-3xl border border-amber-200/70 bg-white/95 p-6 shadow-[0_24px_70px_rgba(120,53,15,0.10)] ring-1 ring-white sm:p-8" data-reveal>
@@ -105,7 +105,8 @@
                                     class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                     type="text"
                                     name="state"
-                                    value="{{ old('state', $profile?->state) }}"
+                                    value="{{ old('state', $profile?->state ?: 'Gujarat') }}"
+                                    readonly
                                     required
                                 >
                                 @error('state')
@@ -177,37 +178,12 @@
                                 </div>
                             </label>
 
-                            <div id="online-payment-ui" class="hidden rounded-2xl border border-dashed border-amber-300/60 bg-amber-50/30 p-5 space-y-4 transition">
-                                <p class="text-xs font-semibold uppercase tracking-wider text-brand-primary">Simulated Secure Payment Gateway</p>
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Card Number"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
-                                    <input
-                                        type="text"
-                                        placeholder="Name on Card"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
+                            <div id="online-payment-ui" class="hidden rounded-2xl border border-emerald-300/80 bg-emerald-50/40 p-5 space-y-3 transition">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">Razorpay Payment Gateway</span>
+                                    <span class="rounded bg-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-900">TEST MODE</span>
                                 </div>
-                                <div class="grid gap-4 grid-cols-3">
-                                    <input
-                                        type="text"
-                                        placeholder="Expiry MM/YY"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
-                                    <input
-                                        type="text"
-                                        placeholder="CVV"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
-                                    <span class="inline-flex items-center justify-center text-[10px] font-semibold text-zinc-400">Locked Demo Mode</span>
-                                </div>
+                                <p class="text-xs text-zinc-600">Pay securely online using Credit/Debit Cards, UPI, Netbanking, or Wallets powered by Razorpay.</p>
                             </div>
                         </div>
                     </div>
@@ -280,14 +256,18 @@
 
                     <button
                         type="submit"
+                        id="place-order-submit-btn"
                         class="mt-6 block w-full rounded-2xl bg-zinc-950 py-3.5 text-center text-sm font-semibold text-white shadow-lg transition hover:bg-brand-primary"
                     >
                         Confirm and Place Order
                     </button>
                 </aside>
 
+                <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
                 <script>
                     document.addEventListener('DOMContentLoaded', () => {
+                        const form = document.getElementById('checkout-form');
+                        const submitBtn = document.getElementById('place-order-submit-btn');
                         const applyBtn = document.getElementById('apply-coupon-btn');
                         const removeBtn = document.getElementById('remove-coupon-btn');
                         const input = document.getElementById('coupon-code-input');
@@ -311,6 +291,121 @@
                         const hideFeedback = () => {
                             feedback.classList.add('hidden');
                         };
+
+                        // Dynamic button text based on payment selection
+                        document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+                            radio.addEventListener('change', (e) => {
+                                if (e.target.value === 'online') {
+                                    submitBtn.textContent = 'Confirm & Pay with Razorpay';
+                                } else {
+                                    submitBtn.textContent = 'Confirm and Place Order';
+                                }
+                            });
+                        });
+
+                        // Form submit handler
+                        form.addEventListener('submit', (e) => {
+                            const paymentMethod = form.querySelector('input[name="payment_method"]:checked')?.value;
+                            
+                            if (paymentMethod === 'online') {
+                                e.preventDefault();
+                                submitBtn.disabled = true;
+                                submitBtn.textContent = 'Initializing Razorpay...';
+
+                                const formData = new FormData(form);
+
+                                fetch("{{ route('checkout.store') }}", {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                        'Accept': 'application/json'
+                                    },
+                                    body: formData
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (!data.success) {
+                                        submitBtn.disabled = false;
+                                        submitBtn.textContent = 'Confirm & Pay with Razorpay';
+                                        if (data.errors) {
+                                            const errorMsg = Object.values(data.errors).flat().join('\n');
+                                            alert(errorMsg);
+                                        } else {
+                                            alert(data.message || 'Validation or order placement failed.');
+                                        }
+                                        return;
+                                    }
+
+                                    // Open Razorpay Standard Checkout
+                                    const options = {
+                                        key: data.key_id,
+                                        amount: data.amount,
+                                        currency: data.currency || 'INR',
+                                        name: 'FlavourFlow Spices',
+                                        description: 'Order #' + data.order_number,
+                                        order_id: data.razorpay_order_id,
+                                        handler: function (response) {
+                                            submitBtn.textContent = 'Verifying Payment...';
+                                            fetch("{{ route('checkout.razorpay.verify') }}", {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                                    'Accept': 'application/json'
+                                                },
+                                                body: JSON.stringify({
+                                                    razorpay_order_id: response.razorpay_order_id,
+                                                    razorpay_payment_id: response.razorpay_payment_id,
+                                                    razorpay_signature: response.razorpay_signature
+                                                })
+                                            })
+                                            .then(vRes => vRes.json())
+                                            .then(vData => {
+                                                if (vData.success) {
+                                                    window.location.href = vData.redirect_url;
+                                                } else {
+                                                    submitBtn.disabled = false;
+                                                    submitBtn.textContent = 'Confirm & Pay with Razorpay';
+                                                    alert('Payment Verification Failed: ' + (vData.message || 'Payment invalid.'));
+                                                }
+                                            })
+                                            .catch(err => {
+                                                submitBtn.disabled = false;
+                                                submitBtn.textContent = 'Confirm & Pay with Razorpay';
+                                                alert('Verification request error. Please check internet connection.');
+                                            });
+                                        },
+                                        prefill: {
+                                            name: data.customer_name,
+                                            email: data.customer_email,
+                                            contact: data.customer_mobile
+                                        },
+                                        theme: {
+                                            color: '#b42318'
+                                        },
+                                        modal: {
+                                            ondismiss: function () {
+                                                submitBtn.disabled = false;
+                                                submitBtn.textContent = 'Confirm & Pay with Razorpay';
+                                            }
+                                        }
+                                    };
+
+                                    const rzp = new Razorpay(options);
+                                    rzp.on('payment.failed', function (response) {
+                                        submitBtn.disabled = false;
+                                        submitBtn.textContent = 'Confirm & Pay with Razorpay';
+                                        alert('Payment Failed: ' + (response.error?.description || 'Payment was declined or failed.'));
+                                    });
+                                    rzp.open();
+                                })
+                                .catch(err => {
+                                    submitBtn.disabled = false;
+                                    submitBtn.textContent = 'Confirm & Pay with Razorpay';
+                                    alert('Failed to initialize payment checkout. Please check form details.');
+                                });
+                            }
+                        });
 
                         applyBtn.addEventListener('click', () => {
                             const code = input.value.trim();
