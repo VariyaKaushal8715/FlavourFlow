@@ -18,6 +18,7 @@ class OrderController extends Controller
         $user = $request->user();
         $orders = $user->orders()
             ->withCount('items')
+            ->with(['items' => fn ($q) => $q->with('product')->orderBy('id')->limit(1)])
             ->orderBy('created_at', 'desc')
             ->get();
 

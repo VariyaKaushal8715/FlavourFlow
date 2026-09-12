@@ -225,8 +225,42 @@
             </div>
 
             <aside class="space-y-5" data-reveal>
-                {{-- Quick links: Wishlist & Cart --}}
+                {{-- Quick links: Wishlist, Cart, Coupons, Orders --}}
                 <div class="grid grid-cols-2 gap-4">
+                    {{-- My Coupons card --}}
+                    <a
+                        href="{{ route('account.coupons') }}"
+                        class="group flex flex-col gap-3 rounded-3xl border border-amber-200/70 bg-white/95 p-5 shadow-[0_8px_30px_rgba(120,53,15,0.08)] transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_12px_40px_rgba(120,53,15,0.14)]"
+                    >
+                        <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-red-50 text-brand-primary shadow-sm transition group-hover:border-brand-primary/30 group-hover:shadow-md">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <p class="text-sm font-semibold text-zinc-950">My Coupons</p>
+                            <p class="mt-0.5 text-xs text-zinc-500">Savings & vouchers</p>
+                        </div>
+                        <span class="mt-auto text-xs font-semibold text-brand-primary transition group-hover:translate-x-0.5">View &rarr;</span>
+                    </a>
+
+                    {{-- My Orders card --}}
+                    <a
+                        href="{{ route('account.orders') }}"
+                        class="group flex flex-col gap-3 rounded-3xl border border-amber-200/70 bg-white/95 p-5 shadow-[0_8px_30px_rgba(120,53,15,0.08)] transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_12px_40px_rgba(120,53,15,0.14)]"
+                    >
+                        <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-red-50 text-brand-primary shadow-sm transition group-hover:border-brand-primary/30 group-hover:shadow-md">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <p class="text-sm font-semibold text-zinc-950">My Orders</p>
+                            <p class="mt-0.5 text-xs text-zinc-500">Track shipments</p>
+                        </div>
+                        <span class="mt-auto text-xs font-semibold text-brand-primary transition group-hover:translate-x-0.5">View &rarr;</span>
+                    </a>
+
                     {{-- Wishlist card --}}
                     <a
                         href="{{ route('wishlist.index') }}"

@@ -231,32 +231,39 @@
                         <h3 class="mt-1 text-xl font-semibold text-zinc-950">Select Payment Method</h3>
 
                         <div class="mt-5 space-y-4">
-                            <label class="flex cursor-pointer items-start gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20">
+                            <label id="label-payment-cod" class="flex cursor-pointer items-start gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20">
                                 <input
                                     type="radio"
                                     name="payment_method"
+                                    id="payment-cod-radio"
                                     value="cod"
                                     class="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
                                     checked
-                                    onclick="document.getElementById('online-payment-ui').classList.add('hidden')"
                                 >
                                 <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-zinc-950">Cash on Delivery (COD)</p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-sm font-semibold text-zinc-950">Cash on Delivery (COD)</p>
+                                    </div>
                                     <p class="mt-1 text-xs text-zinc-500">Pay with cash when your premium spices are delivered to your door.</p>
                                 </div>
                             </label>
 
-                            <label class="flex cursor-pointer items-start gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20">
+                            <label id="label-payment-online" class="flex cursor-pointer items-start gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20">
                                 <input
                                     type="radio"
                                     name="payment_method"
+                                    id="payment-online-radio"
                                     value="online"
                                     class="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
-                                    onclick="document.getElementById('online-payment-ui').classList.remove('hidden')"
                                 >
                                 <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-zinc-950">Online Payment</p>
-                                    <p class="mt-1 text-xs text-zinc-500">Pay securely online using credit/debit card, UPI, or mobile wallets.</p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-sm font-semibold text-zinc-950">Online Payment</p>
+                                        <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-brand-primary animate-pulse">
+                                            🎁 Get Reward Coupon
+                                        </span>
+                                    </div>
+                                    <p class="mt-1 text-xs text-zinc-500">Pay securely online using credit/debit card, UPI, or mobile wallets and earn a discount voucher on ₹1,000+.</p>
                                 </div>
                             </label>
 
@@ -289,7 +296,7 @@
                                         class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
                                         disabled
                                     >
-                                    <span class="inline-flex items-center justify-center text-[10px] font-semibold text-zinc-400">Locked Demo Mode</span>
+                                    <span class="inline-flex items-center justify-center text-[10px] font-semibold text-emerald-700 bg-emerald-100 rounded-lg">Instant Online Demo</span>
                                 </div>
                             </div>
                         </div>
@@ -318,7 +325,7 @@
                             <input
                                 type="text"
                                 id="coupon-code-input"
-                                class="flex-1 rounded-xl border border-amber-200/80 bg-amber-50/20 px-3 py-2 text-sm text-zinc-950 shadow-sm outline-none focus:border-brand-primary"
+                                class="flex-1 rounded-xl border border-amber-200/80 bg-amber-50/20 px-3 py-2 text-sm text-zinc-950 uppercase shadow-sm outline-none focus:border-brand-primary"
                                 placeholder="Enter coupon code"
                             >
                             <button
@@ -340,6 +347,50 @@
                         </div>
                         
                         <input type="hidden" name="coupon_code" id="applied-coupon-hidden-input">
+
+                        {{-- Available Coupons Quick Drawer --}}
+                        @if (isset($availableCoupons) && $availableCoupons->count() > 0)
+                            <div class="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/40 p-3.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
+                                        <span>🎁</span> Available For You ({{ $availableCoupons->count() }})
+                                    </span>
+                                    <button type="button" id="toggle-available-coupons-btn" class="text-[11px] font-bold text-brand-primary hover:underline">
+                                        View &darr;
+                                    </button>
+                                </div>
+                                <div id="available-coupons-list" class="mt-3 space-y-2 hidden max-h-48 overflow-y-auto pr-1">
+                                    @foreach ($availableCoupons as $availCoupon)
+                                        <div class="flex items-center justify-between rounded-xl border border-amber-200 bg-white p-2.5 text-xs shadow-2xs">
+                                            <div class="min-w-0 pr-2">
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="font-mono font-bold text-zinc-950">{{ $availCoupon->code }}</span>
+                                                    <span @class([
+                                                        'rounded px-1.5 py-0.5 text-[9px] font-semibold',
+                                                        'bg-sky-100 text-sky-800' => $availCoupon->payment_method_eligibility === 'online',
+                                                        'bg-amber-100 text-amber-800' => $availCoupon->payment_method_eligibility === 'cod',
+                                                        'bg-zinc-100 text-zinc-700' => $availCoupon->payment_method_eligibility === 'both',
+                                                    ])>
+                                                        {{ $availCoupon->paymentMethodLabel() }}
+                                                    </span>
+                                                </div>
+                                                <p class="text-[10px] font-semibold text-brand-primary">{{ $availCoupon->formattedDiscount() }}</p>
+                                                @if ((float)$availCoupon->min_order_amount > 0)
+                                                    <p class="text-[10px] text-zinc-400">Min: ₹{{ number_format($availCoupon->min_order_amount, 2) }}</p>
+                                                @endif
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onclick="applyQuickCoupon('{{ $availCoupon->code }}')"
+                                                class="shrink-0 rounded-lg bg-zinc-950 px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-brand-primary"
+                                            >
+                                                Apply
+                                            </button>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="mt-6 border-t border-zinc-200 pt-5 space-y-3 text-sm text-zinc-600">
@@ -389,6 +440,8 @@
                         const standardDeliveryCharge = subtotal < 300 ? 30.0 : 0.0;
                         let currentDeliveryCharge = standardDeliveryCharge;
                         let currentDiscount = 0.0;
+                        let appliedCouponCode = null;
+                        let appliedCouponEligibility = null;
                         
                         const standardRadio = document.getElementById('delivery-standard-radio');
                         const expressRadio = document.getElementById('delivery-express-radio');
@@ -509,6 +562,94 @@
                         standardRadio?.addEventListener('change', () => setDeliveryOption('standard'));
                         expressRadio?.addEventListener('change', () => setDeliveryOption('express'));
 
+                        // COD Modal & Payment Handling
+                        const codRadio = document.getElementById('payment-cod-radio');
+                        const onlineRadio = document.getElementById('payment-online-radio');
+                        const onlineUi = document.getElementById('online-payment-ui');
+                        const codModal = document.getElementById('cod-incentive-modal');
+                        const btnSwitchOnline = document.getElementById('btn-switch-to-online');
+                        const btnContinueCod = document.getElementById('btn-continue-cod');
+
+                        let hasPromptedCodIncentive = false;
+
+                        function handlePaymentChange() {
+                            const isOnline = onlineRadio && onlineRadio.checked;
+                            if (isOnline) {
+                                onlineUi?.classList.remove('hidden');
+                            } else {
+                                onlineUi?.classList.add('hidden');
+                            }
+
+                            // Dynamic validation: check eligibility of currently applied coupon
+                            if (appliedCouponCode && appliedCouponEligibility) {
+                                if (!isOnline && appliedCouponEligibility === 'online') {
+                                    removeAppliedCoupon();
+                                    showFeedback('This coupon is valid only for online payment. Please select online payment to use this coupon.', false);
+                                } else if (isOnline && appliedCouponEligibility === 'cod') {
+                                    removeAppliedCoupon();
+                                    showFeedback('This coupon is valid only for Cash on Delivery. Please select Cash on Delivery to use this coupon.', false);
+                                }
+                            }
+                        }
+
+                        function removeAppliedCoupon() {
+                            discountRow.classList.add('hidden');
+                            currentDiscount = 0.0;
+                            updateTotals();
+                            
+                            pill.classList.add('hidden');
+                            pill.classList.remove('flex');
+                            hiddenInput.value = '';
+                            input.disabled = false;
+                            applyBtn.disabled = false;
+                            appliedCouponCode = null;
+                            appliedCouponEligibility = null;
+                        }
+
+                        codRadio?.addEventListener('click', (e) => {
+                            if (!hasPromptedCodIncentive) {
+                                hasPromptedCodIncentive = true;
+                                codModal.classList.remove('hidden');
+                            }
+                            handlePaymentChange();
+                        });
+
+                        onlineRadio?.addEventListener('change', () => {
+                            handlePaymentChange();
+                        });
+
+                        btnSwitchOnline?.addEventListener('click', () => {
+                            onlineRadio.checked = true;
+                            handlePaymentChange();
+                            codModal.classList.add('hidden');
+                        });
+
+                        btnContinueCod?.addEventListener('click', () => {
+                            codRadio.checked = true;
+                            handlePaymentChange();
+                            codModal.classList.add('hidden');
+                        });
+
+                        // Available Coupons Drawer Toggle
+                        const toggleCouponsBtn = document.getElementById('toggle-available-coupons-btn');
+                        const availableCouponsList = document.getElementById('available-coupons-list');
+                        toggleCouponsBtn?.addEventListener('click', () => {
+                            if (availableCouponsList.classList.contains('hidden')) {
+                                availableCouponsList.classList.remove('hidden');
+                                toggleCouponsBtn.innerHTML = 'Hide &uarr;';
+                            } else {
+                                availableCouponsList.classList.add('hidden');
+                                toggleCouponsBtn.innerHTML = 'View &darr;';
+                            }
+                        });
+
+                        window.applyQuickCoupon = function(code) {
+                            if (input) {
+                                input.value = code;
+                                applyBtn.click();
+                            }
+                        };
+
                         const showFeedback = (text, isSuccess) => {
                             feedback.textContent = text;
                             feedback.className = `mt-1.5 text-xs font-semibold ${isSuccess ? 'text-emerald-600' : 'text-red-600'}`;
@@ -531,6 +672,7 @@
                             applyBtn.textContent = 'Applying...';
 
                             const selectedDelivery = expressRadio.checked ? 'express' : 'standard';
+                            const selectedPaymentMethod = onlineRadio && onlineRadio.checked ? 'online' : 'cod';
 
                             fetch("{{ route('checkout.coupon.apply') }}", {
                                 method: 'POST',
@@ -541,7 +683,8 @@
                                 },
                                 body: JSON.stringify({
                                     coupon_code: code,
-                                    delivery_option: selectedDelivery
+                                    delivery_option: selectedDelivery,
+                                    payment_method: selectedPaymentMethod
                                 })
                             })
                             .then(res => res.json())
@@ -558,6 +701,8 @@
                                     pill.classList.remove('hidden');
                                     pill.classList.add('flex');
                                     hiddenInput.value = data.coupon.code;
+                                    appliedCouponCode = data.coupon.code;
+                                    appliedCouponEligibility = data.coupon.payment_method_eligibility;
                                     input.value = '';
                                     input.disabled = true;
                                     applyBtn.disabled = true;
@@ -577,20 +722,50 @@
                         });
 
                         removeBtn?.addEventListener('click', () => {
-                            discountRow.classList.add('hidden');
-                            currentDiscount = 0.0;
-                            updateTotals();
-                            
-                            pill.classList.add('hidden');
-                            pill.classList.remove('flex');
-                            hiddenInput.value = '';
-                            input.disabled = false;
-                            applyBtn.disabled = false;
+                            removeAppliedCoupon();
                             hideFeedback();
                         });
                     });
                 </script>
             </form>
+        </div>
+
+        {{-- COD Incentive Modal --}}
+        <div id="cod-incentive-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm">
+            <div class="relative w-full max-w-md overflow-hidden rounded-3xl border border-amber-300/80 bg-gradient-to-b from-white via-amber-50/40 to-white p-6 shadow-2xl">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-100 text-3xl shadow-inner">
+                    🎁
+                </div>
+                <div class="mt-4 text-center">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-brand-primary">
+                        Special Reward Offer
+                    </span>
+                    <h3 class="mt-2 text-xl font-bold text-zinc-950">Pay Online & Get a Discount Coupon 🎁</h3>
+                    <p class="mt-2 text-xs leading-relaxed text-zinc-600">
+                        Pay online securely with Card, UPI, or Wallets on orders above ₹1,000 to automatically earn an exclusive <strong>10% OFF discount coupon</strong> for your next purchase!
+                    </p>
+                    <p class="mt-2 text-[11px] font-semibold text-amber-900 bg-amber-100/70 rounded-xl p-2.5">
+                        ⚡ Valid for online payments. COD orders do not receive reward discount coupons.
+                    </p>
+                </div>
+
+                <div class="mt-6 space-y-2.5">
+                    <button
+                        type="button"
+                        id="btn-switch-to-online"
+                        class="flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 py-3.5 text-xs font-bold text-white shadow-lg transition hover:bg-brand-primary"
+                    >
+                        <span>⚡ Switch to Online & Claim Coupon</span>
+                    </button>
+                    <button
+                        type="button"
+                        id="btn-continue-cod"
+                        class="flex w-full items-center justify-center rounded-2xl border border-zinc-200 bg-white py-3 text-xs font-semibold text-zinc-600 transition hover:bg-zinc-50"
+                    >
+                        <span>Continue with COD</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </section>
 </x-site.layout>

@@ -65,6 +65,58 @@
                 </div>
             </div>
 
+            {{-- Earned Reward Coupon Card --}}
+            @if ($order->earnedCoupon || (isset($earnedCoupon) && $earnedCoupon))
+                @php
+                    $coupon = $order->earnedCoupon ?? $earnedCoupon;
+                @endphp
+                <div class="mt-8 overflow-hidden rounded-3xl border-2 border-dashed border-amber-400 bg-gradient-to-br from-amber-500/10 via-amber-100/40 to-red-500/10 p-6 sm:p-8 text-left shadow-lg">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400 text-3xl shadow-md">
+                                🎁
+                            </span>
+                            <div>
+                                <span class="rounded-full bg-amber-200 px-3 py-0.5 text-xs font-bold text-amber-900">
+                                    🎉 Online Payment Bonus Earned!
+                                </span>
+                                <h3 class="mt-1 text-2xl font-bold text-zinc-950">
+                                    {{ $coupon->formattedDiscount() }} Voucher
+                                </h3>
+                                <p class="text-xs text-zinc-600">
+                                    Thank you for paying online! Here is your exclusive reward voucher for your next order.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col items-start sm:items-end gap-2">
+                            <div class="flex items-center gap-2 rounded-2xl border-2 border-dashed border-brand-primary bg-white px-4 py-2.5 shadow-sm">
+                                <span class="font-mono text-base font-bold text-zinc-950 tracking-wider" id="earned-coupon-code">{{ $coupon->code }}</span>
+                                <button
+                                    type="button"
+                                    onclick="navigator.clipboard.writeText('{{ $coupon->code }}'); this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000)"
+                                    class="rounded-xl bg-zinc-950 px-3 py-1 text-xs font-bold text-white transition hover:bg-brand-primary"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <p class="text-[11px] font-semibold text-zinc-500">
+                                Valid until {{ $coupon->expires_at ? $coupon->expires_at->format('M d, Y') : '30 days' }}
+                                @if ((float)$coupon->min_order_amount > 0)
+                                    &middot; Min order Rs. {{ number_format($coupon->min_order_amount, 2) }}
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center justify-end border-t border-amber-200/60 pt-3">
+                        <a href="{{ route('account.coupons') }}" class="text-xs font-bold text-brand-primary hover:underline">
+                            View All My Coupons &rarr;
+                        </a>
+                    </div>
+                </div>
+            @endif
+
             <!-- Track Order, My Orders, Continue Shopping buttons -->
             <div class="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <a
