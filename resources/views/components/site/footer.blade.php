@@ -23,27 +23,27 @@
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(180,35,24,0.26),transparent_30%),radial-gradient(circle_at_top_right,rgba(244,185,66,0.16),transparent_24%),linear-gradient(180deg,rgba(9,9,11,0.92)_0%,rgba(9,9,11,1)_58%)]"></div>
     <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"></div>
 
-    <div class="relative mx-auto w-full max-w-7xl px-6 py-16 lg:px-8 lg:py-20">
-        <div class="grid gap-8 lg:grid-cols-[1.25fr_1fr]">
-            <section class="footer-surface rounded-[1.5rem] border border-white/10 bg-white/5 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.24)] backdrop-blur-sm lg:p-8" data-reveal>
-                <div class="flex items-start gap-4">
-                    <img class="footer-logo h-10 w-10 rounded-xl object-cover ring-1 ring-white/10" src="{{ asset($brand['logo']) }}" alt="{{ $brand['name'] }} logo">
+    <div class="relative mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+        <div class="grid gap-6 sm:gap-8 lg:grid-cols-[1.25fr_1fr]">
+            <section class="footer-surface rounded-[1.25rem] sm:rounded-[1.5rem] border border-white/10 bg-white/5 p-4 sm:p-6 shadow-[0_24px_60px_rgba(0,0,0,0.24)] backdrop-blur-sm lg:p-8" data-reveal>
+                <div class="flex items-start gap-3 sm:gap-4">
+                    <img class="footer-logo h-8 w-8 sm:h-10 sm:w-10 rounded-xl object-cover ring-1 ring-white/10 shrink-0" src="{{ asset($brand['logo']) }}" alt="{{ $brand['name'] }} logo">
                     <div class="min-w-0">
-                        <p class="text-xs font-semibold uppercase tracking-[0.32em] text-amber-300">FlavourFlow</p>
-                        <h2 class="mt-2 text-2xl font-semibold text-white sm:text-3xl">{{ $brand['name'] }}</h2>
-                        <p class="mt-2 text-sm leading-6 text-zinc-400">{{ __('ui.footer_tagline') }}</p>
+                        <p class="text-[0.65rem] sm:text-xs font-semibold uppercase tracking-[0.32em] text-amber-300">FlavourFlow</p>
+                        <h2 class="mt-1 text-xl font-semibold text-white sm:text-3xl">{{ $brand['name'] }}</h2>
+                        <p class="mt-1 text-xs sm:text-sm leading-relaxed text-zinc-400">{{ __('ui.footer_tagline') }}</p>
                     </div>
                 </div>
 
-                <p class="mt-6 max-w-xl text-sm leading-7 text-zinc-400">
+                <p class="mt-4 sm:mt-6 max-w-xl text-xs sm:text-sm leading-relaxed sm:leading-7 text-zinc-400">
                     {{ __('ui.footer_desc') }}
                 </p>
 
-                <div class="mt-8 flex flex-wrap gap-3">
-                    <a class="inline-flex min-h-12 items-center justify-center rounded-full bg-gradient-to-r from-red-700 to-amber-500 px-5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(180,35,24,0.28)] transition hover:translate-y-[-1px] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" href="{{ $footer['brand']['cta']['href'] }}">
+                <div class="mt-6 sm:mt-8 flex flex-wrap gap-2.5 sm:gap-3">
+                    <a class="inline-flex min-h-10 sm:min-h-12 items-center justify-center rounded-full bg-gradient-to-r from-red-700 to-amber-500 px-4 sm:px-5 text-xs sm:text-sm font-semibold text-white shadow-[0_16px_34px_rgba(180,35,24,0.28)] transition hover:translate-y-[-1px] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" href="{{ $footer['brand']['cta']['href'] }}">
                         {{ __('ui.shop_fresh_spices') }}
                     </a>
-                    <span class="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200/90">
+                    <span class="inline-flex min-h-10 sm:min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-3 sm:px-4 text-[0.65rem] sm:text-xs font-semibold uppercase tracking-[0.22em] text-amber-200/90">
                         {{ __('ui.premium_pantry') }}
                     </span>
                 </div>
