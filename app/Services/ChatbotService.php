@@ -48,6 +48,8 @@ class ChatbotService
         $orderContext = $this->resolveOrderContext($cleanQuery, $userId);
 
         // System prompt and context assembly
+        $systemPrompt = "You are FlavourFlow's AI Assistant, a friendly and helpful e-commerce assistant for FlavourFlow spice store. "
+            ."Answer the customer's query clearly, politely, and accurately using ONLY the provided Store Data.\n\n"
         $systemPrompt = "You are FlavourFlow's AI Assistant, a friendly and helpful e-commerce customer support chatbot.\n\n"
             ."INTENT RULES:\n"
             ."1. DELIVERY CHARGES: If customer asks about shipping or delivery charges/fees, inform them delivery is FREE on orders of Rs. 500 and above, else Rs. 50. Do not mention user orders.\n"
@@ -59,6 +61,13 @@ class ChatbotService
             ."3. PRODUCT RECOMMENDATIONS: Use Store Data for prices, stock, and descriptions.\n\n"
             ."STORE DATA:\n"
             ."Available Products matching query:\n".json_encode($productContext['data'], JSON_PRETTY_PRINT)."\n\n"
+            ."Customer Orders matching query:\n".json_encode($orderContext['data'], JSON_PRETTY_PRINT)."\n\n"
+            ."STRICT RULES:\n"
+            ."1. Never invent or hardcode products, prices, stock levels, or order details not present in Store Data.\n"
+            ."2. If suggesting products, use exact names, prices in Rs., and stock availability from Store Data.\n"
+            ."3. If the user asks about order status or delivery, state the order number, current status, delivery timestamp/updates, and total amount.\n"
+            ."4. If a guest asks about an order, advise them to log in to view their orders.\n"
+            .'5. Keep responses concise, helpful, formatted cleanly with line breaks or bullet points where appropriate.';
             ."Customer Active Orders:\n".json_encode($orderContext['data'], JSON_PRETTY_PRINT);
 
         // Attempt API call to Gemini
@@ -95,6 +104,7 @@ class ChatbotService
         }
 
         // Rule-based fallback if API key is not present or API call fails
+        $fallbackReply = $this->buildFallbackReply($cleanQuery, $productContext['data'], $orderContext['data'], $userId);
         $fallbackReply = $this->buildFallbackReply($cleanQuery, $productContext['data'], $orderContext, $userId);
 
         return [
@@ -189,6 +199,7 @@ class ChatbotService
     {
         if (! $userId) {
             return [
+                'data' => ['auth_required' => 'User is not logged in. Advise user to log in.'],
                 'auth_required' => true,
                 'data' => [],
                 'models' => [],
@@ -197,8 +208,12 @@ class ChatbotService
             ];
         }
 
+        $ordersQuery = Order::query()->where('user_id', $userId)->with('items');
         $hasSpecificOrder = preg_match('/(ORD-[\w\-]+)/i', $query, $matches);
 
+        // Check if query mentions a specific order number like "ORD-20260907-XXXXXX" or numeric ID
+        if (preg_match('/(ORD-[\w\-]+)/i', $query, $matches)) {
+            $ordersQuery->where('order_number', strtoupper($matches[1]));
         if ($hasSpecificOrder) {
             $orderNumber = strtoupper($matches[1]);
             $orders = Order::query()
@@ -218,9 +233,11 @@ class ChatbotService
             ];
         }
 
+        $orders = $ordersQuery->orderBy('created_at', 'desc')->limit(5)->get();
         // Active orders only: exclude Delivered, Cancelled
         $activeStatuses = ['Pending', 'Confirmed', 'Shipped', 'Out for Delivery'];
 
+        $data = $orders->map(function (Order $o) {
         $orders = Order::query()
             ->where('user_id', $userId)
             ->whereIn('status', $activeStatuses)
@@ -260,21 +277,31 @@ class ChatbotService
                 'items' => $o->items->map(fn ($item) => "{$item->product_name} (x{$item->quantity})")->toArray(),
             ];
         })->toArray();
+
+        return [
+            'data' => $data,
+            'models' => $orders,
+        ];
     }
 
     /**
      * Fallback rule-based formatter when API key is missing or offline.
      */
+    protected function buildFallbackReply(string $query, array $productData, array $orderData, ?int $userId): string
     protected function buildFallbackReply(string $query, array $productData, array $orderContext, ?int $userId): string
     {
         $queryLower = Str::lower($query);
 
+        // Order or delivery query
         // Order status query
         if (Str::contains($queryLower, ['order', 'delivery', 'status', 'track', 'shipped', 'where is'])) {
+            if (! $userId) {
             if (! $userId || ($orderContext['auth_required'] ?? false)) {
                 return 'Please sign in to your FlavourFlow account to check your order details and delivery status.';
             }
 
+            if (isset($orderData['auth_required'])) {
+                return 'Please log in to view your orders.';
             $orderData = $orderContext['data'] ?? [];
 
             if ($orderContext['is_specific'] ?? false) {
@@ -292,16 +319,25 @@ class ChatbotService
                     ."• Date: {$order['date']}";
             }
 
+            if (empty($orderData)) {
+                return "We couldn't find any recent orders associated with your account.";
             $activeCount = $orderContext['active_count'] ?? 0;
 
             if ($activeCount === 0) {
                 return "You don't have any active orders to track.";
             }
 
+            $latestOrder = $orderData[0];
+            $itemsList = implode(', ', $latestOrder['items'] ?? []);
             if ($activeCount === 1) {
                 $order = $orderData[0];
                 $itemsList = implode(', ', $order['items'] ?? []);
 
+            return "Here is the status of your recent Order #{$latestOrder['order_number']}:\n"
+                ."• Status: {$latestOrder['status']}\n"
+                ."• Total: {$latestOrder['total_amount']}\n"
+                ."• Items: {$itemsList}\n"
+                ."• Date: {$latestOrder['date']}";
                 return "Here is the status of your active Order #{$order['order_number']}:\n"
                     ."• Status: {$order['status']}\n"
                     ."• Total: {$order['total_amount']}\n"

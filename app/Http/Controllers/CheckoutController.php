@@ -8,7 +8,6 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Services\RazorpayService;
-use App\Services\WhatsAppService;
 use App\Support\CartState;
 use App\Support\GujaratLocation;
 use Illuminate\Contracts\View\View;
@@ -275,9 +274,6 @@ class CheckoutController extends Controller
                 return $order;
             });
 
-            // Trigger Notifications for COD Order
-            $this->sendOrderNotifications($order);
-
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
@@ -295,68 +291,6 @@ class CheckoutController extends Controller
             }
 
             return redirect()->route('cart.index')->withErrors($e->errors());
-        }
-    }
-
-    private function sendOrderNotifications(Order $order): void
-    {
-        // Trigger Queued WhatsApp notifications
-        $waService = app(WhatsAppService::class);
-
-        // 1. Customer Notification: Order Placed
-        $customerPhone = $order->mobile ?? $order->user?->profile?->mobile_number;
-        if ($customerPhone) {
-            $customerMsg = "Hi {$order->name}, your order #{$order->order_number} for Rs. {$order->total_amount} has been successfully placed at FlavourFlow! We are processing it now.";
-            $waService->dispatchNotification(
-                recipientPhone: $customerPhone,
-                event: 'order_placed',
-                parameters: [$order->name, $order->order_number, "Rs. {$order->total_amount}"],
-                fallbackMessage: $customerMsg,
-                recipientType: 'customer'
-            );
-        }
-
-        // 2. Admin Notification: New Order Received
-        $adminPhones = WhatsAppService::getAdminPhoneNumbers();
-        $adminMsg = "🛍️ *New Order Received!*\nOrder #: {$order->order_number}\nCustomer: {$order->name}\nAmount: Rs. {$order->total_amount}\nPayment: ".strtoupper($order->payment_method);
-        foreach ($adminPhones as $adminPhone) {
-            $waService->dispatchNotification(
-                recipientPhone: $adminPhone,
-                event: 'new_order_received',
-                parameters: [$order->order_number, $order->name, "Rs. {$order->total_amount}", strtoupper($order->payment_method)],
-                fallbackMessage: $adminMsg,
-                recipientType: 'admin'
-            );
-        }
-
-        // 3. Stock Level Alerts for items in order
-        foreach ($order->items as $item) {
-            $product = $item->product;
-            if ($product) {
-                if ($product->quantity === 0) {
-                    $stockMsg = "⚠️ *Out of Stock Alert!*\nProduct: {$product->name} (SKU: {$product->sku}) is now OUT OF STOCK.";
-                    foreach ($adminPhones as $adminPhone) {
-                        $waService->dispatchNotification(
-                            recipientPhone: $adminPhone,
-                            event: 'out_of_stock',
-                            parameters: [$product->name, $product->sku ?? 'N/A'],
-                            fallbackMessage: $stockMsg,
-                            recipientType: 'admin'
-                        );
-                    }
-                } elseif ($product->isLowStock()) {
-                    $stockMsg = "⚠️ *Low Stock Alert!*\nProduct: {$product->name} (SKU: {$product->sku}) has only {$product->quantity} units left.";
-                    foreach ($adminPhones as $adminPhone) {
-                        $waService->dispatchNotification(
-                            recipientPhone: $adminPhone,
-                            event: 'low_stock',
-                            parameters: [$product->name, $product->sku ?? 'N/A', (string) $product->quantity],
-                            fallbackMessage: $stockMsg,
-                            recipientType: 'admin'
-                        );
-                    }
-                }
-            }
         }
     }
 
@@ -445,9 +379,6 @@ class CheckoutController extends Controller
                 // Clear Cart
                 $cart->clear();
             });
-
-            // Dispatch Notifications
-            $this->sendOrderNotifications($order);
 
             session()->put('placed_order_id', $order->id);
 
