@@ -23,7 +23,6 @@ class OrderNotificationService
     /**
      * Send all confirmation notifications for a successfully placed order.
      *
-     * @param  Order  $order
      * @return array Summary of notification statuses
      */
     public function sendOrderConfirmation(Order $order): array
@@ -80,7 +79,8 @@ class OrderNotificationService
                 ['order' => $order->order_number]
             );
         } catch (Throwable $e) {
-            Log::warning('Failed generating signed route, falling back to authenticated route: ' . $e->getMessage());
+            Log::warning('Failed generating signed route, falling back to authenticated route: '.$e->getMessage());
+
             return route('account.orders.track', $order->order_number);
         }
     }
@@ -98,12 +98,14 @@ class OrderNotificationService
         if (empty($recipient)) {
             Log::info("Skipping Customer WhatsApp for Order #{$order->order_number}: No mobile number available.");
             $this->recordNotification($order, OrderDeliveryNotification::CHANNEL_CUSTOMER_WHATSAPP, 'none', OrderDeliveryNotification::STATUS_SKIPPED, 'No mobile number provided.');
+
             return false;
         }
 
         // Idempotency check: Don't resend if already sent
         if ($this->hasAlreadySent($order, OrderDeliveryNotification::CHANNEL_CUSTOMER_WHATSAPP)) {
             Log::info("Customer WhatsApp for Order #{$order->order_number} already sent. Skipping duplicate.");
+
             return true;
         }
 
@@ -125,6 +127,7 @@ class OrderNotificationService
                     null,
                     ['message_id' => $sendResult->messageId]
                 );
+
                 return true;
             } else {
                 $this->recordNotification(
@@ -134,10 +137,11 @@ class OrderNotificationService
                     OrderDeliveryNotification::STATUS_FAILED,
                     $sendResult->error
                 );
+
                 return false;
             }
         } catch (Throwable $e) {
-            Log::error("Customer WhatsApp error for Order #{$order->order_number}: " . $e->getMessage(), ['exception' => $e]);
+            Log::error("Customer WhatsApp error for Order #{$order->order_number}: ".$e->getMessage(), ['exception' => $e]);
             $this->recordNotification(
                 $order,
                 OrderDeliveryNotification::CHANNEL_CUSTOMER_WHATSAPP,
@@ -145,6 +149,7 @@ class OrderNotificationService
                 OrderDeliveryNotification::STATUS_FAILED,
                 $e->getMessage()
             );
+
             return false;
         }
     }
@@ -162,12 +167,14 @@ class OrderNotificationService
         if (empty($recipient)) {
             Log::info("Skipping Customer Email for Order #{$order->order_number}: No email address available.");
             $this->recordNotification($order, OrderDeliveryNotification::CHANNEL_CUSTOMER_EMAIL, 'none', OrderDeliveryNotification::STATUS_SKIPPED, 'No email address provided.');
+
             return false;
         }
 
         // Idempotency check: Don't resend if already sent
         if ($this->hasAlreadySent($order, OrderDeliveryNotification::CHANNEL_CUSTOMER_EMAIL)) {
             Log::info("Customer Email for Order #{$order->order_number} already sent. Skipping duplicate.");
+
             return true;
         }
 
@@ -180,9 +187,10 @@ class OrderNotificationService
                 $recipient,
                 OrderDeliveryNotification::STATUS_SENT
             );
+
             return true;
         } catch (Throwable $e) {
-            Log::error("Customer Email dispatch failed for Order #{$order->order_number}: " . $e->getMessage(), ['exception' => $e]);
+            Log::error("Customer Email dispatch failed for Order #{$order->order_number}: ".$e->getMessage(), ['exception' => $e]);
             $this->recordNotification(
                 $order,
                 OrderDeliveryNotification::CHANNEL_CUSTOMER_EMAIL,
@@ -190,6 +198,7 @@ class OrderNotificationService
                 OrderDeliveryNotification::STATUS_FAILED,
                 $e->getMessage()
             );
+
             return false;
         }
     }
@@ -207,12 +216,14 @@ class OrderNotificationService
         if (empty($adminPhone)) {
             Log::info("Skipping Admin WhatsApp for Order #{$order->order_number}: No admin WhatsApp configured.");
             $this->recordNotification($order, OrderDeliveryNotification::CHANNEL_ADMIN_WHATSAPP, 'none', OrderDeliveryNotification::STATUS_SKIPPED, 'No admin WhatsApp configured.');
+
             return false;
         }
 
         // Idempotency check: Don't resend if already sent
         if ($this->hasAlreadySent($order, OrderDeliveryNotification::CHANNEL_ADMIN_WHATSAPP)) {
             Log::info("Admin WhatsApp for Order #{$order->order_number} already sent. Skipping duplicate.");
+
             return true;
         }
 
@@ -234,6 +245,7 @@ class OrderNotificationService
                     null,
                     ['message_id' => $sendResult->messageId]
                 );
+
                 return true;
             } else {
                 $this->recordNotification(
@@ -243,10 +255,11 @@ class OrderNotificationService
                     OrderDeliveryNotification::STATUS_FAILED,
                     $sendResult->error
                 );
+
                 return false;
             }
         } catch (Throwable $e) {
-            Log::error("Admin WhatsApp error for Order #{$order->order_number}: " . $e->getMessage(), ['exception' => $e]);
+            Log::error("Admin WhatsApp error for Order #{$order->order_number}: ".$e->getMessage(), ['exception' => $e]);
             $this->recordNotification(
                 $order,
                 OrderDeliveryNotification::CHANNEL_ADMIN_WHATSAPP,
@@ -254,6 +267,7 @@ class OrderNotificationService
                 OrderDeliveryNotification::STATUS_FAILED,
                 $e->getMessage()
             );
+
             return false;
         }
     }
@@ -271,12 +285,14 @@ class OrderNotificationService
         if (empty($adminEmail)) {
             Log::info("Skipping Admin Email for Order #{$order->order_number}: No admin email configured.");
             $this->recordNotification($order, OrderDeliveryNotification::CHANNEL_ADMIN_EMAIL, 'none', OrderDeliveryNotification::STATUS_SKIPPED, 'No admin email configured.');
+
             return false;
         }
 
         // Idempotency check: Don't resend if already sent
         if ($this->hasAlreadySent($order, OrderDeliveryNotification::CHANNEL_ADMIN_EMAIL)) {
             Log::info("Admin Email for Order #{$order->order_number} already sent. Skipping duplicate.");
+
             return true;
         }
 
@@ -289,9 +305,10 @@ class OrderNotificationService
                 $adminEmail,
                 OrderDeliveryNotification::STATUS_SENT
             );
+
             return true;
         } catch (Throwable $e) {
-            Log::error("Admin Email dispatch failed for Order #{$order->order_number}: " . $e->getMessage(), ['exception' => $e]);
+            Log::error("Admin Email dispatch failed for Order #{$order->order_number}: ".$e->getMessage(), ['exception' => $e]);
             $this->recordNotification(
                 $order,
                 OrderDeliveryNotification::CHANNEL_ADMIN_EMAIL,
@@ -299,6 +316,7 @@ class OrderNotificationService
                 OrderDeliveryNotification::STATUS_FAILED,
                 $e->getMessage()
             );
+
             return false;
         }
     }
@@ -315,7 +333,7 @@ class OrderNotificationService
         $itemsList = '';
         foreach ($order->items as $item) {
             $pack = $item->unit ? " ({$item->unit})" : '';
-            $itemsList .= "• {$item->quantity}x {$item->product_name}{$pack} - ₹" . number_format($item->total_price, 2) . "\n";
+            $itemsList .= "• {$item->quantity}x {$item->product_name}{$pack} - ₹".number_format($item->total_price, 2)."\n";
         }
 
         $addressSummary = "{$order->address}, {$order->city}, {$order->state} - {$order->pincode}";
@@ -323,22 +341,22 @@ class OrderNotificationService
         $orderDate = $order->created_at ? $order->created_at->format('d M Y, h:i A') : now()->format('d M Y, h:i A');
 
         return "*Order Confirmed!* 🎉\n\n"
-            . "Hi {$order->name},\n\n"
-            . "Your {$storeName} order *#{$order->order_number}* has been placed and confirmed successfully.\n\n"
-            . "📅 *Date:* {$orderDate}\n"
-            . "💳 *Total:* ₹{$totalFormatted}\n"
-            . "📦 *Status:* {$order->status}\n\n"
-            . "*Items Ordered:*\n"
-            . "{$itemsList}\n"
-            . "📍 *Delivery Address:*\n"
-            . "{$addressSummary}\n\n"
-            . "🔗 *Track Your Order:*\n"
-            . "{$trackingUrl}\n\n"
-            . "📞 *Seller / Store Contact:*\n"
-            . "{$storeName}\n"
-            . "Phone: {$storePhone}\n"
-            . "Email: {$storeEmail}\n\n"
-            . "Thank you for shopping with {$storeName}!";
+            ."Hi {$order->name},\n\n"
+            ."Your {$storeName} order *#{$order->order_number}* has been placed and confirmed successfully.\n\n"
+            ."📅 *Date:* {$orderDate}\n"
+            ."💳 *Total:* ₹{$totalFormatted}\n"
+            ."📦 *Status:* {$order->status}\n\n"
+            ."*Items Ordered:*\n"
+            ."{$itemsList}\n"
+            ."📍 *Delivery Address:*\n"
+            ."{$addressSummary}\n\n"
+            ."🔗 *Track Your Order:*\n"
+            ."{$trackingUrl}\n\n"
+            ."📞 *Seller / Store Contact:*\n"
+            ."{$storeName}\n"
+            ."Phone: {$storePhone}\n"
+            ."Email: {$storeEmail}\n\n"
+            ."Thank you for shopping with {$storeName}!";
     }
 
     /**
@@ -348,7 +366,7 @@ class OrderNotificationService
     {
         $itemsList = '';
         foreach ($order->items as $item) {
-            $itemsList .= "• {$item->quantity}x {$item->product_name} (₹" . number_format($item->total_price, 2) . ")\n";
+            $itemsList .= "• {$item->quantity}x {$item->product_name} (₹".number_format($item->total_price, 2).")\n";
         }
 
         $customerMobile = $order->mobile ?? 'Not provided';
@@ -357,21 +375,21 @@ class OrderNotificationService
         $orderDate = $order->created_at ? $order->created_at->format('d M Y, h:i A') : now()->format('d M Y, h:i A');
 
         return "🚨 *NEW ORDER RECEIVED*\n\n"
-            . "*Order #:* {$order->order_number}\n"
-            . "*Date:* {$orderDate}\n"
-            . "*Total:* ₹{$totalFormatted}\n"
-            . "*Payment:* " . strtoupper($order->payment_method) . "\n"
-            . "*Status:* {$order->status}\n\n"
-            . "👤 *Customer Details:*\n"
-            . "• Name: {$order->name}\n"
-            . "• Phone: {$customerMobile}\n"
-            . "• Email: {$order->email}\n\n"
-            . "📦 *Products:*\n"
-            . "{$itemsList}\n"
-            . "📍 *Delivery Address:*\n"
-            . "{$addressSummary}\n\n"
-            . "🔗 *View in Admin:*\n"
-            . "{$adminOrderUrl}";
+            ."*Order #:* {$order->order_number}\n"
+            ."*Date:* {$orderDate}\n"
+            ."*Total:* ₹{$totalFormatted}\n"
+            .'*Payment:* '.strtoupper($order->payment_method)."\n"
+            ."*Status:* {$order->status}\n\n"
+            ."👤 *Customer Details:*\n"
+            ."• Name: {$order->name}\n"
+            ."• Phone: {$customerMobile}\n"
+            ."• Email: {$order->email}\n\n"
+            ."📦 *Products:*\n"
+            ."{$itemsList}\n"
+            ."📍 *Delivery Address:*\n"
+            ."{$addressSummary}\n\n"
+            ."🔗 *View in Admin:*\n"
+            ."{$adminOrderUrl}";
     }
 
     /**
@@ -413,7 +431,7 @@ class OrderNotificationService
                 ]
             );
         } catch (Throwable $e) {
-            Log::error("Failed saving OrderDeliveryNotification record: " . $e->getMessage());
+            Log::error('Failed saving OrderDeliveryNotification record: '.$e->getMessage());
         }
     }
 }

@@ -134,10 +134,10 @@
                                             
                                             <div>
                                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 text-center">Your Rating</label>
-                                                <div class="mt-2 flex justify-center gap-2" data-rating-group="${product.id}">
+                                                <div class="review-rating-group mt-2" data-rating-group="${product.id}" role="radiogroup" aria-label="Rating for ${product.name}">
                                                     ${[1,2,3,4,5].map(star => `
-                                                        <button type="button" data-star-value="${star}" data-star-product="${product.id}" class="text-zinc-200 hover:scale-110 transition duration-155">
-                                                            <svg class="h-7 w-7 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                                        <button type="button" data-star-value="${star}" data-star-product="${product.id}" class="review-star" role="radio" aria-checked="false" aria-label="${star} star${star === 1 ? '' : 's'}" tabindex="${star === 1 ? '0' : '-1'}">
+                                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                                                         </button>
                                                     `).join('')}
                                                 </div>
@@ -166,28 +166,102 @@
                             .catch(err => console.error("Error fetching reviews status:", err));
                     };
 
-                    // Handle rating star clicks
+                    const setRatingVisuals = (group, previewRating = 0) => {
+                        const selectedRating = parseInt(group.dataset.selectedRating || '0');
+                        const activeRating = previewRating || selectedRating;
+
+                        group.querySelectorAll('[data-star-value]').forEach(star => {
+                            const value = parseInt(star.dataset.starValue);
+                            star.classList.toggle('is-preview', previewRating > 0 && value <= activeRating);
+                            star.classList.toggle('is-selected', selectedRating > 0 && value <= selectedRating);
+                            star.setAttribute('aria-checked', value === selectedRating ? 'true' : 'false');
+                        });
+                    };
+
+                    const selectRating = (btn) => {
+                        const rating = parseInt(btn.dataset.starValue);
+                        const productId = btn.dataset.starProduct;
+                        const group = reviewsContainer.querySelector(`[data-rating-group="${productId}"]`);
+                        const stars = group.querySelectorAll('[data-star-value]');
+
+                        document.getElementById(`rating-input-${productId}`).value = rating;
+                        group.dataset.selectedRating = rating;
+                        stars.forEach(star => star.tabIndex = star === btn ? 0 : -1);
+                        setRatingVisuals(group);
+                    };
+
+                    // Handle rating star clicks and keyboard selection.
                     reviewsContainer.addEventListener('click', (e) => {
                         const btn = e.target.closest('[data-star-value]');
                         if (btn) {
-                            const rating = parseInt(btn.dataset.starValue);
-                            const productId = btn.dataset.starProduct;
-                            
-                            document.getElementById(`rating-input-${productId}`).value = rating;
-                            
-                            const group = reviewsContainer.querySelector(`[data-rating-group="${productId}"]`);
-                            const stars = group.querySelectorAll('[data-star-value]');
-                            stars.forEach(star => {
-                                const val = parseInt(star.dataset.starValue);
-                                if (val <= rating) {
-                                    star.classList.remove('text-zinc-200');
-                                    star.classList.add('text-amber-400');
-                                } else {
-                                    star.classList.remove('text-amber-400');
-                                    star.classList.add('text-zinc-200');
-                                }
-                            });
+                            selectRating(btn);
                         }
+                    });
+
+                    reviewsContainer.addEventListener('mouseover', (e) => {
+                        const btn = e.target.closest('[data-star-value]');
+                        if (!btn) {
+                            return;
+                        }
+
+                        const group = btn.closest('[data-rating-group]');
+                        group.querySelectorAll('[data-star-value]').forEach(star => star.classList.toggle('is-hovered', star === btn));
+                        setRatingVisuals(group, parseInt(btn.dataset.starValue));
+                    });
+
+                    reviewsContainer.addEventListener('mouseout', (e) => {
+                        const group = e.target.closest('[data-rating-group]');
+                        if (!group || group.contains(e.relatedTarget)) {
+                            return;
+                        }
+
+                        group.querySelectorAll('[data-star-value]').forEach(star => star.classList.remove('is-hovered'));
+                        setRatingVisuals(group);
+                    });
+
+                    reviewsContainer.addEventListener('focusin', (e) => {
+                        const btn = e.target.closest('[data-star-value]');
+                        if (btn) {
+                            setRatingVisuals(btn.closest('[data-rating-group]'), parseInt(btn.dataset.starValue));
+                        }
+                    });
+
+                    reviewsContainer.addEventListener('focusout', (e) => {
+                        const group = e.target.closest('[data-rating-group]');
+                        if (group && !group.contains(e.relatedTarget)) {
+                            setRatingVisuals(group);
+                        }
+                    });
+
+                    reviewsContainer.addEventListener('keydown', (e) => {
+                        const btn = e.target.closest('[data-star-value]');
+                        if (!btn) {
+                            return;
+                        }
+
+                        const group = btn.closest('[data-rating-group]');
+                        const stars = [...group.querySelectorAll('[data-star-value]')];
+                        const currentIndex = stars.indexOf(btn);
+                        let nextIndex = currentIndex;
+
+                        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                            nextIndex = Math.min(currentIndex + 1, stars.length - 1);
+                        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                            nextIndex = Math.max(currentIndex - 1, 0);
+                        } else if (e.key === 'Home') {
+                            nextIndex = 0;
+                        } else if (e.key === 'End') {
+                            nextIndex = stars.length - 1;
+                        } else if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            selectRating(btn);
+                            return;
+                        } else {
+                            return;
+                        }
+
+                        e.preventDefault();
+                        stars[nextIndex].focus();
                     });
 
                     // Lock escape & prevent back button navigation
