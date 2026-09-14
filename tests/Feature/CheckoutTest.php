@@ -1,9 +1,12 @@
 <?php
 
+use App\Mail\AdminOrderMail;
+use App\Mail\OrderCustomerMail;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 
 test('guests are redirected to login before viewing checkout', function () {
     $this->get(route('checkout.index'))
@@ -84,6 +87,8 @@ test('checkout validation rules are enforced', function () {
 });
 
 test('successful checkout saves order, clear cart, reduces stock, and redirects', function () {
+    Mail::fake();
+
     $user = User::factory()->create();
     $product = Product::factory()->create(['price' => 100, 'quantity' => 10]);
 
@@ -126,6 +131,9 @@ test('successful checkout saves order, clear cart, reduces stock, and redirects'
     expect($order)->not->toBeNull();
     expect($order->status)->toBe('Pending');
     expect($order->name)->toBe('John Doe');
+
+    Mail::assertQueued(OrderCustomerMail::class, fn (OrderCustomerMail $mail): bool => $mail->event === 'order_placed' && $mail->order->is($order));
+    Mail::assertQueued(AdminOrderMail::class, fn (AdminOrderMail $mail): bool => $mail->event === 'new_order' && $mail->order?->is($order));
 
     // Assert order items inserted
     $this->assertDatabaseHas('order_items', [

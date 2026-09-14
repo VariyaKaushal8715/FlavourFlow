@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Services\EmailNotificationService;
 use App\Services\RazorpayService;
 use App\Support\CartState;
 use App\Support\GujaratLocation;
@@ -21,6 +22,8 @@ use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
+    public function __construct(private EmailNotificationService $emailNotifications) {}
+
     public function index(Request $request, CartState $cart): View|RedirectResponse
     {
         if ($cart->count() === 0) {
@@ -183,6 +186,8 @@ class CheckoutController extends Controller
                     'payment_method' => 'online',
                 ]);
 
+                $this->emailNotifications->sendOrderPlaced($order);
+
                 return response()->json([
                     'success' => true,
                     'payment_method' => 'online',
@@ -273,6 +278,8 @@ class CheckoutController extends Controller
 
                 return $order;
             });
+
+            $this->emailNotifications->sendOrderPlaced($order);
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -379,6 +386,9 @@ class CheckoutController extends Controller
                 // Clear Cart
                 $cart->clear();
             });
+
+            $payment->refresh();
+            $this->emailNotifications->sendPaymentSuccessful($payment);
 
             session()->put('placed_order_id', $order->id);
 
