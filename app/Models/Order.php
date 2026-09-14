@@ -25,6 +25,8 @@ class Order extends Model
         'pincode',
         'country',
         'payment_method',
+        'delivery_option',
+        'delivery_days',
         'subtotal',
         'delivery_charge',
         'total_amount',
@@ -33,7 +35,9 @@ class Order extends Model
         'out_for_delivery_at',
         'delivered_at',
         'coupon_code',
+        'coupon_id',
         'discount_amount',
+        'earned_coupon_id',
         'cancelled_at',
         'cancellation_reason',
     ];
@@ -105,5 +109,25 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
+    }
+
+    public function earnedCoupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class, 'earned_coupon_id');
+    }
+
+    public function generatedCoupons(): HasMany
+    {
+        return $this->hasMany(Coupon::class, 'source_order_id');
     }
 }

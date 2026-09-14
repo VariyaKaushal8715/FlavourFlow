@@ -77,4 +77,17 @@ test('opening order details or track page marks notifications as read', function
 test('guest cannot fetch notifications', function () {
     $this->get(route('account.orders'))
         ->assertRedirect(route('login'));
+
+    $this->get(route('account.orders.notifications.sse'))
+        ->assertRedirect(route('login'));
+});
+
+test('authenticated user can connect to orders sse stream', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)
+        ->get(route('account.orders.notifications.sse'));
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'text/event-stream; charset=UTF-8');
 });
