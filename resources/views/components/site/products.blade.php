@@ -7,6 +7,7 @@
     'tone' => 'default',
     'wishlistProductIds' => [],
     'sort' => 'featured',
+    'sortOptions' => null,
     'minPrice' => null,
     'maxPrice' => null,
     'lowestPrice' => 0,
@@ -17,7 +18,6 @@
     $displayEyebrow = $eyebrow ?? __('ui.collection_eyebrow');
     $displayTitle = $title ?? __('ui.collection_title');
     $displayDescription = $description ?? __('ui.collection_desc');
-    $currentSort = $sort ?: 'featured';
     $lowest = (int) $lowestPrice;
     $highest = (int) $highestPrice;
     if ($highest <= $lowest) {
@@ -26,21 +26,49 @@
     $curMin = ($minPrice !== null && $minPrice >= $lowest) ? (int) $minPrice : $lowest;
     $curMax = ($maxPrice !== null && $maxPrice <= $highest && $maxPrice >= $lowest) ? (int) $maxPrice : $highest;
 
-    $sortOptions = [
-        'featured' => __('ui.featured'),
-        'rating' => __('ui.top_rated'),
-        'price_asc' => __('ui.price_low_high'),
-        'price_desc' => __('ui.price_high_low'),
-        'name' => __('ui.name_az'),
-        'newest' => __('ui.newest_arrivals'),
-        'price_range' => __('ui.price_range'),
-    ];
+    // Build dynamic sort options mapping (key => label)
+    $formattedOptions = [];
+    if ($sortOptions instanceof \Illuminate\Support\Collection) {
+        foreach ($sortOptions as $opt) {
+            $formattedOptions[$opt->key] = $opt->label;
+        }
+    } elseif (is_array($sortOptions) && ! empty($sortOptions)) {
+        foreach ($sortOptions as $key => $value) {
+            if (is_object($value)) {
+                $formattedOptions[$value->key] = $value->label;
+            } elseif (is_array($value) && isset($value['key'], $value['label'])) {
+                $formattedOptions[$value['key']] = $value['label'];
+            } else {
+                $formattedOptions[$key] = $value;
+            }
+        }
+    } else {
+        $formattedOptions = [
+            'featured' => __('ui.featured'),
+            'rating' => __('ui.top_rated'),
+            'price_asc' => __('ui.price_low_high'),
+            'price_desc' => __('ui.price_high_low'),
+            'name' => __('ui.name_az'),
+            'newest' => __('ui.newest_arrivals'),
+            'best_selling' => 'Best Selling',
+            'discount' => 'Biggest Discounts',
+            'price_range' => __('ui.price_range'),
+        ];
+    }
 
-    $hasActiveFilters = ($currentSort !== 'featured') || ($minPrice !== null && $minPrice > $lowest) || ($maxPrice !== null && $maxPrice < $highest);
+    $firstOptionKey = array_key_first($formattedOptions) ?? 'featured';
+    $defaultOptionKey = array_key_exists('featured', $formattedOptions) ? 'featured' : $firstOptionKey;
 
-    $triggerLabel = $sortOptions[$currentSort] ?? $sortOptions['featured'];
+    $currentSort = $sort ?: $defaultOptionKey;
+    if (! array_key_exists($currentSort, $formattedOptions)) {
+        $currentSort = $defaultOptionKey;
+    }
+
+    $hasActiveFilters = ($currentSort !== $defaultOptionKey) || ($minPrice !== null && $minPrice > $lowest) || ($maxPrice !== null && $maxPrice < $highest);
+
+    $triggerLabel = $formattedOptions[$currentSort] ?? ($formattedOptions[$defaultOptionKey] ?? 'Sort Products');
     if ($currentSort === 'price_range') {
-        $triggerLabel = __('ui.price_range') . ': ₹' . $curMin . ' – ₹' . $curMax;
+        $triggerLabel = ($formattedOptions['price_range'] ?? __('ui.price_range')) . ': ₹' . $curMin . ' – ₹' . $curMax;
     }
 @endphp
 
@@ -125,10 +153,10 @@
                                 id="sort-dropdown-menu"
                                 role="listbox"
                                 tabindex="-1"
-                                class="absolute left-0 right-0 z-30 mt-2 origin-top rounded-2xl border border-amber-200/80 bg-white p-2 shadow-2xl transition-all duration-200 ease-out invisible opacity-0 scale-95 pointer-events-none"
+                                class="absolute left-0 right-0 z-30 mt-2 origin-top rounded-2xl border border-amber-200/80 bg-white p-2 shadow-2xl transition-all duration-200 ease-out invisible opacity-0 scale-95 pointer-events-none max-h-80 overflow-y-auto"
                             >
                                 <div class="space-y-1">
-                                    @foreach ($sortOptions as $key => $label)
+                                    @foreach ($formattedOptions as $key => $label)
                                         <div
                                             role="option"
                                             data-value="{{ $key }}"
@@ -140,6 +168,14 @@
                                                     <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
                                                     </svg>
+                                                @elseif ($key === 'best_selling')
+                                                    <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /></svg>
+                                                @elseif ($key === 'rating')
+                                                    <svg class="h-4 w-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                                @elseif ($key === 'discount')
+                                                    <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                @elseif ($key === 'newest')
+                                                    <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" /></svg>
                                                 @endif
                                                 {{ $label }}
                                             </span>

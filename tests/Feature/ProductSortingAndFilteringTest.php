@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductSortOption;
 
 test('home page sorts products by featured by default', function () {
     Product::factory()->create(['name' => 'Cardamom Regular', 'price' => 200, 'priority' => 10, 'is_featured' => false, 'is_active' => true]);
@@ -135,4 +138,106 @@ test('home page shows empty state when no products match price range', function 
     $products = $response->viewData('products');
     expect($products)->toBeEmpty();
     $response->assertSee(__('ui.no_products_found'));
+});
+
+test('home page loads sort options dynamically from database', function () {
+    $response = $this->get(route('home'));
+    $response->assertSuccessful();
+
+    $sortOptions = $response->viewData('sortOptions');
+    expect($sortOptions)->not->toBeEmpty();
+    expect($sortOptions->pluck('key')->all())->toContain('featured', 'price_asc', 'price_desc', 'rating');
+});
+
+test('disabled sort option disappears from home page and falls back to default', function () {
+    ProductSortOption::where('key', 'newest')->update(['is_active' => false]);
+
+    $response = $this->get(route('home'));
+    $response->assertSuccessful();
+
+    $sortOptions = $response->viewData('sortOptions');
+    expect($sortOptions->pluck('key')->all())->not->toContain('newest');
+
+    // Accessing disabled sort falls back to default
+    $responseWithDisabled = $this->get(route('home', ['sort' => 'newest']));
+    $responseWithDisabled->assertSuccessful();
+    expect($responseWithDisabled->viewData('sort'))->toBe('featured');
+});
+
+test('newly created sort option appears on home page and sorts correctly', function () {
+    Product::factory()->create(['name' => 'Low Priority Herb', 'priority' => 10, 'is_active' => true]);
+    Product::factory()->create(['name' => 'High Priority Spice', 'priority' => 95, 'is_active' => true]);
+
+    ProductSortOption::create([
+        'key' => 'staff_priority',
+        'label' => 'Staff Priority Picks',
+        'sort_field' => 'priority',
+        'sort_direction' => 'desc',
+        'display_order' => 1,
+        'is_active' => true,
+    ]);
+
+    $response = $this->get(route('home', ['sort' => 'staff_priority']));
+    $response->assertSuccessful();
+
+    $sortOptions = $response->viewData('sortOptions');
+    expect($sortOptions->pluck('key')->all())->toContain('staff_priority');
+
+    $products = $response->viewData('products');
+    expect($products[0]['name'])->toBe('High Priority Spice');
+});
+
+test('best selling sort option sorts products by order item quantity sold', function () {
+    $product1 = Product::factory()->create(['name' => 'Low Seller Clove', 'is_active' => true]);
+    $product2 = Product::factory()->create(['name' => 'Top Seller Cardamom', 'is_active' => true]);
+
+    $order = Order::factory()->create();
+    OrderItem::factory()->create([
+        'order_id' => $order->id,
+        'product_id' => $product1->id,
+        'quantity' => 2,
+    ]);
+    OrderItem::factory()->create([
+        'order_id' => $order->id,
+        'product_id' => $product2->id,
+        'quantity' => 25,
+    ]);
+
+    $response = $this->get(route('home', ['sort' => 'best_selling']));
+    $response->assertSuccessful();
+
+    $products = $response->viewData('products');
+    expect($products[0]['name'])->toBe('Top Seller Cardamom');
+});
+
+test('discount sort option sorts products by biggest discount amount', function () {
+    Product::factory()->create([
+        'name' => 'Small Discount Pepper',
+        'price' => 200,
+        'compare_at_price' => 220, // 20 discount
+        'is_active' => true,
+    ]);
+    Product::factory()->create([
+        'name' => 'Huge Discount Saffron',
+        'price' => 500,
+        'compare_at_price' => 1000, // 500 discount
+        'is_active' => true,
+    ]);
+
+    $response = $this->get(route('home', ['sort' => 'discount']));
+    $response->assertSuccessful();
+
+    $products = $response->viewData('products');
+    expect($products[0]['name'])->toBe('Huge Discount Saffron');
+});
+
+test('display order in database controls sort options ordering on home page', function () {
+    ProductSortOption::where('key', 'price_desc')->update(['display_order' => 1]);
+    ProductSortOption::where('key', 'featured')->update(['display_order' => 99]);
+
+    $response = $this->get(route('home'));
+    $response->assertSuccessful();
+
+    $sortOptions = $response->viewData('sortOptions');
+    expect($sortOptions->first()->key)->toBe('price_desc');
 });

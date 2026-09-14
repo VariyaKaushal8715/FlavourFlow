@@ -140,6 +140,17 @@
                                 </div>
                             </a>
 
+                            <a @class([
+                                'flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition',
+                                'bg-white text-zinc-950 shadow-sm' => request()->routeIs('admin.sort-options*'),
+                                'text-zinc-400 hover:bg-white/5 hover:text-white' => ! request()->routeIs('admin.sort-options*'),
+                            ]) href="{{ route('admin.sort-options.index') }}">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" /></svg>
+                                    <span>Sort Products</span>
+                                </div>
+                            </a>
+
                             <p class="pt-4 px-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Settings</p>
 
                             <a @class([
