@@ -16,6 +16,9 @@ class Payment extends Model
         'cashfree_order_id',
         'cashfree_payment_id',
         'payment_session_id',
+        'provider',
+        'transaction_id',
+        'gateway_order_id',
         'razorpay_order_id',
         'razorpay_payment_id',
         'razorpay_signature',
@@ -30,6 +33,7 @@ class Payment extends Model
         'refund_status',
         'refunded_amount',
         'response_data',
+        'payment_details',
     ];
 
     protected $casts = [
@@ -37,6 +41,7 @@ class Payment extends Model
         'refunded_amount' => 'decimal:2',
         'paid_at' => 'datetime',
         'response_data' => 'array',
+        'payment_details' => 'array',
     ];
 
     public function order(): BelongsTo
@@ -47,5 +52,22 @@ class Payment extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function isSuccessful(): bool
+    {
+        return in_array($this->status, ['successful', 'captured'], true);
+    }
+
+    public function methodDisplayName(): string
+    {
+        return match ($this->payment_method) {
+            'card' => 'Credit / Debit Card',
+            'netbanking' => 'Net Banking',
+            'upi' => 'UPI Payment',
+            'cod' => 'Cash on Delivery (COD)',
+            'online' => 'Online Payment',
+            default => strtoupper((string) $this->payment_method),
+        };
     }
 }

@@ -28,47 +28,105 @@
                     </a>
                 </div>
 
-                <!-- Vertical timeline for mobile, styled cleanly -->
-                <div class="mt-8 relative pl-8 space-y-8 before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-200">
+                <!-- Vertical timeline connecting all steps -->
+                <div class="mt-8 space-y-0">
                     @foreach($steps as $index => $step)
-                        <div class="relative">
-                            <!-- Dot indicators -->
-                            <span @class([
-                                'absolute -left-[27px] top-1.5 flex h-5 w-5 items-center justify-center rounded-full ring-4 ring-white',
-                                'bg-emerald-600 text-white' => $step['state'] === 'completed',
-                                'bg-amber-500 text-white animate-pulse' => $step['state'] === 'active',
-                                'bg-zinc-200 text-zinc-400' => $step['state'] === 'pending',
-                            ])>
-                                @if($step['state'] === 'completed')
-                                    <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                @elseif($step['state'] === 'active')
-                                    <span class="h-2 w-2 rounded-full bg-white"></span>
-                                @endif
-                            </span>
+                        @php
+                            $isLast = $loop->last;
+                            $isCompleted = $step['state'] === 'completed';
+                            $isActive = $step['state'] === 'active';
+                            $isPending = $step['state'] === 'pending';
+                            $isCancelled = $step['name'] === 'Cancelled';
+                        @endphp
 
-                            <!-- Step content -->
-                            <div class="min-w-0">
-                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <h3 @class([
-                                        'text-sm font-semibold',
-                                        'text-emerald-700' => $step['state'] === 'completed',
-                                        'text-amber-600' => $step['state'] === 'active',
-                                        'text-zinc-400' => $step['state'] === 'pending',
-                                    ])>
-                                        {{ $step['label'] }}
-                                    </h3>
+                        <div class="relative flex gap-4 sm:gap-6">
+                            <!-- Timeline Node (Dot + Line) -->
+                            <div class="flex flex-col items-center">
+                                <!-- Dot -->
+                                <div @class([
+                                    'relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all duration-200',
+                                    'bg-emerald-600 text-white ring-4 ring-emerald-50 shadow-sm' => $isCompleted,
+                                    'bg-amber-500 text-white ring-4 ring-amber-100 shadow-sm' => $isActive && !$isCancelled,
+                                    'bg-rose-600 text-white ring-4 ring-rose-100 shadow-sm' => $isActive && $isCancelled,
+                                    'bg-white border-2 border-zinc-300 text-zinc-300 ring-4 ring-zinc-50' => $isPending,
+                                ])>
+                                    @if($isCompleted)
+                                        <svg class="h-3.5 w-3.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    @elseif($isActive)
+                                        @if($isCancelled)
+                                            <svg class="h-3.5 w-3.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        @else
+                                            <span class="relative flex h-2.5 w-2.5">
+                                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+                                                <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-white"></span>
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="h-2 w-2 rounded-full bg-zinc-300"></span>
+                                    @endif
+                                </div>
+
+                                <!-- Connecting Line to next step -->
+                                @if(!$isLast)
+                                    <div @class([
+                                        'w-0.5 flex-1 my-1',
+                                        'bg-emerald-500' => $isCompleted,
+                                        'bg-gradient-to-b from-amber-500 to-zinc-200' => $isActive && !$isCancelled,
+                                        'bg-rose-300' => $isActive && $isCancelled,
+                                        'bg-zinc-200' => $isPending,
+                                    ])></div>
+                                @endif
+                            </div>
+
+                            <!-- Content Column -->
+                            <div @class([
+                                'flex-1 min-w-0',
+                                'pb-8' => !$isLast,
+                                'pb-1' => $isLast,
+                            ])>
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h3 @class([
+                                            'text-sm sm:text-base font-bold tracking-tight',
+                                            'text-zinc-950' => $isCompleted,
+                                            'text-amber-900' => $isActive && !$isCancelled,
+                                            'text-rose-950' => $isActive && $isCancelled,
+                                            'text-zinc-400 font-medium' => $isPending,
+                                        ])>
+                                            {{ $step['label'] }}
+                                        </h3>
+
+                                        @if($isActive && !$isCancelled)
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-500/20">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                                Current Status
+                                            </span>
+                                        @elseif($isActive && $isCancelled)
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-semibold text-rose-800 ring-1 ring-inset ring-rose-500/20">
+                                                Cancelled
+                                            </span>
+                                        @elseif($isCompleted)
+                                            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                                Completed
+                                            </span>
+                                        @endif
+                                    </div>
+
                                     @if($step['time'])
-                                        <span class="text-xs text-zinc-400 font-medium">
+                                        <span class="text-xs font-medium text-zinc-400 sm:text-right shrink-0">
                                             {{ $step['time']->format('M d, Y h:i A') }}
                                         </span>
                                     @endif
                                 </div>
+
                                 <p @class([
-                                    'mt-1 text-xs leading-relaxed',
-                                    'text-zinc-600' => $step['state'] !== 'pending',
-                                    'text-zinc-400' => $step['state'] === 'pending',
+                                    'mt-1 text-xs sm:text-sm leading-relaxed',
+                                    'text-zinc-600' => !$isPending,
+                                    'text-zinc-400' => $isPending,
                                 ])>
                                     {{ $step['description'] }}
                                 </p>

@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Offer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
-use App\Models\Product;
+use App\Services\CouponService;
 use App\Services\EmailNotificationService;
 use App\Services\RazorpayService;
 use App\Support\CartState;
@@ -22,7 +21,10 @@ use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
-    public function __construct(private EmailNotificationService $emailNotifications) {}
+    public function __construct(
+        protected CouponService $couponService,
+        protected EmailNotificationService $emailNotifications
+    ) {}
 
     public function index(Request $request, CartState $cart): View|RedirectResponse
     {
@@ -36,6 +38,7 @@ class CheckoutController extends Controller
         $subtotal = $cart->subtotal();
         $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
         $total = $subtotal + $deliveryCharge;
+        $availableCoupons = $this->couponService->getAvailableCouponsForUser($user);
 
         return view('checkout.index', [
             'site' => config('personal_site'),
@@ -45,6 +48,7 @@ class CheckoutController extends Controller
             'total' => $total,
             'profile' => $profile,
             'user' => $user,
+            'availableCoupons' => $availableCoupons,
         ]);
     }
 
@@ -86,6 +90,7 @@ class CheckoutController extends Controller
                 'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
                 'country' => ['required', 'string', 'max:100'],
                 'payment_method' => ['required', 'string', 'in:cod,online'],
+                'delivery_option' => ['nullable', 'string', 'in:standard,express'],
                 'coupon_code' => ['nullable', 'string', 'max:50'],
             ]);
 
@@ -100,22 +105,19 @@ class CheckoutController extends Controller
 
                     $couponCode = $validated['coupon_code'] ?? null;
                     $discountAmount = 0.00;
+                    $couponModel = null;
 
                     if ($couponCode) {
-                        $codeClean = Str::upper(str_replace(' ', '', $couponCode));
-                        $coupon = Offer::whereNotNull('coupon_code')
-                            ->get()
-                            ->first(function ($offer) use ($codeClean) {
-                                return Str::upper(str_replace(' ', '', $offer->coupon_code)) === $codeClean;
-                            });
+                        $couponResult = $this->couponService->validateCoupon($couponCode, $request->user(), $subtotal, 'online');
 
-                        if ($coupon && $coupon->isValidFor($subtotal)) {
-                            $discountAmount = $coupon->calculateDiscount($subtotal);
-                        } else {
+                        if (! $couponResult['valid']) {
                             throw ValidationException::withMessages([
-                                'coupon_code' => 'The coupon code is invalid, expired, or does not meet the requirements.',
+                                'coupon_code' => $couponResult['error'] ?: 'The coupon code is invalid or expired.',
                             ]);
                         }
+
+                        $discountAmount = $couponResult['discount'];
+                        $couponModel = $couponResult['coupon'];
                     }
 
                     $totalAmount = max(0.00, $subtotal - $discountAmount + $deliveryCharge);
@@ -134,11 +136,17 @@ class CheckoutController extends Controller
                         'country' => $validated['country'],
                         'payment_method' => 'online',
                         'coupon_code' => $couponCode,
+                        'coupon_id' => null,
                         'discount_amount' => $discountAmount,
+                        'earned_coupon_id' => null,
                         'subtotal' => $subtotal,
                         'delivery_charge' => $deliveryCharge,
                         'total_amount' => $totalAmount,
                     ]);
+
+                    if ($couponModel) {
+                        $this->couponService->recordUsage($couponModel, $request->user(), $order, $discountAmount);
+                    }
 
                     // Save Order Items without decrementing stock yet
                     foreach ($cart->items() as $item) {
@@ -210,22 +218,19 @@ class CheckoutController extends Controller
 
                 $couponCode = $validated['coupon_code'] ?? null;
                 $discountAmount = 0.00;
+                $couponModel = null;
 
                 if ($couponCode) {
-                    $codeClean = Str::upper(str_replace(' ', '', $couponCode));
-                    $coupon = Offer::whereNotNull('coupon_code')
-                        ->get()
-                        ->first(function ($offer) use ($codeClean) {
-                            return Str::upper(str_replace(' ', '', $offer->coupon_code)) === $codeClean;
-                        });
+                    $couponResult = $this->couponService->validateCoupon($couponCode, $request->user(), $subtotal, 'cod');
 
-                    if ($coupon && $coupon->isValidFor($subtotal)) {
-                        $discountAmount = $coupon->calculateDiscount($subtotal);
-                    } else {
+                    if (! $couponResult['valid']) {
                         throw ValidationException::withMessages([
-                            'coupon_code' => 'The coupon code is invalid, expired, or does not meet the requirements.',
+                            'coupon_code' => $couponResult['error'] ?: 'The coupon code is invalid or expired.',
                         ]);
                     }
+
+                    $discountAmount = $couponResult['discount'];
+                    $couponModel = $couponResult['coupon'];
                 }
 
                 $totalAmount = max(0.00, $subtotal - $discountAmount + $deliveryCharge);
@@ -244,11 +249,17 @@ class CheckoutController extends Controller
                     'country' => $validated['country'],
                     'payment_method' => 'cod',
                     'coupon_code' => $couponCode,
+                    'coupon_id' => null,
                     'discount_amount' => $discountAmount,
+                    'earned_coupon_id' => null,
                     'subtotal' => $subtotal,
                     'delivery_charge' => $deliveryCharge,
                     'total_amount' => $totalAmount,
                 ]);
+
+                if ($couponModel) {
+                    $this->couponService->recordUsage($couponModel, $request->user(), $order, $discountAmount);
+                }
 
                 foreach ($cart->items() as $item) {
                     $product = Product::lockForUpdate()->findOrFail($item['product']->id);
@@ -309,11 +320,12 @@ class CheckoutController extends Controller
             return redirect()->route('home');
         }
 
-        $order = Order::with('items')->findOrFail($orderId);
+        $order = Order::with(['items', 'earnedCoupon'])->findOrFail($orderId);
 
         return view('checkout.success', [
             'site' => config('personal_site'),
             'order' => $order,
+            'earnedCoupon' => $order->earnedCoupon,
         ]);
     }
 
@@ -389,6 +401,7 @@ class CheckoutController extends Controller
 
             $payment->refresh();
             $this->emailNotifications->sendPaymentSuccessful($payment);
+            $this->couponService->generateRewardCouponForOrder($order->refresh());
 
             session()->put('placed_order_id', $order->id);
 
@@ -411,43 +424,39 @@ class CheckoutController extends Controller
     {
         $validated = $request->validate([
             'coupon_code' => ['required', 'string', 'max:50'],
+            'delivery_option' => ['nullable', 'string', 'in:standard,express'],
+            'payment_method' => ['nullable', 'string', 'in:cod,online'],
         ]);
 
-        $code = $validated['coupon_code'];
-        $codeClean = Str::upper(str_replace(' ', '', $code));
-        $coupon = Offer::whereNotNull('coupon_code')
-            ->get()
-            ->first(function ($offer) use ($codeClean) {
-                return Str::upper(str_replace(' ', '', $offer->coupon_code)) === $codeClean;
-            });
-
-        if (! $coupon) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid coupon code.',
-            ], 422);
-        }
-
         $subtotal = $cart->subtotal();
-        $error = null;
-        if (! $coupon->isValidFor($subtotal, $error)) {
+        $paymentMethod = $validated['payment_method'] ?? 'cod';
+        $couponResult = $this->couponService->validateCoupon($validated['coupon_code'], $request->user(), $subtotal, $paymentMethod);
+
+        if (! $couponResult['valid']) {
             return response()->json([
                 'success' => false,
-                'message' => $error ?: 'This coupon is not valid.',
+                'message' => $couponResult['error'] ?: 'Invalid coupon code.',
             ], 422);
         }
 
-        $discount = $coupon->calculateDiscount($subtotal);
+        $discount = $couponResult['discount'];
         $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
         $total = max(0.0, $subtotal - $discount + $deliveryCharge);
+        $coupon = $couponResult['coupon'];
+        $code = $couponResult['type'] === 'coupon' ? $coupon->code : $coupon->coupon_code;
+        $type = $couponResult['type'] === 'coupon' ? $coupon->discount_type : $coupon->getDiscountType();
+        $value = $couponResult['type'] === 'coupon' ? (float) $coupon->discount_value : (float) $coupon->getDiscountValue();
+        $paymentEligibility = $couponResult['type'] === 'coupon' ? $coupon->payment_method_eligibility : 'both';
 
         return response()->json([
             'success' => true,
             'message' => 'Coupon applied successfully!',
             'coupon' => [
-                'code' => $coupon->coupon_code,
-                'type' => $coupon->getDiscountType(),
-                'value' => (float) $coupon->getDiscountValue(),
+                'code' => $code,
+                'type' => $type,
+                'value' => $value,
+                'formatted' => $couponResult['type'] === 'coupon' ? $coupon->formattedDiscount() : $coupon->discount_label,
+                'payment_method_eligibility' => $paymentEligibility,
             ],
             'discount' => $discount,
             'subtotal' => $subtotal,

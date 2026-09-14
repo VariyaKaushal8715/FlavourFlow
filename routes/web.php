@@ -1,10 +1,14 @@
 <?php
 
 use App\Http\Controllers\Account\OrderController;
+use App\Http\Controllers\Account\UserCouponController;
 use App\Http\Controllers\Account\UserProfileController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminCouponController;
+use App\Http\Controllers\Admin\AdminCouponRewardRuleController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminDeliveryController;
 use App\Http\Controllers\Admin\AdminInventoryController;
 use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminOrderController;
@@ -22,9 +26,12 @@ use App\Http\Controllers\CashfreeWebhookController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactEmailController;
+use App\Http\Controllers\DeliveryCheckController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OfferDetailsController;
+use App\Http\Controllers\PaymentWebhookController;
+use App\Http\Controllers\PrivacyConsentController;
 use App\Http\Controllers\ProductDetailsController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\WishlistController;
@@ -59,9 +66,13 @@ Route::post('/logout', [UserSessionController::class, 'destroy'])
     ->name('logout');
 
 Route::get('/language/{locale}', LocaleController::class)->name('language.switch');
+Route::post('/delivery/check', [DeliveryCheckController::class, 'check'])->name('delivery.check');
+Route::post('/webhook/payment', [PaymentWebhookController::class, 'handle'])->name('payment.webhook');
 
 Route::get('/products/{product:slug}', ProductDetailsController::class)->name('products.show');
 Route::get('/offers/{offer}', OfferDetailsController::class)->name('offers.show');
+Route::view('/privacy-policy', 'privacy')->name('privacy-policy');
+Route::get('/orders/{order:order_number}/track/secure', [OrderController::class, 'trackSigned'])->name('orders.track.signed');
 
 Route::middleware('auth')->group(function () {
     Route::prefix('account')
@@ -73,6 +84,7 @@ Route::middleware('auth')->group(function () {
             Route::patch('/mobile-number', [UserProfileController::class, 'updateMobileNumber'])->name('profile.mobile_number.update');
             Route::patch('/email-address', [UserProfileController::class, 'updateEmailAddress'])->name('profile.email.update');
             Route::delete('/', [UserProfileController::class, 'destroy'])->name('profile.destroy');
+            Route::get('/coupons', [UserCouponController::class, 'index'])->name('coupons');
             Route::get('/orders', [OrderController::class, 'index'])->name('orders');
             Route::get('/orders/{order:order_number}', [OrderController::class, 'show'])->name('orders.show');
             Route::get('/orders/{order:order_number}/track', [OrderController::class, 'track'])->name('orders.track');
@@ -97,6 +109,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
 
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/privacy-consent', [PrivacyConsentController::class, 'store'])->name('privacy-consent.store');
+    Route::put('/account/privacy-consent', [PrivacyConsentController::class, 'update'])->name('privacy-consent.update');
     Route::get('/wishlist/products', [WishlistController::class, 'products'])->name('wishlist.products');
     Route::post('/wishlist/{product:slug}', [WishlistController::class, 'store'])->name('wishlist.store');
     Route::delete('/wishlist/{product:slug}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
@@ -151,6 +165,26 @@ Route::prefix('admin')
             // Profile
             Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
             Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
+
+            // Delivery Control
+            Route::get('/delivery', [AdminDeliveryController::class, 'index'])->name('delivery.index');
+            Route::put('/delivery', [AdminDeliveryController::class, 'update'])->name('delivery.update');
+
+            // Coupon Control
+            Route::prefix('coupons')->name('coupons.')->group(function () {
+                Route::get('/', [AdminCouponController::class, 'index'])->name('index');
+                Route::get('/create', [AdminCouponController::class, 'create'])->name('create');
+                Route::post('/', [AdminCouponController::class, 'store'])->name('store');
+                Route::get('/{coupon}/edit', [AdminCouponController::class, 'edit'])->name('edit');
+                Route::put('/{coupon}', [AdminCouponController::class, 'update'])->name('update');
+                Route::patch('/{coupon}/toggle', [AdminCouponController::class, 'toggle'])->name('toggle');
+                Route::delete('/{coupon}', [AdminCouponController::class, 'destroy'])->name('destroy');
+
+                Route::post('/reward-rules', [AdminCouponRewardRuleController::class, 'store'])->name('rewardRules.store');
+                Route::put('/reward-rules/{rewardRule}', [AdminCouponRewardRuleController::class, 'update'])->name('rewardRules.update');
+                Route::patch('/reward-rules/{rewardRule}/toggle', [AdminCouponRewardRuleController::class, 'toggle'])->name('rewardRules.toggle');
+                Route::delete('/reward-rules/{rewardRule}', [AdminCouponRewardRuleController::class, 'destroy'])->name('rewardRules.destroy');
+            });
 
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
         });
