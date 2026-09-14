@@ -96,7 +96,6 @@
                 </p>
             </div>
             @if ($tone === 'default')
-<<<<<<< HEAD
                 <form
                     id="product-filter-form"
                     class="flex flex-col gap-2.5 lg:justify-self-end w-full lg:w-auto"
@@ -260,26 +259,6 @@
                                 </a>
                             @endif
                         </div>
-=======
-                <form class="flex flex-wrap items-center gap-3 shrink-0" method="GET" action="{{ route('home') }}#{{ $sectionId }}" data-reveal>
-                    <label class="text-sm font-medium text-zinc-600" for="sort-products">{{ __('ui.sort_by') }}</label>
-                    <div class="flex items-center gap-2">
-                        <select
-                            class="min-h-12 rounded-lg border border-zinc-300 bg-white px-4 text-sm outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
-                            id="sort-products"
-                            name="sort"
-                        >
-                            <option value="featured" @selected($sort === 'featured')>{{ __('ui.featured') }}</option>
-                            <option value="rating" @selected($sort === 'rating')>{{ __('ui.top_rated') }}</option>
-                            <option value="price_asc" @selected($sort === 'price_asc')>{{ __('ui.price_low_high') }}</option>
-                            <option value="price_desc" @selected($sort === 'price_desc')>{{ __('ui.price_high_low') }}</option>
-                            <option value="name" @selected($sort === 'name')>{{ __('ui.name_az') }}</option>
-                            <option value="newest" @selected($sort === 'newest')>{{ __('ui.newest_arrivals') }}</option>
-                        </select>
-                        <button class="inline-flex min-h-12 items-center justify-center rounded-lg bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-red-700" type="submit">
-                            {{ __('ui.apply') }}
-                        </button>
->>>>>>> 193bbff25de008820a3dcfcf899e12dae1633002
                     </div>
                 </form>
             @endif
@@ -298,11 +277,14 @@
                 </div>
             </div>
         @else
-            <div @class([
-                'grid gap-5 sm:grid-cols-2 lg:grid-cols-3',
-                'mt-10' => $tone === 'default',
-                'mt-6' => $tone === 'offer',
-            ])>
+            <div
+                id="products-grid-container"
+                @class([
+                    'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 transition-all duration-300 ease-out opacity-100',
+                    'mt-10' => $tone === 'default',
+                    'mt-6' => $tone === 'offer',
+                ])
+            >
                 @foreach ($products as $index => $product)
                     @php
                         $productId = $product['id'] ?? null;
@@ -390,4 +372,243 @@
             </div>
         @endif
     </div>
+
+    @if ($tone === 'default')
+        <style>
+            .dual-range-input {
+                pointer-events: none;
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                left: 0;
+                width: 100%;
+                height: 24px;
+                margin: 0;
+                outline: none;
+                appearance: none;
+                -webkit-appearance: none;
+                background: transparent;
+                z-index: 20;
+            }
+            .dual-range-input::-webkit-slider-runnable-track {
+                background: transparent;
+                border: none;
+                height: 100%;
+            }
+            .dual-range-input::-moz-range-track {
+                background: transparent;
+                border: none;
+                height: 100%;
+            }
+            .dual-range-input::-webkit-slider-thumb {
+                pointer-events: auto;
+                appearance: none;
+                -webkit-appearance: none;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #b42318 0%, #d97706 100%);
+                border: 2px solid #ffffff;
+                box-shadow: 0 2px 6px rgba(180, 35, 24, 0.4), 0 0 0 1px rgba(180, 35, 24, 0.15);
+                cursor: grab;
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
+            }
+            .dual-range-input::-webkit-slider-thumb:hover {
+                transform: scale(1.15);
+                box-shadow: 0 4px 10px rgba(180, 35, 24, 0.5), 0 0 0 1px rgba(180, 35, 24, 0.3);
+            }
+            .dual-range-input::-webkit-slider-thumb:active {
+                cursor: grabbing;
+                transform: scale(1.2);
+            }
+            .dual-range-input::-moz-range-thumb {
+                pointer-events: auto;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #b42318 0%, #d97706 100%);
+                border: 2px solid #ffffff;
+                box-shadow: 0 2px 6px rgba(180, 35, 24, 0.4), 0 0 0 1px rgba(180, 35, 24, 0.15);
+                cursor: grab;
+            }
+        </style>
+
+        <script>
+            (() => {
+                const initSortDropdown = () => {
+                    const trigger = document.getElementById('custom-sort-trigger');
+                    const menu = document.getElementById('sort-dropdown-menu');
+                    const chevron = document.getElementById('sort-chevron');
+                    const sortInput = document.getElementById('product-sort-input');
+                    const hiddenMinPrice = document.getElementById('hidden-min-price');
+                    const hiddenMaxPrice = document.getElementById('hidden-max-price');
+                    const selectedLabel = document.getElementById('selected-sort-label');
+                    const options = document.querySelectorAll('.sort-option');
+                    const form = document.getElementById('product-filter-form');
+                    const gridContainer = document.getElementById('products-grid-container');
+
+                    const priceRangePanel = document.getElementById('price-range-panel');
+                    const minSlider = document.getElementById('range-min-slider');
+                    const maxSlider = document.getElementById('range-max-slider');
+                    const minText = document.getElementById('slider-min-text');
+                    const maxText = document.getElementById('slider-max-text');
+                    const highlightBar = document.getElementById('slider-highlight-bar');
+
+                    const lowestBound = parseInt("{{ $lowest }}", 10) || 0;
+                    const highestBound = parseInt("{{ $highest }}", 10) || 1000;
+
+                    if (!trigger || !menu) return;
+
+                    let isOpen = false;
+
+                    const updateSliderTrack = () => {
+                        if (!minSlider || !maxSlider || !highlightBar) return;
+                        let v1 = parseInt(minSlider.value, 10);
+                        let v2 = parseInt(maxSlider.value, 10);
+
+                        if (v1 > v2) {
+                            const tmp = v1;
+                            v1 = v2;
+                            v2 = tmp;
+                        }
+
+                        const range = Math.max(1, highestBound - lowestBound);
+                        const leftPercent = Math.max(0, Math.min(100, ((v1 - lowestBound) / range) * 100));
+                        const rightPercent = Math.max(0, Math.min(100, ((v2 - lowestBound) / range) * 100));
+                        const widthPercent = Math.max(0, rightPercent - leftPercent);
+
+                        highlightBar.style.left = leftPercent + '%';
+                        highlightBar.style.width = widthPercent + '%';
+
+                        if (minText) minText.textContent = v1;
+                        if (maxText) maxText.textContent = v2;
+                        if (hiddenMinPrice) hiddenMinPrice.value = v1;
+                        if (hiddenMaxPrice) hiddenMaxPrice.value = v2;
+
+                        if (sortInput && sortInput.value === 'price_range' && selectedLabel) {
+                            selectedLabel.textContent = `Price Range: ₹${v1} – ₹${v2}`;
+                        }
+                    };
+
+                    minSlider?.addEventListener('input', () => {
+                        if (parseInt(minSlider.value, 10) > parseInt(maxSlider.value, 10) - 5) {
+                            minSlider.value = parseInt(maxSlider.value, 10) - 5;
+                        }
+                        minSlider.style.zIndex = '25';
+                        if (maxSlider) maxSlider.style.zIndex = '20';
+                        updateSliderTrack();
+                    });
+
+                    maxSlider?.addEventListener('input', () => {
+                        if (parseInt(maxSlider.value, 10) < parseInt(minSlider.value, 10) + 5) {
+                            maxSlider.value = parseInt(minSlider.value, 10) + 5;
+                        }
+                        maxSlider.style.zIndex = '25';
+                        if (minSlider) minSlider.style.zIndex = '20';
+                        updateSliderTrack();
+                    });
+
+                    updateSliderTrack();
+
+                    const openMenu = () => {
+                        isOpen = true;
+                        menu.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                        menu.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+                        chevron?.classList.add('rotate-180');
+                        trigger.setAttribute('aria-expanded', 'true');
+                    };
+
+                    const closeMenu = () => {
+                        isOpen = false;
+                        menu.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                        menu.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+                        chevron?.classList.remove('rotate-180');
+                        trigger.setAttribute('aria-expanded', 'false');
+                        setTimeout(() => {
+                            if (!isOpen) menu.classList.add('invisible');
+                        }, 200);
+                    };
+
+                    trigger.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        isOpen ? closeMenu() : openMenu();
+                    });
+
+                    document.addEventListener('click', (e) => {
+                        if (isOpen && !menu.contains(e.target) && !trigger.contains(e.target)) {
+                            closeMenu();
+                        }
+                    });
+
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape' && isOpen) {
+                            closeMenu();
+                            trigger.focus();
+                        }
+                    });
+
+                    options.forEach((opt) => {
+                        opt.addEventListener('click', (e) => {
+                            const val = opt.getAttribute('data-value');
+                            const labelText = opt.querySelector('span')?.textContent?.trim() || '';
+                            
+                            if (sortInput) sortInput.value = val;
+
+                            options.forEach(o => {
+                                const isSelected = o === opt;
+                                o.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+                                const checkIcon = o.querySelector('svg:last-of-type');
+                                if (isSelected) {
+                                    o.className = 'sort-option group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all duration-150 bg-amber-50/90 font-semibold text-brand-primary';
+                                    if (checkIcon) {
+                                        checkIcon.classList.remove('opacity-0', 'group-hover:opacity-30');
+                                        checkIcon.classList.add('opacity-100');
+                                    }
+                                } else {
+                                    o.className = 'sort-option group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all duration-150 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950';
+                                    if (checkIcon) {
+                                        checkIcon.classList.remove('opacity-100');
+                                        checkIcon.classList.add('opacity-0', 'group-hover:opacity-30');
+                                    }
+                                }
+                            });
+
+                            if (val === 'price_range') {
+                                if (priceRangePanel) {
+                                    priceRangePanel.classList.remove('max-h-0', 'opacity-0');
+                                    priceRangePanel.classList.add('max-h-56', 'opacity-100', 'mt-2.5', 'pt-3', 'border-t', 'border-amber-100');
+                                }
+                                updateSliderTrack();
+                            } else {
+                                if (priceRangePanel) {
+                                    priceRangePanel.classList.add('max-h-0', 'opacity-0');
+                                    priceRangePanel.classList.remove('max-h-56', 'opacity-100', 'mt-2.5', 'pt-3', 'border-t', 'border-amber-100');
+                                }
+                                if (selectedLabel) selectedLabel.textContent = labelText;
+                                if (hiddenMinPrice) hiddenMinPrice.value = '';
+                                if (hiddenMaxPrice) hiddenMaxPrice.value = '';
+                                closeMenu();
+                            }
+                        });
+                    });
+
+                    form?.addEventListener('submit', () => {
+                        if (sortInput && sortInput.value !== 'price_range') {
+                            if (hiddenMinPrice) hiddenMinPrice.value = '';
+                            if (hiddenMaxPrice) hiddenMaxPrice.value = '';
+                        }
+                        if (gridContainer) {
+                            gridContainer.classList.add('opacity-50', 'scale-[0.99]');
+                        }
+                    });
+                };
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initSortDropdown);
+                } else {
+                    initSortDropdown();
+                }
+            })();
+        </script>
+    @endif
 </section>

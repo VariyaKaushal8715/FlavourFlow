@@ -241,3 +241,103 @@ test('display order in database controls sort options ordering on home page', fu
     $sortOptions = $response->viewData('sortOptions');
     expect($sortOptions->first()->key)->toBe('price_desc');
 });
+
+test('sort products UI contains filter form, custom trigger, options, sliders, and apply button', function () {
+    $response = $this->get(route('home'));
+    $response->assertSuccessful();
+
+    $response->assertSee('id="product-filter-form"', false);
+    $response->assertSee('id="custom-sort-trigger"', false);
+    $response->assertSee('id="product-sort-input"', false);
+    $response->assertSee('id="sort-dropdown-menu"', false);
+    $response->assertSee('id="filter-apply-btn"', false);
+    $response->assertSee('id="range-min-slider"', false);
+    $response->assertSee('id="range-max-slider"', false);
+    $response->assertSee(__('ui.apply'));
+    $response->assertSee(__('ui.sort_products'));
+});
+
+test('all nine standard sorting options correctly order multiple products', function () {
+    ProductSortOption::seedDefaults();
+
+    $p1 = Product::factory()->create([
+        'name' => 'A Kashmiri Saffron',
+        'price' => 500,
+        'compare_at_price' => 700, // discount: 200
+        'rating' => 4.9,
+        'is_featured' => true,
+        'priority' => 10,
+        'created_at' => now()->subDays(5),
+        'is_active' => true,
+    ]);
+    $p2 = Product::factory()->create([
+        'name' => 'B Organic Turmeric',
+        'price' => 100,
+        'compare_at_price' => 110, // discount: 10
+        'rating' => 4.2,
+        'is_featured' => false,
+        'priority' => 20,
+        'created_at' => now()->subDays(1),
+        'is_active' => true,
+    ]);
+    $p3 = Product::factory()->create([
+        'name' => 'C Black Pepper',
+        'price' => 300,
+        'compare_at_price' => 600, // discount: 300
+        'rating' => 3.8,
+        'is_featured' => false,
+        'priority' => 5,
+        'created_at' => now()->subDays(10),
+        'is_active' => true,
+    ]);
+
+    $order = Order::factory()->create();
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $p3->id, 'quantity' => 50]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $p1->id, 'quantity' => 20]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $p2->id, 'quantity' => 5]);
+
+    // 1. featured
+    $resFeatured = $this->get(route('home', ['sort' => 'featured']));
+    $namesFeatured = collect($resFeatured->viewData('products'))->pluck('name')->all();
+    expect($namesFeatured[0])->toBe('A Kashmiri Saffron');
+
+    // 2. rating (desc)
+    $resRating = $this->get(route('home', ['sort' => 'rating']));
+    $namesRating = collect($resRating->viewData('products'))->pluck('name')->all();
+    expect($namesRating)->toBe(['A Kashmiri Saffron', 'B Organic Turmeric', 'C Black Pepper']);
+
+    // 3. price_asc
+    $resPriceAsc = $this->get(route('home', ['sort' => 'price_asc']));
+    $namesPriceAsc = collect($resPriceAsc->viewData('products'))->pluck('name')->all();
+    expect($namesPriceAsc)->toBe(['B Organic Turmeric', 'C Black Pepper', 'A Kashmiri Saffron']);
+
+    // 4. price_desc
+    $resPriceDesc = $this->get(route('home', ['sort' => 'price_desc']));
+    $namesPriceDesc = collect($resPriceDesc->viewData('products'))->pluck('name')->all();
+    expect($namesPriceDesc)->toBe(['A Kashmiri Saffron', 'C Black Pepper', 'B Organic Turmeric']);
+
+    // 5. name (A-Z)
+    $resName = $this->get(route('home', ['sort' => 'name']));
+    $namesName = collect($resName->viewData('products'))->pluck('name')->all();
+    expect($namesName)->toBe(['A Kashmiri Saffron', 'B Organic Turmeric', 'C Black Pepper']);
+
+    // 6. newest
+    $resNewest = $this->get(route('home', ['sort' => 'newest']));
+    $namesNewest = collect($resNewest->viewData('products'))->pluck('name')->all();
+    expect($namesNewest)->toBe(['B Organic Turmeric', 'A Kashmiri Saffron', 'C Black Pepper']);
+
+    // 7. best_selling
+    $resBestSelling = $this->get(route('home', ['sort' => 'best_selling']));
+    $namesBestSelling = collect($resBestSelling->viewData('products'))->pluck('name')->all();
+    expect($namesBestSelling)->toBe(['C Black Pepper', 'A Kashmiri Saffron', 'B Organic Turmeric']);
+
+    // 8. discount
+    $resDiscount = $this->get(route('home', ['sort' => 'discount']));
+    $namesDiscount = collect($resDiscount->viewData('products'))->pluck('name')->all();
+    expect($namesDiscount)->toBe(['C Black Pepper', 'A Kashmiri Saffron', 'B Organic Turmeric']);
+
+    // 9. price_range with bounds
+    $resPriceRange = $this->get(route('home', ['sort' => 'price_range', 'min_price' => 150, 'max_price' => 550]));
+    $namesPriceRange = collect($resPriceRange->viewData('products'))->pluck('name')->all();
+    expect($namesPriceRange)->toBe(['C Black Pepper', 'A Kashmiri Saffron']);
+});
