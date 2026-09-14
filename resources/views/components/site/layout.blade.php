@@ -97,6 +97,36 @@
                 </div>
             </div>
 
+            @if (! auth()->user()->privacyConsent()->exists())
+                <div class="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-zinc-950/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="privacy-consent-title" aria-describedby="privacy-consent-description">
+                    <div class="w-full max-w-lg rounded-3xl border border-amber-200/70 bg-white p-6 shadow-2xl sm:p-8">
+                        <div class="flex items-start gap-4">
+                            <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-50 text-brand-primary" aria-hidden="true">
+                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 19 6v6c0 4.8-3.1 8.6-7 10-3.9-1.4-7-5.2-7-10V6l7-3Z"/><path d="M9.5 12.1 11.2 14l3.5-4"/></svg>
+                            </span>
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-primary">Your privacy matters</p>
+                                <h2 id="privacy-consent-title" class="mt-1 text-2xl font-semibold text-zinc-950">Choose your cookie preference</h2>
+                            </div>
+                        </div>
+                        <p id="privacy-consent-description" class="mt-5 text-sm leading-6 text-zinc-600">FlavourFlow uses essential cookies to keep your account, cart, and checkout working. Optional activity tracking helps us understand product interactions and improve recommendations.</p>
+                        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                            <form method="POST" action="{{ route('privacy-consent.store') }}" class="sm:flex-1">
+                                @csrf
+                                <input type="hidden" name="consent_status" value="allowed">
+                                <button class="w-full rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-primary/20" type="submit">Allow Cookies & Activity Tracking</button>
+                            </form>
+                            <form method="POST" action="{{ route('privacy-consent.store') }}" class="sm:flex-1">
+                                @csrf
+                                <input type="hidden" name="consent_status" value="declined">
+                                <button class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-800 transition hover:border-brand-primary hover:text-brand-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-primary/15" type="submit">Decline Non-Essential Tracking</button>
+                            </form>
+                        </div>
+                        <a class="mt-5 inline-flex text-sm font-semibold text-brand-primary underline decoration-amber-300 underline-offset-4 hover:text-zinc-950 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-primary/15" href="{{ route('privacy-policy') }}" target="_blank" rel="noreferrer">View Privacy Policy</a>
+                    </div>
+                </div>
+            @endif
+
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
                     const modal = document.getElementById('mandatory-review-modal');

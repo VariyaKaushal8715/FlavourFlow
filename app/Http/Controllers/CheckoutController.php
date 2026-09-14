@@ -6,6 +6,7 @@ use App\Events\OrderPlaced;
 use App\Models\DeliverySetting;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Services\AddressValidationService;
 use App\Services\CouponService;
@@ -66,41 +67,51 @@ class CheckoutController extends Controller
             'state' => ['required', 'string', 'max:100'],
             'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
             'country' => ['required', 'string', 'max:100'],
-            'payment_method' => ['required', 'string', 'in:cod,online'],
+            'payment_method' => ['required', 'string', 'in:cod,online,upi,card,netbanking,wallet'],
+            'online_payment_method' => ['nullable', 'string', 'in:upi,card,netbanking,wallet'],
             'delivery_option' => ['nullable', 'string', 'in:standard,express'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
+            // Conditional fields for online payment methods
+            'upi_id' => ['required_if:payment_method,upi', 'required_if:online_payment_method,upi', 'string', 'max:255'],
+            'card_number' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'max:255'],
+            'card_name' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'max:255'],
+            'card_expiry' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'regex:/^(0[1-9]|1[0-2])\/\d{2}$/'],
+            'card_cvv' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'regex:/^[0-9]{3,4}$/'],
+            'netbanking_bank' => ['required_if:payment_method,netbanking', 'required_if:online_payment_method,netbanking', 'string', 'max:255'],
+            'wallet_provider' => ['required_if:payment_method,wallet', 'required_if:online_payment_method,wallet', 'string', 'max:255'],
         ]);
 
-        // Validate global delivery location settings
+        $onlinePaymentMethods = ['upi', 'card', 'netbanking', 'wallet'];
+        $selectedPaymentMethod = $validated['payment_method'];
+        $onlinePaymentMethod = $validated['online_payment_method'] ?? null;
+
+        if (in_array($selectedPaymentMethod, $onlinePaymentMethods, true)) {
+            $onlinePaymentMethod = $selectedPaymentMethod;
+            $validated['payment_method'] = 'online';
+        }
+
         $deliverySetting = DeliverySetting::current();
-        if (! $deliverySetting->isDeliverable($validated['country'], $validated['state'], $validated['city'])) {
+        if (! $deliverySetting->isDeliverable($validated['country'], $validated['state'] ?? null, $validated['city'] ?? null)) {
             throw ValidationException::withMessages([
                 'country' => 'Sorry, we don’t deliver to this location.',
             ]);
         }
 
-        // Validate per-product deliverable locations
         foreach ($cart->items() as $item) {
             /** @var Product $itemProduct */
             $itemProduct = $item['product'];
+
             if (! $itemProduct->isDeliverableTo($validated['country'], $validated['state'], $validated['city'])) {
-                $locationStr = implode(', ', array_filter([$validated['city'], $validated['state'], $validated['country']]));
+                $location = implode(', ', array_filter([$validated['city'], $validated['state'], $validated['country']]));
+
                 throw ValidationException::withMessages([
-                    'country' => "Sorry, '{$itemProduct->name}' cannot be delivered to {$locationStr}.",
+                    'country' => "Sorry, '{$itemProduct->name}' cannot be delivered to {$location}.",
                 ]);
             }
         }
 
-        // Additional address validation using the address validation service
-        $addressResult = AddressValidationService::validate($validated);
-        if ($addressResult !== AddressValidationService::VALID) {
-            throw ValidationException::withMessages([
-                'address' => AddressValidationService::message($addressResult),
-            ]);
-        }
-
         try {
-            $order = DB::transaction(function () use ($validated, $cart, $request) {
+            $order = DB::transaction(function () use ($validated, $cart, $request, $onlinePaymentMethod) {
                 // Generate a unique Order Number
                 $orderNumber = 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
 
@@ -134,6 +145,14 @@ class CheckoutController extends Controller
 
                 $totalAmount = max(0.00, $subtotal - $discountAmount + $deliveryCharge);
 
+                // Additional address validation using the new service
+                $addressResult = AddressValidationService::validate($validated);
+                if ($addressResult !== AddressValidationService::VALID) {
+                    throw ValidationException::withMessages([
+                        'address' => AddressValidationService::message($addressResult),
+                    ]);
+                }
+
                 $order = Order::create([
                     'order_number' => $orderNumber,
                     'user_id' => $request->user()->id,
@@ -160,6 +179,24 @@ class CheckoutController extends Controller
                 // Record coupon usage if applied
                 if ($couponModel) {
                     $this->couponService->recordUsage($couponModel, $request->user(), $order, $discountAmount);
+                }
+
+                if ($validated['payment_method'] === 'online') {
+                    Payment::create([
+                        'order_id' => $order->id,
+                        'user_id' => $request->user()->id,
+                        'payment_method' => $onlinePaymentMethod ?? 'card',
+                        'provider' => 'demo',
+                        'transaction_id' => 'DEMO-'.strtoupper(Str::random(12)),
+                        'amount' => $totalAmount,
+                        'currency' => 'INR',
+                        'status' => 'successful',
+                        'paid_at' => now(),
+                        'payment_details' => [
+                            'mode' => 'checkout_demo',
+                            'selected_method' => $onlinePaymentMethod,
+                        ],
+                    ]);
                 }
 
                 // Validate stock, decrement inventory, and save Order Items

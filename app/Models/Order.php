@@ -106,9 +106,9 @@ class Order extends Model
         return $this->hasOne(RefundRequest::class);
     }
 
-    public function deliveryNotifications(): HasMany
+    public function payment(): HasOne
     {
-        return $this->hasMany(OrderDeliveryNotification::class);
+        return $this->hasOne(Payment::class);
     }
 
     public function coupon(): BelongsTo
