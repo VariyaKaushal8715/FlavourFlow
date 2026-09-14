@@ -222,6 +222,30 @@
                         </div>
                     </div>
                 @endif
+
+                <div class="mt-8 border-t border-amber-200/70 pt-6" id="privacy-cookies">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-brand-primary">Privacy & Cookies</p>
+                            <h3 class="mt-1 text-lg font-semibold text-zinc-950">Manage your privacy preference</h3>
+                            <p class="mt-1 max-w-xl text-sm leading-6 text-zinc-500">Essential cookies remain enabled for account, cart, and order functionality. Optional activity tracking can be changed at any time.</p>
+                        </div>
+                        <a class="inline-flex items-center rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:border-brand-primary hover:text-brand-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-primary/15" href="{{ route('privacy-policy') }}">Read Privacy Policy</a>
+                    </div>
+
+                    <div class="mt-5 flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-zinc-900">Optional activity tracking</p>
+                            <p class="mt-1 text-xs text-zinc-500">Current status: <span class="font-semibold {{ $privacyConsent?->allowsActivityTracking() ? 'text-emerald-700' : 'text-zinc-700' }}">{{ $privacyConsent?->allowsActivityTracking() ? 'Allowed' : 'Declined' }}</span></p>
+                        </div>
+                        <form method="POST" action="{{ route('privacy-consent.update') }}">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="consent_status" value="{{ $privacyConsent?->allowsActivityTracking() ? 'declined' : 'allowed' }}">
+                            <button class="inline-flex items-center rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-primary/20" type="submit">{{ $privacyConsent?->allowsActivityTracking() ? 'Revoke Optional Tracking' : 'Allow Optional Tracking' }}</button>
+                        </form>
+                    </div>
+                </div>
             </div>
 
             <aside class="space-y-5" data-reveal>

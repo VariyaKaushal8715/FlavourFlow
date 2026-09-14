@@ -11,8 +11,11 @@ use Throwable;
 class MetaWhatsAppProvider implements WhatsAppProviderInterface
 {
     protected ?string $apiUrl;
+
     protected ?string $phoneNumberId;
+
     protected ?string $accessToken;
+
     protected int $timeout;
 
     public function __construct(array $config = [])
@@ -28,13 +31,14 @@ class MetaWhatsAppProvider implements WhatsAppProviderInterface
         if (empty($this->phoneNumberId) || empty($this->accessToken)) {
             $error = 'Meta WhatsApp Cloud API credentials not fully configured.';
             Log::warning($error);
+
             return WhatsAppSendResult::failure($error);
         }
 
         // Clean phone number (digits only, e.g. 919876543210)
         $cleanTo = preg_replace('/[^\d]/', '', $to);
 
-        $url = rtrim($this->apiUrl, '/') . "/{$this->phoneNumberId}/messages";
+        $url = rtrim($this->apiUrl, '/')."/{$this->phoneNumberId}/messages";
 
         try {
             $response = Http::withToken($this->accessToken)
@@ -53,15 +57,18 @@ class MetaWhatsAppProvider implements WhatsAppProviderInterface
             if ($response->successful()) {
                 $data = $response->json();
                 $messageId = $data['messages'][0]['id'] ?? null;
+
                 return WhatsAppSendResult::success($messageId, $data);
             }
 
-            $errorMsg = 'Meta WhatsApp error: ' . ($response->json()['error']['message'] ?? $response->body());
+            $errorMsg = 'Meta WhatsApp error: '.($response->json()['error']['message'] ?? $response->body());
             Log::error($errorMsg);
+
             return WhatsAppSendResult::failure($errorMsg, $response->json() ?? []);
         } catch (Throwable $e) {
-            Log::error('Meta WhatsApp dispatch exception: ' . $e->getMessage(), ['exception' => $e]);
-            return WhatsAppSendResult::failure('Meta WhatsApp exception: ' . $e->getMessage());
+            Log::error('Meta WhatsApp dispatch exception: '.$e->getMessage(), ['exception' => $e]);
+
+            return WhatsAppSendResult::failure('Meta WhatsApp exception: '.$e->getMessage());
         }
     }
 }

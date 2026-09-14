@@ -226,70 +226,117 @@
                         </div>
                     </div>
 
-                    <div class="mt-8 border-t border-zinc-100 pt-6">
-                        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-brand-primary">Payment Options</p>
-                        <h3 class="mt-1 text-xl font-semibold text-zinc-950">Select Payment Method</h3>
+                    @php
+                        $onlinePaymentMethods = ['upi', 'card', 'netbanking', 'wallet'];
+                        $selectedPaymentMethod = old('payment_method', 'cod');
+                        $onlinePaymentSelected = in_array($selectedPaymentMethod, $onlinePaymentMethods, true);
+                    @endphp
 
-                        <div class="mt-5 space-y-4">
-                            <label class="flex cursor-pointer items-start gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20">
-                                <input
-                                    type="radio"
-                                    name="payment_method"
-                                    value="cod"
-                                    class="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
-                                    checked
-                                    onclick="document.getElementById('online-payment-ui').classList.add('hidden')"
-                                >
-                                <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-zinc-950">Cash on Delivery (COD)</p>
-                                    <p class="mt-1 text-xs text-zinc-500">Pay with cash when your premium spices are delivered to your door.</p>
-                                </div>
+                    <div class="mt-8 border-t border-zinc-100 pt-6" data-payment-section>
+                        <div class="flex flex-wrap items-end justify-between gap-3">
+                            <div>
+                                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-brand-primary">Payment Options</p>
+                                <h3 class="mt-1 text-xl font-semibold text-zinc-950">Choose how you would like to pay</h3>
+                            </div>
+                            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                Secure checkout
+                            </span>
+                        </div>
+
+                        <div class="mt-5 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Payment method">
+                            <label @class([
+                                'relative flex cursor-pointer gap-3 rounded-2xl border p-4 transition duration-200 hover:-translate-y-0.5 hover:border-brand-primary hover:shadow-md focus-within:ring-4 focus-within:ring-brand-primary/15',
+                                'border-brand-primary bg-amber-50/70 shadow-sm' => $selectedPaymentMethod === 'cod',
+                                'border-zinc-200 bg-white' => $selectedPaymentMethod !== 'cod',
+                            ]) data-payment-choice="cod">
+                                <input class="peer sr-only" type="radio" name="payment_method" value="cod" @checked($selectedPaymentMethod === 'cod')>
+                                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-zinc-100 text-zinc-700 peer-checked:bg-zinc-950 peer-checked:text-white" aria-hidden="true">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7.5h16v11H4z"/><path d="M7 7.5V5h10v2.5M8 12h4M8 15h2"/></svg>
+                                </span>
+                                <span class="min-w-0">
+                                    <span class="flex items-center gap-2 text-sm font-semibold text-zinc-950">Cash on Delivery <span class="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-500">COD</span></span>
+                                    <span class="mt-1 block text-xs leading-5 text-zinc-500">Pay when your order arrives at your door.</span>
+                                </span>
+                                <span class="absolute right-4 top-4 hidden h-5 w-5 place-items-center rounded-full bg-brand-primary text-white peer-checked:grid" aria-hidden="true">✓</span>
                             </label>
 
-                            <label class="flex cursor-pointer items-start gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20">
-                                <input
-                                    type="radio"
-                                    name="payment_method"
-                                    value="online"
-                                    class="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
-                                    onclick="document.getElementById('online-payment-ui').classList.remove('hidden')"
-                                >
-                                <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-zinc-950">Online Payment</p>
-                                    <p class="mt-1 text-xs text-zinc-500">Pay securely online using credit/debit card, UPI, or mobile wallets.</p>
-                                </div>
-                            </label>
+                            <div @class([
+                                'relative flex gap-3 rounded-2xl border p-4 transition duration-200',
+                                'border-brand-primary bg-amber-50/70 shadow-sm' => $onlinePaymentSelected,
+                                'border-zinc-200 bg-white' => ! $onlinePaymentSelected,
+                            ]) data-payment-choice="online" role="button" tabindex="0" aria-label="Online Payment">
+                                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-brand-primary" aria-hidden="true">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5v-9Z"/><path d="m8 10 4 2 4-2M12 12v5"/></svg>
+                                </span>
+                                <span class="min-w-0">
+                                    <span class="text-sm font-semibold text-zinc-950">Online Payment</span>
+                                    <span class="mt-1 block text-xs leading-5 text-zinc-500">UPI, cards, net banking, and wallets.</span>
+                                </span>
+                                <span class="absolute right-4 top-4 grid h-5 w-5 place-items-center rounded-full border-2 border-zinc-300 text-xs text-transparent" data-online-indicator aria-hidden="true">✓</span>
+                            </div>
+                        </div>
 
-                            <div id="online-payment-ui" class="hidden rounded-2xl border border-dashed border-amber-300/60 bg-amber-50/30 p-5 space-y-4 transition">
-                                <p class="text-xs font-semibold uppercase tracking-wider text-brand-primary">Simulated Secure Payment Gateway</p>
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Card Number"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
-                                    <input
-                                        type="text"
-                                        placeholder="Name on Card"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
+                        <div id="online-payment-ui" @class([
+                            'mt-5 overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-50/70 p-4 transition-all duration-300 sm:p-5',
+                            'hidden' => ! $onlinePaymentSelected,
+                        ]) data-online-payment-ui>
+                            <div class="flex flex-col gap-3 border-b border-zinc-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-primary">Test / Demo Payment</p>
+                                    <h4 class="mt-1 text-lg font-semibold text-zinc-950">Choose Payment Method</h4>
+                                    <p class="mt-1 text-sm text-zinc-500">Select an option below to continue securely.</p>
                                 </div>
-                                <div class="grid gap-4 grid-cols-3">
-                                    <input
-                                        type="text"
-                                        placeholder="Expiry MM/YY"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
-                                    <input
-                                        type="text"
-                                        placeholder="CVV"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
-                                    <span class="inline-flex items-center justify-center text-[10px] font-semibold text-zinc-400">Locked Demo Mode</span>
+                                <span class="inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm ring-1 ring-zinc-200">
+                                    <svg class="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 19 6v6c0 4.8-3.1 8.6-7 10-3.9-1.4-7-5.2-7-10V6l7-3Z"/><path d="m9.5 12.1 1.7 1.8 3.5-4"/></svg>
+                                    No sensitive data stored
+                                </span>
+                            </div>
+
+                            <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="radiogroup" aria-label="Online payment method">
+                                @foreach ([
+                                    'upi' => ['UPI', 'Pay using your UPI ID', '↗'],
+                                    'card' => ['Credit / Debit Card', 'Visa, Mastercard, or RuPay', '▣'],
+                                    'netbanking' => ['Net Banking', 'Pay through your bank', '▤'],
+                                    'wallet' => ['Wallets', 'Choose your preferred wallet', '◉'],
+                                ] as $method => [$label, $description, $icon])
+                                    <label @class([
+                                        'group relative flex cursor-pointer items-start gap-3 rounded-2xl border bg-white p-3.5 transition duration-200 hover:-translate-y-0.5 hover:border-brand-primary hover:shadow-md focus-within:ring-4 focus-within:ring-brand-primary/15',
+                                        'border-brand-primary bg-amber-50/70 shadow-sm' => $selectedPaymentMethod === $method,
+                                        'border-zinc-200' => $selectedPaymentMethod !== $method,
+                                    ]) data-method-card="{{ $method }}">
+                                        <input class="peer sr-only" type="radio" name="payment_method" value="{{ $method }}" @checked($selectedPaymentMethod === $method)>
+                                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-700 transition peer-checked:bg-brand-primary peer-checked:text-white">{{ $icon }}</span>
+                                        <span class="min-w-0">
+                                            <span class="block text-sm font-semibold text-zinc-950">{{ $label }}</span>
+                                            <span class="mt-1 block text-[11px] leading-4 text-zinc-500">{{ $description }}</span>
+                                        </span>
+                                        <span class="absolute right-3 top-3 hidden h-4 w-4 place-items-center rounded-full bg-brand-primary text-[10px] text-white peer-checked:grid" aria-hidden="true">✓</span>
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            <div class="mt-5 rounded-2xl border border-white bg-white p-4 shadow-sm sm:p-5" data-payment-panels>
+                                <div class="hidden space-y-4" data-payment-panel="upi">
+                                    <div><h5 class="text-base font-semibold text-zinc-950">Pay with UPI</h5><p class="mt-1 text-sm text-zinc-500">Enter your UPI ID to simulate a secure verification.</p></div>
+                                    <label class="block"><span class="text-xs font-semibold uppercase tracking-wide text-zinc-600">UPI ID</span><div class="mt-2 flex flex-col gap-2 sm:flex-row"><input class="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/10" type="text" name="upi_id" value="{{ old('upi_id') }}" placeholder="name@bank" autocomplete="off" data-payment-field required><button type="button" class="rounded-xl border border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-800 transition hover:border-brand-primary hover:text-brand-primary focus:outline-none focus:ring-4 focus:ring-brand-primary/15" data-upi-verify>Verify</button></div><p class="mt-2 hidden text-xs font-semibold text-emerald-700" data-upi-feedback>Demo UPI ID verified for this test payment.</p>@error('upi_id')<p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>@enderror</label>
+                                </div>
+
+                                <div class="hidden space-y-4" data-payment-panel="card">
+                                    <div><h5 class="text-base font-semibold text-zinc-950">Card details</h5><p class="mt-1 text-sm text-zinc-500">Use any demo card details. Your CVV is never retained.</p></div>
+                                    <label class="block"><span class="text-xs font-semibold uppercase tracking-wide text-zinc-600">Card Number</span><input class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm tracking-[0.16em] text-zinc-950 outline-none transition placeholder:tracking-normal placeholder:text-zinc-400 hover:border-zinc-300 focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/10" type="text" inputmode="numeric" name="card_number" value="{{ old('card_number') }}" placeholder="1234 5678 9012 3456" autocomplete="cc-number" data-card-number data-payment-field required>@error('card_number')<p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>@enderror</label>
+                                    <label class="block"><span class="text-xs font-semibold uppercase tracking-wide text-zinc-600">Name on Card</span><input class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/10" type="text" name="card_name" value="{{ old('card_name') }}" placeholder="As printed on your card" autocomplete="cc-name" data-payment-field required>@error('card_name')<p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>@enderror</label>
+                                    <div class="grid gap-4 sm:grid-cols-2"><label class="block"><span class="text-xs font-semibold uppercase tracking-wide text-zinc-600">Expiry Date</span><input class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/10" type="text" name="card_expiry" value="{{ old('card_expiry') }}" placeholder="MM/YY" autocomplete="cc-exp" maxlength="5" data-card-expiry data-payment-field required>@error('card_expiry')<p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>@enderror</label><label class="block"><span class="text-xs font-semibold uppercase tracking-wide text-zinc-600">CVV</span><input class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/10" type="password" inputmode="numeric" name="card_cvv" placeholder="3 or 4 digits" autocomplete="cc-csc" maxlength="4" data-payment-field required>@error('card_cvv')<p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>@enderror</label></div>
+                                </div>
+
+                                <div class="hidden space-y-4" data-payment-panel="netbanking">
+                                    <div><h5 class="text-base font-semibold text-zinc-950">Choose your bank</h5><p class="mt-1 text-sm text-zinc-500">Select a bank to continue in demo mode. No password or OTP is requested.</p></div>
+                                    <label class="block"><span class="text-xs font-semibold uppercase tracking-wide text-zinc-600">Select Your Bank</span><select class="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-950 outline-none transition hover:border-zinc-300 focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/10" name="netbanking_bank" data-payment-field required><option value="">Choose your bank</option><option value="HDFC Bank" @selected(old('netbanking_bank') === 'HDFC Bank')>HDFC Bank</option><option value="ICICI Bank" @selected(old('netbanking_bank') === 'ICICI Bank')>ICICI Bank</option><option value="State Bank of India" @selected(old('netbanking_bank') === 'State Bank of India')>State Bank of India</option><option value="Axis Bank" @selected(old('netbanking_bank') === 'Axis Bank')>Axis Bank</option><option value="Kotak Mahindra Bank" @selected(old('netbanking_bank') === 'Kotak Mahindra Bank')>Kotak Mahindra Bank</option><option value="Other bank" @selected(old('netbanking_bank') === 'Other bank')>Other bank</option></select>@error('netbanking_bank')<p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>@enderror</label>
+                                </div>
+
+                                <div class="hidden space-y-4" data-payment-panel="wallet">
+                                    <div><h5 class="text-base font-semibold text-zinc-950">Choose your wallet</h5><p class="mt-1 text-sm text-zinc-500">Select a wallet to simulate the payment handoff.</p></div>
+                                    <div class="grid gap-3 sm:grid-cols-3"><label class="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 p-3 transition hover:border-brand-primary has-[:checked]:border-brand-primary has-[:checked]:bg-amber-50/70"><input class="h-4 w-4 accent-[var(--brand-primary)]" type="radio" name="wallet_provider" value="Google Pay" @checked(old('wallet_provider') === 'Google Pay') data-payment-field required><span class="text-sm font-semibold text-zinc-800">Google Pay</span></label><label class="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 p-3 transition hover:border-brand-primary has-[:checked]:border-brand-primary has-[:checked]:bg-amber-50/70"><input class="h-4 w-4 accent-[var(--brand-primary)]" type="radio" name="wallet_provider" value="PhonePe" @checked(old('wallet_provider') === 'PhonePe') data-payment-field required><span class="text-sm font-semibold text-zinc-800">PhonePe</span></label><label class="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 p-3 transition hover:border-brand-primary has-[:checked]:border-brand-primary has-[:checked]:bg-amber-50/70"><input class="h-4 w-4 accent-[var(--brand-primary)]" type="radio" name="wallet_provider" value="Paytm" @checked(old('wallet_provider') === 'Paytm') data-payment-field required><span class="text-sm font-semibold text-zinc-800">Paytm</span></label></div>@error('wallet_provider')<p class="mt-2 text-xs font-medium text-red-700">{{ $message }}</p>@enderror
                                 </div>
                             </div>
                         </div>
@@ -509,6 +556,86 @@
                         standardRadio?.addEventListener('change', () => setDeliveryOption('standard'));
                         expressRadio?.addEventListener('change', () => setDeliveryOption('express'));
 
+                        const onlinePaymentUi = document.querySelector('[data-online-payment-ui]');
+                        const onlinePaymentChoice = document.querySelector('[data-payment-choice="online"]');
+                        const paymentChoices = [...document.querySelectorAll('[data-payment-choice]')];
+                        const methodCards = [...document.querySelectorAll('[data-method-card]')];
+                        const paymentMethodInputs = [...document.querySelectorAll('input[name="payment_method"]')];
+                        const paymentPanels = [...document.querySelectorAll('[data-payment-panel]')];
+                        const onlineMethods = ['upi', 'card', 'netbanking', 'wallet'];
+
+                        const setPaymentCardState = (card, selected) => {
+                            card.classList.toggle('border-brand-primary', selected);
+                            card.classList.toggle('bg-amber-50/70', selected);
+                            card.classList.toggle('shadow-sm', selected);
+                            card.classList.toggle('border-zinc-200', !selected);
+                        };
+
+                        const setMethodCardState = (card, selected) => {
+                            card.classList.toggle('border-brand-primary', selected);
+                            card.classList.toggle('bg-amber-50/70', selected);
+                            card.classList.toggle('shadow-sm', selected);
+                            card.classList.toggle('border-zinc-200', !selected);
+                        };
+
+                        const setPaymentMethod = (method) => {
+                            const isOnline = onlineMethods.includes(method);
+
+                            paymentChoices.forEach((card) => setPaymentCardState(card, card.dataset.paymentChoice === (isOnline ? 'online' : method)));
+                            methodCards.forEach((card) => setMethodCardState(card, card.dataset.methodCard === method));
+                            onlinePaymentUi?.classList.toggle('hidden', !isOnline);
+                            onlinePaymentChoice?.querySelector('[data-online-indicator]')?.classList.toggle('bg-brand-primary', isOnline);
+                            onlinePaymentChoice?.querySelector('[data-online-indicator]')?.classList.toggle('border-brand-primary', isOnline);
+                            onlinePaymentChoice?.querySelector('[data-online-indicator]')?.classList.toggle('text-white', isOnline);
+
+                            paymentPanels.forEach((panel) => {
+                                const isActive = panel.dataset.paymentPanel === method;
+                                panel.classList.toggle('hidden', !isActive);
+                                panel.querySelectorAll('[data-payment-field]').forEach((field) => {
+                                    field.disabled = !isActive;
+                                });
+                            });
+                        };
+
+                        paymentMethodInputs.forEach((input) => {
+                            input.addEventListener('change', () => setPaymentMethod(input.value));
+                        });
+
+                        onlinePaymentChoice?.addEventListener('click', () => {
+                            const activeOnlineMethod = paymentMethodInputs.find((input) => onlineMethods.includes(input.value) && input.checked)?.value || 'card';
+                            const activeInput = paymentMethodInputs.find((input) => input.value === activeOnlineMethod);
+
+                            if (activeInput) {
+                                activeInput.checked = true;
+                                setPaymentMethod(activeOnlineMethod);
+                            }
+                        });
+
+                        onlinePaymentChoice?.addEventListener('keydown', (event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                onlinePaymentChoice.click();
+                            }
+                        });
+
+                        document.querySelector('[data-upi-verify]')?.addEventListener('click', () => {
+                            const upiInput = document.querySelector('input[name="upi_id"]');
+                            const upiFeedback = document.querySelector('[data-upi-feedback]');
+
+                            if (!upiInput?.value.includes('@')) {
+                                upiInput?.focus();
+                                upiInput?.setCustomValidity('Enter a valid demo UPI ID, such as name@bank.');
+                                upiInput?.reportValidity();
+                                return;
+                            }
+
+                            upiInput.setCustomValidity('');
+                            upiFeedback?.classList.remove('hidden');
+                        });
+
+                        const initialPaymentMethod = paymentMethodInputs.find((input) => input.checked)?.value || 'cod';
+                        setPaymentMethod(initialPaymentMethod);
+
                         const showFeedback = (text, isSuccess) => {
                             feedback.textContent = text;
                             feedback.className = `mt-1.5 text-xs font-semibold ${isSuccess ? 'text-emerald-600' : 'text-red-600'}`;
@@ -594,4 +721,3 @@
         </div>
     </section>
 </x-site.layout>
-

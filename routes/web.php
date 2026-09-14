@@ -23,6 +23,7 @@ use App\Http\Controllers\DeliveryCheckController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OfferDetailsController;
+use App\Http\Controllers\PrivacyConsentController;
 use App\Http\Controllers\ProductDetailsController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\WishlistController;
@@ -55,6 +56,7 @@ Route::post('/delivery/check', [DeliveryCheckController::class, 'check'])->name(
 
 Route::get('/products/{product:slug}', ProductDetailsController::class)->name('products.show');
 Route::get('/offers/{offer}', OfferDetailsController::class)->name('offers.show');
+Route::view('/privacy-policy', 'privacy')->name('privacy-policy');
 Route::get('/orders/{order:order_number}/track/secure', [OrderController::class, 'trackSigned'])->name('orders.track.signed');
 
 Route::middleware('auth')->group(function () {
@@ -90,6 +92,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
 
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/privacy-consent', [PrivacyConsentController::class, 'store'])->name('privacy-consent.store');
+    Route::put('/account/privacy-consent', [PrivacyConsentController::class, 'update'])->name('privacy-consent.update');
     Route::get('/wishlist/products', [WishlistController::class, 'products'])->name('wishlist.products');
     Route::post('/wishlist/{product:slug}', [WishlistController::class, 'store'])->name('wishlist.store');
     Route::delete('/wishlist/{product:slug}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');

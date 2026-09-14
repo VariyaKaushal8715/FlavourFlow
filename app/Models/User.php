@@ -72,6 +72,19 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    /**
+     * Get the user's privacy consent record.
+     */
+    public function privacyConsent(): HasOne
+    {
+        return $this->hasOne(PrivacyConsent::class);
+    }
+
+    public function allowsActivityTracking(): bool
+    {
+        return $this->privacyConsent?->allowsActivityTracking() ?? false;
+    }
+
     public function orderNotifications(): HasMany
     {
         return $this->hasMany(OrderNotification::class);

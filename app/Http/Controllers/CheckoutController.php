@@ -2,18 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderPlaced;
 use App\Models\DeliverySetting;
 use App\Models\Offer;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
-
+use App\Services\AddressValidationService;
 use App\Support\CartState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -58,9 +61,25 @@ class CheckoutController extends Controller
             'state' => ['required', 'string', 'max:100'],
             'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
             'country' => ['required', 'string', 'max:100'],
-            'payment_method' => ['required', 'string', 'in:cod,online'],
+            'payment_method' => ['required', 'string', 'in:cod,upi,card,netbanking,wallet'],
+            'delivery_option' => ['nullable', 'string', 'in:standard,express'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
+            // Conditional fields for online payment methods
+            'upi_id' => ['required_if:payment_method,upi', 'string', 'max:255'],
+            'card_number' => ['required_if:payment_method,card', 'string', 'max:255'],
+            'card_name' => ['required_if:payment_method,card', 'string', 'max:255'],
+            'card_expiry' => ['required_if:payment_method,card', 'string', 'regex:/^(0[1-9]|1[0-2])\/\d{2}$/'],
+            'card_cvv' => ['required_if:payment_method,card', 'string', 'regex:/^[0-9]{3,4}$/'],
+            'netbanking_bank' => ['required_if:payment_method,netbanking', 'string', 'max:255'],
+            'wallet_provider' => ['required_if:payment_method,wallet', 'string', 'max:255'],
         ]);
+
+        $deliverySetting = DeliverySetting::current();
+        if (! $deliverySetting->isDeliverable($validated['country'], $validated['state'] ?? null, $validated['city'] ?? null)) {
+            throw ValidationException::withMessages([
+                'country' => 'Sorry, we don’t deliver to this location.',
+            ]);
+        }
 
         try {
             $order = DB::transaction(function () use ($validated, $cart, $request) {
@@ -95,10 +114,10 @@ class CheckoutController extends Controller
                 $totalAmount = max(0.00, $subtotal - $discountAmount + $deliveryCharge);
 
                 // Additional address validation using the new service
-                $addressResult = \App\Services\AddressValidationService::validate($validated);
-                if ($addressResult !== \App\Services\AddressValidationService::VALID) {
+                $addressResult = AddressValidationService::validate($validated);
+                if ($addressResult !== AddressValidationService::VALID) {
                     throw ValidationException::withMessages([
-                        'address' => \App\Services\AddressValidationService::message($addressResult),
+                        'address' => AddressValidationService::message($addressResult),
                     ]);
                 }
 
@@ -159,9 +178,9 @@ class CheckoutController extends Controller
 
             // Dispatch Order Confirmation Notifications (WhatsApp + Email for Customer and Admin)
             try {
-                \App\Events\OrderPlaced::dispatch($order);
+                OrderPlaced::dispatch($order);
             } catch (\Throwable $notificationException) {
-                \Illuminate\Support\Facades\Log::error('OrderPlaced event error: ' . $notificationException->getMessage());
+                Log::error('OrderPlaced event error: '.$notificationException->getMessage());
             }
 
             return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
