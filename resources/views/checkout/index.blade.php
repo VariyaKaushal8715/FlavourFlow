@@ -387,6 +387,47 @@
                         </div>
                         
                         <input type="hidden" name="coupon_code" id="applied-coupon-hidden-input">
+
+                        @if (isset($availableCoupons) && $availableCoupons->count() > 0)
+                            <div class="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/40 p-3.5">
+                                <div class="flex items-center justify-between gap-3">
+                                    <span class="text-xs font-bold text-zinc-900">Available For You ({{ $availableCoupons->count() }})</span>
+                                    <button type="button" id="toggle-available-coupons-btn" class="text-[11px] font-bold text-brand-primary hover:underline">
+                                        View &darr;
+                                    </button>
+                                </div>
+                                <div id="available-coupons-list" class="mt-3 hidden max-h-48 space-y-2 overflow-y-auto pr-1">
+                                    @foreach ($availableCoupons as $availableCoupon)
+                                        <div class="flex items-center justify-between rounded-xl border border-amber-200 bg-white p-2.5 text-xs shadow-sm">
+                                            <div class="min-w-0 pr-2">
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="font-mono font-bold text-zinc-950">{{ $availableCoupon->code }}</span>
+                                                    <span @class([
+                                                        'rounded px-1.5 py-0.5 text-[9px] font-semibold',
+                                                        'bg-sky-100 text-sky-800' => $availableCoupon->payment_method_eligibility === 'online',
+                                                        'bg-amber-100 text-amber-800' => $availableCoupon->payment_method_eligibility === 'cod',
+                                                        'bg-zinc-100 text-zinc-700' => $availableCoupon->payment_method_eligibility === 'both',
+                                                    ])>
+                                                        {{ $availableCoupon->paymentMethodLabel() }}
+                                                    </span>
+                                                </div>
+                                                <p class="text-[10px] font-semibold text-brand-primary">{{ $availableCoupon->formattedDiscount() }}</p>
+                                                @if ((float) $availableCoupon->min_order_amount > 0)
+                                                    <p class="text-[10px] text-zinc-400">Min: Rs. {{ number_format($availableCoupon->min_order_amount, 2) }}</p>
+                                                @endif
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onclick="applyQuickCoupon('{{ $availableCoupon->code }}')"
+                                                class="shrink-0 rounded-lg bg-zinc-950 px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-brand-primary"
+                                            >
+                                                Apply
+                                            </button>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="mt-6 border-t border-zinc-200 pt-5 space-y-3 text-sm text-zinc-600">
@@ -436,6 +477,8 @@
                         const standardDeliveryCharge = subtotal < 300 ? 30.0 : 0.0;
                         let currentDeliveryCharge = standardDeliveryCharge;
                         let currentDiscount = 0.0;
+                        let appliedCouponCode = null;
+                        let appliedCouponEligibility = null;
                         
                         const standardRadio = document.getElementById('delivery-standard-radio');
                         const expressRadio = document.getElementById('delivery-express-radio');
@@ -595,6 +638,16 @@
                                     field.disabled = !isActive;
                                 });
                             });
+
+                            if (appliedCouponCode && appliedCouponEligibility) {
+                                if (!isOnline && appliedCouponEligibility === 'online') {
+                                    removeAppliedCoupon();
+                                    showFeedback('This coupon is valid only for online payment. Please select online payment to use this coupon.', false);
+                                } else if (isOnline && appliedCouponEligibility === 'cod') {
+                                    removeAppliedCoupon();
+                                    showFeedback('This coupon is valid only for Cash on Delivery. Please select Cash on Delivery to use this coupon.', false);
+                                }
+                            }
                         };
 
                         paymentMethodInputs.forEach((input) => {
@@ -636,6 +689,20 @@
                         const initialPaymentMethod = paymentMethodInputs.find((input) => input.checked)?.value || 'cod';
                         setPaymentMethod(initialPaymentMethod);
 
+                        const toggleCouponsBtn = document.getElementById('toggle-available-coupons-btn');
+                        const availableCouponsList = document.getElementById('available-coupons-list');
+                        toggleCouponsBtn?.addEventListener('click', () => {
+                            const isHidden = availableCouponsList?.classList.toggle('hidden');
+                            toggleCouponsBtn.innerHTML = isHidden ? 'View &darr;' : 'Hide &uarr;';
+                        });
+
+                        window.applyQuickCoupon = function(code) {
+                            if (input) {
+                                input.value = code;
+                                applyBtn?.click();
+                            }
+                        };
+
                         const showFeedback = (text, isSuccess) => {
                             feedback.textContent = text;
                             feedback.className = `mt-1.5 text-xs font-semibold ${isSuccess ? 'text-emerald-600' : 'text-red-600'}`;
@@ -645,6 +712,26 @@
                         const hideFeedback = () => {
                             feedback.classList.add('hidden');
                         };
+
+                        function selectedPaymentCategory() {
+                            const selectedPaymentMethod = paymentMethodInputs.find((input) => input.checked)?.value || 'cod';
+
+                            return onlineMethods.includes(selectedPaymentMethod) ? 'online' : 'cod';
+                        }
+
+                        function removeAppliedCoupon() {
+                            discountRow.classList.add('hidden');
+                            currentDiscount = 0.0;
+                            updateTotals();
+
+                            pill.classList.add('hidden');
+                            pill.classList.remove('flex');
+                            hiddenInput.value = '';
+                            input.disabled = false;
+                            applyBtn.disabled = false;
+                            appliedCouponCode = null;
+                            appliedCouponEligibility = null;
+                        }
 
                         applyBtn?.addEventListener('click', () => {
                             const code = input.value.trim();
@@ -668,7 +755,8 @@
                                 },
                                 body: JSON.stringify({
                                     coupon_code: code,
-                                    delivery_option: selectedDelivery
+                                    delivery_option: selectedDelivery,
+                                    payment_method: selectedPaymentCategory()
                                 })
                             })
                             .then(res => res.json())
@@ -685,6 +773,8 @@
                                     pill.classList.remove('hidden');
                                     pill.classList.add('flex');
                                     hiddenInput.value = data.coupon.code;
+                                    appliedCouponCode = data.coupon.code;
+                                    appliedCouponEligibility = data.coupon.payment_method_eligibility;
                                     input.value = '';
                                     input.disabled = true;
                                     applyBtn.disabled = true;
@@ -704,15 +794,7 @@
                         });
 
                         removeBtn?.addEventListener('click', () => {
-                            discountRow.classList.add('hidden');
-                            currentDiscount = 0.0;
-                            updateTotals();
-                            
-                            pill.classList.add('hidden');
-                            pill.classList.remove('flex');
-                            hiddenInput.value = '';
-                            input.disabled = false;
-                            applyBtn.disabled = false;
+                            removeAppliedCoupon();
                             hideFeedback();
                         });
                     });
