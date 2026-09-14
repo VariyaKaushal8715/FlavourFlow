@@ -24,33 +24,33 @@
 </style>
 
 <header class="relative z-20">
-    <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-5 lg:px-8">
-        <a class="flex min-w-0 items-center gap-3 text-white" href="{{ route('home') }}" aria-label="{{ $brand['name'] }} home">
-            <img class="h-11 w-11 rounded-lg object-cover ring-1 ring-white/30" src="{{ asset($brand['logo']) }}" alt="{{ $brand['name'] }} mark">
+    <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
+        <a class="flex min-w-0 items-center gap-2.5 sm:gap-3 text-white" href="{{ route('home') }}" aria-label="{{ $brand['name'] }} home">
+            <img class="h-9 w-9 sm:h-11 sm:w-11 rounded-lg object-cover ring-1 ring-white/30 shrink-0" src="{{ asset($brand['logo']) }}" alt="{{ $brand['name'] }} mark">
             <span class="min-w-0">
-                <span class="block truncate text-sm font-semibold">{{ $brand['name'] }}</span>
-                <span class="block truncate text-xs text-white/70">{{ $brand['tagline'] }}</span>
+                <span class="block truncate text-xs sm:text-sm font-semibold">{{ $brand['name'] }}</span>
+                <span class="block truncate text-[0.65rem] sm:text-xs text-white/70">{{ $brand['tagline'] }}</span>
             </span>
         </a>
 
         <div class="flex items-center gap-2 md:hidden">
             @guest
-                <a class="inline-flex h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15" href="{{ route('login') }}">
+                <a class="inline-flex h-9 sm:h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-3 text-xs sm:text-sm font-semibold text-white transition hover:bg-white/15" href="{{ route('login') }}">
                     {{ __('ui.sign_in') }}
                 </a>
             @endguest
             <button
-                class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white transition hover:bg-white/10"
+                class="inline-flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white transition hover:bg-white/10"
                 type="button"
                 data-site-nav-toggle
                 aria-label="{{ __('ui.open_menu') }}"
                 aria-expanded="false"
                 aria-controls="site-nav-panel"
             >
-                <span class="flex flex-col gap-1.5">
-                    <span class="h-0.5 w-5 rounded-full bg-current"></span>
-                    <span class="h-0.5 w-5 rounded-full bg-current"></span>
-                    <span class="h-0.5 w-5 rounded-full bg-current"></span>
+                <span class="flex flex-col gap-1 sm:gap-1.5">
+                    <span class="h-0.5 w-4 sm:w-5 rounded-full bg-current"></span>
+                    <span class="h-0.5 w-4 sm:w-5 rounded-full bg-current"></span>
+                    <span class="h-0.5 w-4 sm:w-5 rounded-full bg-current"></span>
                 </span>
             </button>
         </div>

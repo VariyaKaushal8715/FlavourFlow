@@ -13,21 +13,34 @@ class Payment extends Model
     protected $fillable = [
         'order_id',
         'user_id',
-        'payment_method',
+        'cashfree_order_id',
+        'cashfree_payment_id',
+        'payment_session_id',
         'provider',
         'transaction_id',
         'gateway_order_id',
+        'razorpay_order_id',
+        'razorpay_payment_id',
+        'razorpay_signature',
         'amount',
         'currency',
         'status',
+        'payment_method',
         'paid_at',
+        'error_message',
         'failure_reason',
+        'cashfree_refund_id',
+        'refund_status',
+        'refunded_amount',
+        'response_data',
         'payment_details',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'refunded_amount' => 'decimal:2',
         'paid_at' => 'datetime',
+        'response_data' => 'array',
         'payment_details' => 'array',
     ];
 
@@ -43,7 +56,7 @@ class Payment extends Model
 
     public function isSuccessful(): bool
     {
-        return $this->status === 'successful';
+        return in_array($this->status, ['successful', 'captured'], true);
     }
 
     public function methodDisplayName(): string
@@ -53,7 +66,8 @@ class Payment extends Model
             'netbanking' => 'Net Banking',
             'upi' => 'UPI Payment',
             'cod' => 'Cash on Delivery (COD)',
-            default => strtoupper($this->payment_method),
+            'online' => 'Online Payment',
+            default => strtoupper((string) $this->payment_method),
         };
     }
 }

@@ -40,6 +40,7 @@ class CartController extends Controller
                 'message' => $product->name.' '.__('ui.added_to_cart'),
                 'count' => $cart->count(),
                 'subtotal' => number_format($cart->subtotal(), 2, '.', ''),
+                'cart_url' => route('cart.index'),
             ]);
         }
 

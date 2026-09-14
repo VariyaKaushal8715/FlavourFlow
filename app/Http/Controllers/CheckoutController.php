@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\OrderPlaced;
-use App\Models\DeliverySetting;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
-use App\Services\AddressValidationService;
 use App\Services\CouponService;
+use App\Services\RazorpayService;
 use App\Support\CartState;
+use App\Support\GujaratLocation;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -36,7 +35,7 @@ class CheckoutController extends Controller
         $profile = $user ? $user->profile()->first() : null;
 
         $subtotal = $cart->subtotal();
-        $deliveryCharge = ($subtotal < 300.00) ? 30.00 : 0.00;
+        $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
         $total = $subtotal + $deliveryCharge;
         $availableCoupons = $this->couponService->getAvailableCouponsForUser($user);
 
@@ -52,86 +51,174 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function store(Request $request, CartState $cart): RedirectResponse
+    public function store(Request $request, CartState $cart): RedirectResponse|JsonResponse
     {
-        if ($cart->count() === 0) {
-            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
-        }
+        try {
+            if ($cart->count() === 0) {
+                return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+            }
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'mobile' => ['required', 'string', 'regex:/^[0-9+\s-]{10,15}$/'],
-            'email' => ['required', 'email', 'max:255'],
-            'address' => ['required', 'string', 'max:500'],
-            'city' => ['required', 'string', 'max:100'],
-            'state' => ['required', 'string', 'max:100'],
-            'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
-            'country' => ['required', 'string', 'max:100'],
-            'payment_method' => ['required', 'string', 'in:cod,online,upi,card,netbanking,wallet'],
-            'online_payment_method' => ['nullable', 'string', 'in:upi,card,netbanking,wallet'],
-            'delivery_option' => ['nullable', 'string', 'in:standard,express'],
-            'coupon_code' => ['nullable', 'string', 'max:50'],
-            // Conditional fields for online payment methods
-            'upi_id' => ['required_if:payment_method,upi', 'required_if:online_payment_method,upi', 'string', 'max:255'],
-            'card_number' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'max:255'],
-            'card_name' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'max:255'],
-            'card_expiry' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'regex:/^(0[1-9]|1[0-2])\/\d{2}$/'],
-            'card_cvv' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'regex:/^[0-9]{3,4}$/'],
-            'netbanking_bank' => ['required_if:payment_method,netbanking', 'required_if:online_payment_method,netbanking', 'string', 'max:255'],
-            'wallet_provider' => ['required_if:payment_method,wallet', 'required_if:online_payment_method,wallet', 'string', 'max:255'],
-        ]);
-
-        $onlinePaymentMethods = ['upi', 'card', 'netbanking', 'wallet'];
-        $selectedPaymentMethod = $validated['payment_method'];
-        $onlinePaymentMethod = $validated['online_payment_method'] ?? null;
-
-        if (in_array($selectedPaymentMethod, $onlinePaymentMethods, true)) {
-            $onlinePaymentMethod = $selectedPaymentMethod;
-            $validated['payment_method'] = 'online';
-        }
-
-        $deliverySetting = DeliverySetting::current();
-        if (! $deliverySetting->isDeliverable($validated['country'], $validated['state'] ?? null, $validated['city'] ?? null)) {
-            throw ValidationException::withMessages([
-                'country' => 'Sorry, we don’t deliver to this location.',
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'mobile' => ['required', 'string', 'regex:/^[0-9+\s-]{10,15}$/'],
+                'email' => ['required', 'email', 'max:255'],
+                'address' => [
+                    'required', 'string', 'max:500',
+                    function ($attribute, $value, $fail) {
+                        if (! GujaratLocation::isValidAddress($value)) {
+                            $fail('Only Gujarat addresses are supported.');
+                        }
+                    },
+                ],
+                'city' => [
+                    'required', 'string', 'max:100',
+                    function ($attribute, $value, $fail) {
+                        if (! GujaratLocation::isGujaratCity($value)) {
+                            $fail('Only Gujarat cities are supported.');
+                        }
+                    },
+                ],
+                'state' => [
+                    'required', 'string', 'max:100',
+                    function ($attribute, $value, $fail) {
+                        if (! GujaratLocation::isGujaratState($value)) {
+                            $fail('Only Gujarat state is supported.');
+                        }
+                    },
+                ],
+                'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
+                'country' => ['required', 'string', 'max:100'],
+                'payment_method' => ['required', 'string', 'in:cod,online'],
+                'delivery_option' => ['nullable', 'string', 'in:standard,express'],
+                'coupon_code' => ['nullable', 'string', 'max:50'],
             ]);
-        }
 
-        foreach ($cart->items() as $item) {
-            /** @var Product $itemProduct */
-            $itemProduct = $item['product'];
+            $razorpayService = app(RazorpayService::class);
 
-            if (! $itemProduct->isDeliverableTo($validated['country'], $validated['state'], $validated['city'])) {
-                $location = implode(', ', array_filter([$validated['city'], $validated['state'], $validated['country']]));
+            if ($validated['payment_method'] === 'online') {
+                // For online payment: Create Order in Pending status without reducing stock or clearing cart yet
+                $order = DB::transaction(function () use ($validated, $cart, $request) {
+                    $orderNumber = 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
+                    $subtotal = $cart->subtotal();
+                    $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
 
-                throw ValidationException::withMessages([
-                    'country' => "Sorry, '{$itemProduct->name}' cannot be delivered to {$location}.",
+                    $couponCode = $validated['coupon_code'] ?? null;
+                    $discountAmount = 0.00;
+                    $couponModel = null;
+
+                    if ($couponCode) {
+                        $couponResult = $this->couponService->validateCoupon($couponCode, $request->user(), $subtotal, 'online');
+
+                        if (! $couponResult['valid']) {
+                            throw ValidationException::withMessages([
+                                'coupon_code' => $couponResult['error'] ?: 'The coupon code is invalid or expired.',
+                            ]);
+                        }
+
+                        $discountAmount = $couponResult['discount'];
+                        $couponModel = $couponResult['coupon'];
+                    }
+
+                    $totalAmount = max(0.00, $subtotal - $discountAmount + $deliveryCharge);
+
+                    $order = Order::create([
+                        'order_number' => $orderNumber,
+                        'user_id' => $request->user()->id,
+                        'status' => 'Pending',
+                        'name' => $validated['name'],
+                        'mobile' => $validated['mobile'],
+                        'email' => $validated['email'],
+                        'address' => $validated['address'],
+                        'city' => $validated['city'],
+                        'state' => $validated['state'],
+                        'pincode' => $validated['pincode'],
+                        'country' => $validated['country'],
+                        'payment_method' => 'online',
+                        'coupon_code' => $couponCode,
+                        'coupon_id' => null,
+                        'discount_amount' => $discountAmount,
+                        'earned_coupon_id' => null,
+                        'subtotal' => $subtotal,
+                        'delivery_charge' => $deliveryCharge,
+                        'total_amount' => $totalAmount,
+                    ]);
+
+                    if ($couponModel) {
+                        $this->couponService->recordUsage($couponModel, $request->user(), $order, $discountAmount);
+                    }
+
+                    // Save Order Items without decrementing stock yet
+                    foreach ($cart->items() as $item) {
+                        $product = Product::findOrFail($item['product']->id);
+
+                        if ($product->quantity < $item['quantity']) {
+                            throw ValidationException::withMessages([
+                                'cart' => "The product '{$product->name}' only has {$product->quantity} units left in stock.",
+                            ]);
+                        }
+
+                        OrderItem::create([
+                            'order_id' => $order->id,
+                            'product_id' => $product->id,
+                            'product_name' => $product->name,
+                            'product_slug' => $product->slug,
+                            'sku' => $product->sku,
+                            'unit' => $item['unit'],
+                            'quantity' => $item['quantity'],
+                            'unit_price' => $item['unit_price'],
+                            'total_price' => $item['line_total'],
+                        ]);
+                    }
+
+                    return $order;
+                });
+
+                // Create Razorpay Order via API
+                $rzpResponse = $razorpayService->createOrder($order);
+
+                if (! ($rzpResponse['success'] ?? false)) {
+                    throw ValidationException::withMessages([
+                        'payment' => $rzpResponse['message'] ?? 'Failed to initialize Razorpay payment. Please try again.',
+                    ]);
+                }
+
+                // Create initial Payment record in DB
+                Payment::create([
+                    'order_id' => $order->id,
+                    'user_id' => $request->user()->id,
+                    'razorpay_order_id' => $rzpResponse['id'],
+                    'amount' => $order->total_amount,
+                    'currency' => 'INR',
+                    'status' => 'created',
+                    'payment_method' => 'online',
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'payment_method' => 'online',
+                    'key_id' => $razorpayService->getKeyId(),
+                    'razorpay_order_id' => $rzpResponse['id'],
+                    'amount' => $rzpResponse['amount'],
+                    'currency' => 'INR',
+                    'order_number' => $order->order_number,
+                    'customer_name' => $order->name,
+                    'customer_email' => $order->email,
+                    'customer_mobile' => $order->mobile,
                 ]);
             }
-        }
 
-        try {
-            $order = DB::transaction(function () use ($validated, $cart, $request, $onlinePaymentMethod) {
-                // Generate a unique Order Number
+            // COD Payment Flow
+            $order = DB::transaction(function () use ($validated, $cart, $request) {
                 $orderNumber = 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
-
-                // Calculate checkout totals based on selected delivery option
                 $subtotal = $cart->subtotal();
-                $deliveryOption = $validated['delivery_option'] ?? 'standard';
-                $deliveryCharge = $deliveryOption === 'express' ? 99.00 : ($subtotal < 300.00 ? 30.00 : 0.00);
-                $deliveryDays = $deliveryOption === 'express' ? '1-2 days' : '4-5 days';
+                $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
 
                 $couponCode = $validated['coupon_code'] ?? null;
                 $discountAmount = 0.00;
                 $couponModel = null;
 
                 if ($couponCode) {
-                    $couponResult = $this->couponService->validateCoupon(
-                        $couponCode,
-                        $request->user(),
-                        $subtotal,
-                        $validated['payment_method']
-                    );
+                    $couponResult = $this->couponService->validateCoupon($couponCode, $request->user(), $subtotal, 'cod');
 
                     if (! $couponResult['valid']) {
                         throw ValidationException::withMessages([
@@ -145,18 +232,10 @@ class CheckoutController extends Controller
 
                 $totalAmount = max(0.00, $subtotal - $discountAmount + $deliveryCharge);
 
-                // Additional address validation using the new service
-                $addressResult = AddressValidationService::validate($validated);
-                if ($addressResult !== AddressValidationService::VALID) {
-                    throw ValidationException::withMessages([
-                        'address' => AddressValidationService::message($addressResult),
-                    ]);
-                }
-
                 $order = Order::create([
                     'order_number' => $orderNumber,
                     'user_id' => $request->user()->id,
-                    'status' => $validated['payment_method'] === 'online' ? 'Confirmed' : 'Pending',
+                    'status' => 'Pending',
                     'name' => $validated['name'],
                     'mobile' => $validated['mobile'],
                     'email' => $validated['email'],
@@ -165,41 +244,20 @@ class CheckoutController extends Controller
                     'state' => $validated['state'],
                     'pincode' => $validated['pincode'],
                     'country' => $validated['country'],
-                    'payment_method' => $validated['payment_method'],
-                    'delivery_option' => $deliveryOption,
-                    'delivery_days' => $deliveryDays,
+                    'payment_method' => 'cod',
                     'coupon_code' => $couponCode,
+                    'coupon_id' => null,
                     'discount_amount' => $discountAmount,
+                    'earned_coupon_id' => null,
                     'subtotal' => $subtotal,
                     'delivery_charge' => $deliveryCharge,
                     'total_amount' => $totalAmount,
-                    'confirmed_at' => $validated['payment_method'] === 'online' ? now() : null,
                 ]);
 
-                // Record coupon usage if applied
                 if ($couponModel) {
                     $this->couponService->recordUsage($couponModel, $request->user(), $order, $discountAmount);
                 }
 
-                if ($validated['payment_method'] === 'online') {
-                    Payment::create([
-                        'order_id' => $order->id,
-                        'user_id' => $request->user()->id,
-                        'payment_method' => $onlinePaymentMethod ?? 'card',
-                        'provider' => 'demo',
-                        'transaction_id' => 'DEMO-'.strtoupper(Str::random(12)),
-                        'amount' => $totalAmount,
-                        'currency' => 'INR',
-                        'status' => 'successful',
-                        'paid_at' => now(),
-                        'payment_details' => [
-                            'mode' => 'checkout_demo',
-                            'selected_method' => $onlinePaymentMethod,
-                        ],
-                    ]);
-                }
-
-                // Validate stock, decrement inventory, and save Order Items
                 foreach ($cart->items() as $item) {
                     $product = Product::lockForUpdate()->findOrFail($item['product']->id);
 
@@ -209,10 +267,8 @@ class CheckoutController extends Controller
                         ]);
                     }
 
-                    // Reduce product inventory
                     $product->decrement('quantity', $item['quantity']);
 
-                    // Save Order Item
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $product->id,
@@ -226,31 +282,28 @@ class CheckoutController extends Controller
                     ]);
                 }
 
-                // Generate automatic reward coupon on confirmed online payment
-                if ($order->payment_method === 'online') {
-                    $this->couponService->generateRewardCouponForOrder($order);
-                }
-
-                // Clear the Cart
                 $cart->clear();
 
                 return $order;
             });
 
-            // Dispatch Order Confirmation Notifications (WhatsApp + Email for Customer and Admin)
-            try {
-                OrderPlaced::dispatch($order);
-            } catch (\Throwable $notificationException) {
-                Log::error('OrderPlaced event error: '.$notificationException->getMessage());
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'payment_method' => 'cod',
+                    'redirect_url' => route('checkout.success'),
+                ]);
             }
+
+            session()->put('placed_order_id', $order->id);
 
             return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
         } catch (ValidationException $e) {
-            if (isset($e->errors()['cart'])) {
-                return redirect()->route('cart.index')->withErrors($e->errors());
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'errors' => $e->errors()], 422);
             }
 
-            return back()->withInput()->withErrors($e->errors());
+            return redirect()->route('cart.index')->withErrors($e->errors());
         }
     }
 
@@ -271,6 +324,95 @@ class CheckoutController extends Controller
         ]);
     }
 
+    public function verifyRazorpayPayment(Request $request, CartState $cart): JsonResponse
+    {
+        $validated = $request->validate([
+            'razorpay_order_id' => ['required', 'string'],
+            'razorpay_payment_id' => ['required', 'string'],
+            'razorpay_signature' => ['required', 'string'],
+        ]);
+
+        $razorpayOrderId = $validated['razorpay_order_id'];
+        $razorpayPaymentId = $validated['razorpay_payment_id'];
+        $signature = $validated['razorpay_signature'];
+
+        $payment = Payment::where('razorpay_order_id', $razorpayOrderId)->first();
+
+        if (! $payment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment record not found for this order.',
+            ], 404);
+        }
+
+        $order = $payment->order;
+        $razorpayService = app(RazorpayService::class);
+
+        // Verify Razorpay signature server-side
+        $isValidSignature = $razorpayService->verifySignature($razorpayOrderId, $razorpayPaymentId, $signature);
+
+        if (! $isValidSignature) {
+            $payment->update([
+                'status' => 'failed',
+                'failure_reason' => 'Invalid Razorpay payment signature.',
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Razorpay payment signature verification failed.',
+            ], 400);
+        }
+
+        // Perform atomic completion: Payment -> Captured, Order -> Confirmed, Stock -> Decremented, Cart -> Cleared
+        try {
+            DB::transaction(function () use ($order, $payment, $razorpayPaymentId, $signature, $cart) {
+                // Update Payment Record
+                $payment->update([
+                    'razorpay_payment_id' => $razorpayPaymentId,
+                    'razorpay_signature' => $signature,
+                    'status' => 'captured',
+                    'paid_at' => now(),
+                ]);
+
+                // Update Order Status if not already confirmed
+                if ($order->status !== 'Confirmed') {
+                    $order->update([
+                        'status' => 'Confirmed',
+                        'confirmed_at' => now(),
+                    ]);
+
+                    // Decrement Inventory Stock
+                    foreach ($order->items as $item) {
+                        $product = Product::lockForUpdate()->find($item->product_id);
+                        if ($product) {
+                            $product->decrement('quantity', min($product->quantity, $item->quantity));
+                        }
+                    }
+                }
+
+                // Clear Cart
+                $cart->clear();
+            });
+
+            $this->couponService->generateRewardCouponForOrder($order->refresh());
+
+            session()->put('placed_order_id', $order->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment verified successfully.',
+                'redirect_url' => route('checkout.success'),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Razorpay Verification Completion Error: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process payment completion: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function applyCoupon(Request $request, CartState $cart): JsonResponse
     {
         $validated = $request->validate([
@@ -281,12 +423,7 @@ class CheckoutController extends Controller
 
         $subtotal = $cart->subtotal();
         $paymentMethod = $validated['payment_method'] ?? 'cod';
-        $couponResult = $this->couponService->validateCoupon(
-            $validated['coupon_code'],
-            $request->user(),
-            $subtotal,
-            $paymentMethod
-        );
+        $couponResult = $this->couponService->validateCoupon($validated['coupon_code'], $request->user(), $subtotal, $paymentMethod);
 
         if (! $couponResult['valid']) {
             return response()->json([
@@ -296,10 +433,8 @@ class CheckoutController extends Controller
         }
 
         $discount = $couponResult['discount'];
-        $deliveryOption = $validated['delivery_option'] ?? 'standard';
-        $deliveryCharge = $deliveryOption === 'express' ? 99.00 : ($subtotal < 300.00 ? 30.00 : 0.00);
+        $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
         $total = max(0.0, $subtotal - $discount + $deliveryCharge);
-
         $coupon = $couponResult['coupon'];
         $code = $couponResult['type'] === 'coupon' ? $coupon->code : $coupon->coupon_code;
         $type = $couponResult['type'] === 'coupon' ? $coupon->discount_type : $coupon->getDiscountType();

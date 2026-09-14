@@ -4,6 +4,7 @@ use App\Models\Coupon;
 use App\Models\CouponRewardRule;
 use App\Models\CouponUsage;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\CouponService;
@@ -57,11 +58,34 @@ test('online order above 1000 automatically generates a unique 10% reward coupon
         'delivery_option' => 'standard',
     ]);
 
-    $response->assertRedirect(route('checkout.success'));
+    $response->assertSuccessful()
+        ->assertJson([
+            'success' => true,
+            'payment_method' => 'online',
+        ]);
 
     $order = Order::where('user_id', $user->id)->latest()->first();
     expect($order)->not->toBeNull();
     expect($order->payment_method)->toBe('online');
+    expect($order->status)->toBe('Pending');
+    expect($order->earned_coupon_id)->toBeNull();
+
+    $payment = Payment::where('order_id', $order->id)->first();
+    expect($payment)->not->toBeNull();
+
+    $verifyResponse = $this->actingAs($user)->postJson(route('checkout.razorpay.verify'), [
+        'razorpay_order_id' => $payment->razorpay_order_id,
+        'razorpay_payment_id' => 'pay_test_123',
+        'razorpay_signature' => 'demo-signature',
+    ]);
+
+    $verifyResponse->assertSuccessful()
+        ->assertJson([
+            'success' => true,
+        ]);
+
+    $order->refresh();
+    expect($order->status)->toBe('Confirmed');
     expect($order->earned_coupon_id)->not->toBeNull();
 
     $coupon = Coupon::find($order->earned_coupon_id);
@@ -83,7 +107,7 @@ test('online order above 2000 automatically generates a 15% tier reward coupon',
         'unit' => '100g',
     ]);
 
-    $this->actingAs($user)->post(route('checkout.store'), [
+    $this->actingAs($user)->postJson(route('checkout.store'), [
         'name' => 'Kaushal Test',
         'mobile' => '9876543210',
         'email' => 'kaushal@example.com',
@@ -97,6 +121,15 @@ test('online order above 2000 automatically generates a 15% tier reward coupon',
     ]);
 
     $order = Order::where('user_id', $user->id)->latest()->first();
+    $payment = Payment::where('order_id', $order->id)->first();
+
+    $this->actingAs($user)->postJson(route('checkout.razorpay.verify'), [
+        'razorpay_order_id' => $payment->razorpay_order_id,
+        'razorpay_payment_id' => 'pay_test_456',
+        'razorpay_signature' => 'demo-signature',
+    ])->assertSuccessful();
+
+    $order->refresh();
     $coupon = Coupon::find($order->earned_coupon_id);
 
     expect((float) $coupon->discount_value)->toBe(15.00);

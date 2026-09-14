@@ -155,8 +155,9 @@
                                 class="mt-2 w-full rounded-2xl border border-amber-200/80 bg-amber-50/30 px-4 py-3 text-sm text-zinc-950 shadow-sm outline-none transition hover:border-amber-300 hover:bg-white focus:border-brand-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/15"
                                 type="text"
                                 name="state"
-                                value="{{ old('state', $profile?->state) }}"
+                                value="{{ old('state', $profile?->state ?: 'Gujarat') }}"
                                 autocomplete="address-level1"
+                                readonly
                                 required
                             >
                             @error('state')

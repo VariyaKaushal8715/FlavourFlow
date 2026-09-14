@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\RefundRequest;
 use App\Models\ReturnRequest;
+use App\Services\CashfreeService;
 use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -147,6 +149,26 @@ class AdminOrderController extends Controller
         $refundRequest->update([
             'status' => $validated['status'],
         ]);
+
+        $order = $refundRequest->order;
+        if ($order) {
+            // Trigger Cashfree API Refund if payment was completed via Cashfree
+            if ($validated['status'] === 'Completed') {
+                $payment = Payment::where('order_id', $order->id)->whereNotNull('cashfree_order_id')->first();
+                if ($payment && $payment->status === 'captured') {
+                    $cashfreeService = app(CashfreeService::class);
+                    $refundRes = $cashfreeService->initiateRefund($payment, (float) $refundRequest->amount, $refundRequest->reason);
+
+                    if ($refundRes['success'] ?? false) {
+                        $payment->update([
+                            'cashfree_refund_id' => $refundRes['refund_id'] ?? null,
+                            'refund_status' => $refundRes['refund_status'] ?? 'SUCCESS',
+                            'refunded_amount' => $refundRes['refund_amount'] ?? $refundRequest->amount,
+                        ]);
+                    }
+                }
+            }
+        }
 
         return redirect()->back()->with('success', 'Refund request status updated successfully.');
     }

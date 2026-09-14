@@ -24,20 +24,9 @@ class AdminProfile extends Model
         'state',
         'country',
         'postal_code',
-        'pincode',
         'date_of_birth',
         'gender',
     ];
-
-    public function setPincodeAttribute($value): void
-    {
-        $this->attributes['postal_code'] = $value;
-    }
-
-    public function getPincodeAttribute(): ?string
-    {
-        return $this->attributes['postal_code'] ?? null;
-    }
 
     /**
      * Get the attributes that should be cast.

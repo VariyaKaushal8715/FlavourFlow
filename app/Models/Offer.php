@@ -28,21 +28,6 @@ class Offer extends Model
     /** @use HasFactory<OfferFactory> */
     use HasFactory;
 
-    protected $fillable = [
-        'eyebrow',
-        'title',
-        'description',
-        'discount_label',
-        'coupon_code',
-        'terms',
-        'starts_at',
-        'ends_at',
-        'priority',
-        'image_path',
-        'is_featured',
-        'is_active',
-    ];
-
     protected $attributes = [
         'eyebrow' => 'Limited-time offer',
         'priority' => 50,
