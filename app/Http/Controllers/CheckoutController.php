@@ -63,9 +63,6 @@ class CheckoutController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'mobile' => ['required', 'string', 'regex:/^[0-9+\s-]{10,15}$/'],
                 'email' => ['required', 'email', 'max:255'],
-                'address' => [
-                    'required', 'string', 'max:500',
-                    function ($attribute, $value, $fail) {
                 'address' => ['required', 'string', 'max:500'],
                 'city' => ['required', 'string', 'max:100'],
                 'state' => ['required', 'string', 'max:100'],
