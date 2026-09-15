@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Services\EmailNotificationService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -77,8 +76,6 @@ class Order extends Model
                         'status' => $status,
                         'message' => $messages[$status],
                     ]);
-
-                    app(EmailNotificationService::class)->sendOrderStatusChanged($order);
                 }
             }
         });

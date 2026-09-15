@@ -6,8 +6,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\DeliverySetting;
 use App\Services\CouponService;
-use App\Services\EmailNotificationService;
 use App\Services\RazorpayService;
 use App\Support\CartState;
 use App\Support\GujaratLocation;
@@ -23,8 +23,7 @@ use Illuminate\Validation\ValidationException;
 class CheckoutController extends Controller
 {
     public function __construct(
-        protected CouponService $couponService,
-        protected EmailNotificationService $emailNotifications
+        protected CouponService $couponService
     ) {}
 
     public function index(Request $request, CartState $cart): View|RedirectResponse
@@ -96,6 +95,26 @@ class CheckoutController extends Controller
             ]);
 
             $razorpayService = app(RazorpayService::class);
+            $deliverySetting = DeliverySetting::current();
+
+            if (! $deliverySetting->isDeliverable($validated['country'], $validated['state'] ?? null, $validated['city'] ?? null)) {
+                throw ValidationException::withMessages([
+                    'country' => 'Sorry, we do not deliver to this location.',
+                ]);
+            }
+
+            foreach ($cart->items() as $item) {
+                /** @var Product $product */
+                $product = $item['product'];
+
+                if (! $product->isDeliverableTo($validated['country'], $validated['state'] ?? null, $validated['city'] ?? null)) {
+                    $location = implode(', ', array_filter([$validated['city'] ?? null, $validated['state'] ?? null, $validated['country']]));
+
+                    throw ValidationException::withMessages([
+                        'country' => "Sorry, '{$product->name}' cannot be delivered to {$location}.",
+                    ]);
+                }
+            }
 
             if ($validated['payment_method'] === 'online') {
                 // For online payment: Create Order in Pending status without reducing stock or clearing cart yet
@@ -195,8 +214,6 @@ class CheckoutController extends Controller
                     'payment_method' => 'online',
                 ]);
 
-                $this->emailNotifications->sendOrderPlaced($order);
-
                 return response()->json([
                     'success' => true,
                     'payment_method' => 'online',
@@ -290,8 +307,6 @@ class CheckoutController extends Controller
 
                 return $order;
             });
-
-            $this->emailNotifications->sendOrderPlaced($order);
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -400,8 +415,6 @@ class CheckoutController extends Controller
                 $cart->clear();
             });
 
-            $payment->refresh();
-            $this->emailNotifications->sendPaymentSuccessful($payment);
             $this->couponService->generateRewardCouponForOrder($order->refresh());
 
             session()->put('placed_order_id', $order->id);

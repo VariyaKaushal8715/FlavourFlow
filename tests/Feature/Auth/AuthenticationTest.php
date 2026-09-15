@@ -1,11 +1,8 @@
 <?php
 
-use App\Mail\AccountCreatedMail;
-use App\Mail\AdminOrderMail;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 
 it('shows only the new customer form on the registration page', function (): void {
@@ -27,8 +24,6 @@ it('shows only the existing customer form on the login page', function (): void 
 });
 
 it('registers a new user with a hashed password and logs them in', function (): void {
-    Mail::fake();
-
     $response = $this->post(route('register.submit'), [
         'full_name' => 'Asha Patel',
         'username' => 'asha_spice',
@@ -45,9 +40,6 @@ it('registers a new user with a hashed password and logs them in', function (): 
     expect($user->name)->toBe('Asha Patel');
     expect($user->username)->toBe('asha_spice');
     expect(Hash::check('Password123!', $user->password))->toBeTrue();
-
-    Mail::assertQueued(AccountCreatedMail::class, fn (AccountCreatedMail $mail): bool => $mail->user->is($user));
-    Mail::assertQueued(AdminOrderMail::class, fn (AdminOrderMail $mail): bool => $mail->event === 'new_user_registration' && $mail->user?->is($user));
 });
 
 it('lets a user sign in with their username', function (): void {
