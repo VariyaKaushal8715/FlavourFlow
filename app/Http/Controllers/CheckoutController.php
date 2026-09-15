@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DeliverySetting;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
-use App\Models\DeliverySetting;
 use App\Services\CouponService;
 use App\Services\RazorpayService;
 use App\Support\CartState;
@@ -66,27 +66,9 @@ class CheckoutController extends Controller
                 'address' => [
                     'required', 'string', 'max:500',
                     function ($attribute, $value, $fail) {
-                        if (! GujaratLocation::isValidAddress($value)) {
-                            $fail('Only Gujarat addresses are supported.');
-                        }
-                    },
-                ],
-                'city' => [
-                    'required', 'string', 'max:100',
-                    function ($attribute, $value, $fail) {
-                        if (! GujaratLocation::isGujaratCity($value)) {
-                            $fail('Only Gujarat cities are supported.');
-                        }
-                    },
-                ],
-                'state' => [
-                    'required', 'string', 'max:100',
-                    function ($attribute, $value, $fail) {
-                        if (! GujaratLocation::isGujaratState($value)) {
-                            $fail('Only Gujarat state is supported.');
-                        }
-                    },
-                ],
+                'address' => ['required', 'string', 'max:500'],
+                'city' => ['required', 'string', 'max:100'],
+                'state' => ['required', 'string', 'max:100'],
                 'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
                 'country' => ['required', 'string', 'max:100'],
                 'payment_method' => ['required', 'string', 'in:cod,online'],
