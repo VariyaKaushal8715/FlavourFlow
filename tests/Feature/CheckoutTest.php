@@ -63,7 +63,7 @@ test('authenticated user with items can view checkout page', function () {
         ->assertSee('Rs. 200.00');
 });
 
-test('checkout renders every online payment method and its fields', function () {
+test('checkout renders online payment option', function () {
     $user = User::factory()->create();
     $product = Product::factory()->create(['price' => 100, 'quantity' => 10]);
 
@@ -84,19 +84,10 @@ test('checkout renders every online payment method and its fields', function () 
     $this->actingAs($user)
         ->get(route('checkout.index'))
         ->assertSuccessful()
-        ->assertSee('Choose Payment Method')
-        ->assertSee('UPI')
-        ->assertSee('Credit / Debit Card')
-        ->assertSee('Net Banking')
-        ->assertSee('Wallets')
-        ->assertSee('name="upi_id"', false)
-        ->assertSee('name="card_number"', false)
-        ->assertSee('name="card_name"', false)
-        ->assertSee('name="card_expiry"', false)
-        ->assertSee('name="card_cvv"', false)
-        ->assertSee('name="netbanking_bank"', false)
-        ->assertSee('name="wallet_provider"', false)
-        ->assertSee('Test / Demo Payment');
+        ->assertSee('Select Payment Method')
+        ->assertSee('Cash on Delivery (COD)')
+        ->assertSee('Online Payment')
+        ->assertSee('Razorpay Payment Gateway');
 });
 
 test('checkout validation rules are enforced', function () {
@@ -126,6 +117,8 @@ test('successful checkout saves order, clear cart, reduces stock, and redirects'
     Mail::fake();
 
     $user = User::factory()->create();
+    User::factory()->create(['is_admin' => true, 'email' => 'admin@example.com']);
+
     $product = Product::factory()->create(['price' => 100, 'quantity' => 10]);
 
     CartItem::query()->create([
