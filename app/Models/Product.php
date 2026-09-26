@@ -32,6 +32,8 @@ use Illuminate\Support\Str;
     'image_path',
     'is_featured',
     'is_active',
+    'delivery_mode',
+    'deliverable_locations',
 ])]
 class Product extends Model
 {
@@ -60,6 +62,8 @@ class Product extends Model
         'image_path',
         'is_featured',
         'is_active',
+        'delivery_mode',
+        'deliverable_locations',
     ];
 
     protected $attributes = [
@@ -71,6 +75,7 @@ class Product extends Model
         'priority' => 50,
         'is_featured' => false,
         'is_active' => true,
+        'delivery_mode' => 'all',
     ];
 
     public function getRouteKeyName(): string
@@ -93,6 +98,7 @@ class Product extends Model
             'priority' => 'integer',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
+            'deliverable_locations' => 'array',
         ];
     }
 
@@ -235,6 +241,56 @@ class Product extends Model
             'rating' => (float) $this->rating,
             'url' => route('products.show', ['product' => $this->slug]),
         ];
+    }
+
+    /**
+     * Determine if this product can be delivered to the specified location.
+     */
+    public function isDeliverableTo(?string $country, ?string $state = null, ?string $city = null): bool
+    {
+        if ($this->delivery_mode === 'all' || empty($this->delivery_mode)) {
+            return true;
+        }
+
+        if (empty($country)) {
+            return false;
+        }
+
+        $normCountry = DeliverySetting::normalizeCountry($country);
+        $locations = $this->deliverable_locations ?? [];
+
+        if (empty($locations)) {
+            return false;
+        }
+
+        $normState = Str::lower(trim($state ?? ''));
+        $normCity = Str::lower(trim($city ?? ''));
+
+        foreach ($locations as $rule) {
+            $ruleCountry = DeliverySetting::normalizeCountry($rule['country'] ?? '');
+
+            if ($ruleCountry !== $normCountry) {
+                continue;
+            }
+
+            // For international countries, matching country is sufficient
+            if ($ruleCountry !== 'india') {
+                return true;
+            }
+
+            // For India, evaluate State and City hierarchy
+            $ruleState = Str::lower(trim($rule['state'] ?? ''));
+            $ruleCity = Str::lower(trim($rule['city'] ?? ''));
+
+            $stateMatches = empty($ruleState) || $ruleState === 'all' || $ruleState === '*' || ($normState !== '' && $ruleState === $normState);
+            $cityMatches = empty($ruleCity) || $ruleCity === 'all' || $ruleCity === '*' || ($normCity !== '' && $ruleCity === $normCity);
+
+            if ($stateMatches && $cityMatches) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function orderItems(): HasMany

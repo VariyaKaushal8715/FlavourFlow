@@ -7,6 +7,7 @@
     'tone' => 'default',
     'wishlistProductIds' => [],
     'sort' => 'featured',
+    'sortOptions' => null,
     'minPrice' => null,
     'maxPrice' => null,
     'lowestPrice' => 0,
@@ -17,7 +18,6 @@
     $displayEyebrow = $eyebrow ?? __('ui.collection_eyebrow');
     $displayTitle = $title ?? __('ui.collection_title');
     $displayDescription = $description ?? __('ui.collection_desc');
-    $currentSort = $sort ?: 'featured';
     $lowest = (int) $lowestPrice;
     $highest = (int) $highestPrice;
     if ($highest <= $lowest) {
@@ -26,21 +26,49 @@
     $curMin = ($minPrice !== null && $minPrice >= $lowest) ? (int) $minPrice : $lowest;
     $curMax = ($maxPrice !== null && $maxPrice <= $highest && $maxPrice >= $lowest) ? (int) $maxPrice : $highest;
 
-    $sortOptions = [
-        'featured' => __('ui.featured'),
-        'rating' => __('ui.top_rated'),
-        'price_asc' => __('ui.price_low_high'),
-        'price_desc' => __('ui.price_high_low'),
-        'name' => __('ui.name_az'),
-        'newest' => __('ui.newest_arrivals'),
-        'price_range' => __('ui.price_range'),
-    ];
+    // Build dynamic sort options mapping (key => label)
+    $formattedOptions = [];
+    if ($sortOptions instanceof \Illuminate\Support\Collection) {
+        foreach ($sortOptions as $opt) {
+            $formattedOptions[$opt->key] = $opt->label;
+        }
+    } elseif (is_array($sortOptions) && ! empty($sortOptions)) {
+        foreach ($sortOptions as $key => $value) {
+            if (is_object($value)) {
+                $formattedOptions[$value->key] = $value->label;
+            } elseif (is_array($value) && isset($value['key'], $value['label'])) {
+                $formattedOptions[$value['key']] = $value['label'];
+            } else {
+                $formattedOptions[$key] = $value;
+            }
+        }
+    } else {
+        $formattedOptions = [
+            'featured' => __('ui.featured'),
+            'rating' => __('ui.top_rated'),
+            'price_asc' => __('ui.price_low_high'),
+            'price_desc' => __('ui.price_high_low'),
+            'name' => __('ui.name_az'),
+            'newest' => __('ui.newest_arrivals'),
+            'best_selling' => 'Best Selling',
+            'discount' => 'Biggest Discounts',
+            'price_range' => __('ui.price_range'),
+        ];
+    }
 
-    $hasActiveFilters = ($currentSort !== 'featured') || ($minPrice !== null && $minPrice > $lowest) || ($maxPrice !== null && $maxPrice < $highest);
+    $firstOptionKey = array_key_first($formattedOptions) ?? 'featured';
+    $defaultOptionKey = array_key_exists('featured', $formattedOptions) ? 'featured' : $firstOptionKey;
 
-    $triggerLabel = $sortOptions[$currentSort] ?? $sortOptions['featured'];
+    $currentSort = $sort ?: $defaultOptionKey;
+    if (! array_key_exists($currentSort, $formattedOptions)) {
+        $currentSort = $defaultOptionKey;
+    }
+
+    $hasActiveFilters = ($currentSort !== $defaultOptionKey) || ($minPrice !== null && $minPrice > $lowest) || ($maxPrice !== null && $maxPrice < $highest);
+
+    $triggerLabel = $formattedOptions[$currentSort] ?? ($formattedOptions[$defaultOptionKey] ?? 'Sort Products');
     if ($currentSort === 'price_range') {
-        $triggerLabel = __('ui.price_range') . ': ₹' . $curMin . ' – ₹' . $curMax;
+        $triggerLabel = ($formattedOptions['price_range'] ?? __('ui.price_range')) . ': ₹' . $curMin . ' – ₹' . $curMax;
     }
 @endphp
 
@@ -53,21 +81,20 @@
 >
     <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
         <div @class([
-            'grid gap-6 border-b border-zinc-200 lg:grid-cols-[0.8fr_1.2fr_auto] lg:items-end',
+            'flex flex-col gap-6 border-b border-zinc-200 lg:flex-row lg:items-end lg:justify-between',
             'pb-10' => $tone === 'default',
             'pb-6' => $tone === 'offer',
         ])>
-            <div data-reveal>
+            <div class="max-w-2xl" data-reveal>
                 <p class="text-sm font-semibold text-brand-primary">{{ $displayEyebrow }}</p>
                 <h2 @class([
-                    'mt-3 text-3xl font-semibold leading-tight text-zinc-950',
-                    'sm:text-5xl' => $tone === 'default',
+                    'mt-3 text-3xl font-semibold leading-tight text-zinc-950 sm:text-5xl',
                     'sm:text-4xl' => $tone === 'offer',
                 ])>{{ $displayTitle }}</h2>
+                <p class="mt-4 text-base leading-8 text-zinc-600">
+                    {{ $displayDescription }}
+                </p>
             </div>
-            <p class="max-w-2xl text-base leading-8 text-zinc-600 lg:justify-self-end" data-reveal>
-                {{ $displayDescription }}
-            </p>
             @if ($tone === 'default')
                 <form
                     id="product-filter-form"
@@ -125,10 +152,10 @@
                                 id="sort-dropdown-menu"
                                 role="listbox"
                                 tabindex="-1"
-                                class="absolute left-0 right-0 z-30 mt-2 origin-top rounded-2xl border border-amber-200/80 bg-white p-2 shadow-2xl transition-all duration-200 ease-out invisible opacity-0 scale-95 pointer-events-none"
+                                class="absolute left-0 right-0 z-30 mt-2 origin-top rounded-2xl border border-amber-200/80 bg-white p-2 shadow-2xl transition-all duration-200 ease-out invisible opacity-0 scale-95 pointer-events-none max-h-80 overflow-y-auto"
                             >
                                 <div class="space-y-1">
-                                    @foreach ($sortOptions as $key => $label)
+                                    @foreach ($formattedOptions as $key => $label)
                                         <div
                                             role="option"
                                             data-value="{{ $key }}"
@@ -140,6 +167,14 @@
                                                     <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
                                                     </svg>
+                                                @elseif ($key === 'best_selling')
+                                                    <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /></svg>
+                                                @elseif ($key === 'rating')
+                                                    <svg class="h-4 w-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                                @elseif ($key === 'discount')
+                                                    <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                @elseif ($key === 'newest')
+                                                    <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" /></svg>
                                                 @endif
                                                 {{ $label }}
                                             </span>
@@ -230,18 +265,12 @@
         </div>
 
         @if (empty($products))
-            <div class="mt-12 rounded-3xl border border-dashed border-amber-200 bg-amber-50/40 p-12 text-center" data-reveal>
-                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-brand-primary shadow-sm">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </div>
-                <h3 class="mt-4 text-lg font-semibold text-zinc-950">{{ __('ui.no_products_found') }}</h3>
-                <p class="mt-2 text-sm text-zinc-500">Try adjusting your price range or clearing active filters to view all spices.</p>
-                <div class="mt-6">
+            <div class="mt-12 rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center" data-reveal>
+                <h3 class="text-lg font-semibold text-zinc-950">{{ __('ui.no_products_found') }}</h3>
+                <div class="mt-4">
                     <a
                         href="{{ route('home') }}#{{ $sectionId }}"
-                        class="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-brand-primary active:scale-95"
+                        class="inline-flex items-center justify-center rounded-lg bg-zinc-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
                     >
                         {{ __('ui.clear_filters') }}
                     </a>
@@ -261,7 +290,7 @@
                         $productId = $product['id'] ?? null;
                         $isWishlisted = $productId && in_array($productId, $wishlistProductIds, true);
                     @endphp
-                    <article class="product-tile group relative overflow-hidden rounded-lg border border-zinc-200 bg-white transition-all duration-300 hover:shadow-md" data-reveal data-reveal-delay="{{ ($index % 3) * 90 }}">
+                    <article class="product-tile group relative overflow-hidden rounded-lg border border-zinc-200 bg-white" data-reveal data-reveal-delay="{{ ($index % 3) * 90 }}">
                         <a class="block h-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500" href="{{ $product['url'] ?? '#products' }}" aria-label="View {{ $product['name'] }} details">
                             <div class="relative aspect-[4/3] overflow-hidden bg-zinc-900">
                                 <img class="h-full w-full object-cover transition duration-700 group-hover:scale-105" src="{{ asset($product['image']) }}" alt="{{ $product['name'] }}">
@@ -405,163 +434,181 @@
         </style>
 
         <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const trigger = document.getElementById('custom-sort-trigger');
-                const menu = document.getElementById('sort-dropdown-menu');
-                const chevron = document.getElementById('sort-chevron');
-                const sortInput = document.getElementById('product-sort-input');
-                const hiddenMinPrice = document.getElementById('hidden-min-price');
-                const hiddenMaxPrice = document.getElementById('hidden-max-price');
-                const selectedLabel = document.getElementById('selected-sort-label');
-                const options = document.querySelectorAll('.sort-option');
-                const form = document.getElementById('product-filter-form');
-                const gridContainer = document.getElementById('products-grid-container');
+            (() => {
+                const initSortDropdown = () => {
+                    const trigger = document.getElementById('custom-sort-trigger');
+                    const menu = document.getElementById('sort-dropdown-menu');
+                    const chevron = document.getElementById('sort-chevron');
+                    const sortInput = document.getElementById('product-sort-input');
+                    const hiddenMinPrice = document.getElementById('hidden-min-price');
+                    const hiddenMaxPrice = document.getElementById('hidden-max-price');
+                    const selectedLabel = document.getElementById('selected-sort-label');
+                    const options = document.querySelectorAll('.sort-option');
+                    const form = document.getElementById('product-filter-form');
+                    const gridContainer = document.getElementById('products-grid-container');
 
-                const priceRangePanel = document.getElementById('price-range-panel');
-                const minSlider = document.getElementById('range-min-slider');
-                const maxSlider = document.getElementById('range-max-slider');
-                const minText = document.getElementById('slider-min-text');
-                const maxText = document.getElementById('slider-max-text');
-                const highlightBar = document.getElementById('slider-highlight-bar');
+                    const priceRangePanel = document.getElementById('price-range-panel');
+                    const minSlider = document.getElementById('range-min-slider');
+                    const maxSlider = document.getElementById('range-max-slider');
+                    const minText = document.getElementById('slider-min-text');
+                    const maxText = document.getElementById('slider-max-text');
+                    const highlightBar = document.getElementById('slider-highlight-bar');
 
-                const lowestBound = parseInt("{{ $lowest }}") || 0;
-                const highestBound = parseInt("{{ $highest }}") || 1000;
+                    const lowestBound = parseInt("{{ $lowest }}", 10) || 0;
+                    const highestBound = parseInt("{{ $highest }}", 10) || 1000;
 
-                if (!trigger || !menu) return;
+                    if (!trigger || !menu) return;
 
-                let isOpen = false;
+                    let isOpen = false;
 
-                const updateSliderTrack = () => {
-                    if (!minSlider || !maxSlider || !highlightBar) return;
-                    let v1 = parseInt(minSlider.value);
-                    let v2 = parseInt(maxSlider.value);
+                    const updateSliderTrack = () => {
+                        if (!minSlider || !maxSlider || !highlightBar) return;
+                        let v1 = parseInt(minSlider.value, 10);
+                        let v2 = parseInt(maxSlider.value, 10);
 
-                    if (v1 > v2) {
-                        const tmp = v1;
-                        v1 = v2;
-                        v2 = tmp;
-                    }
+                        if (v1 > v2) {
+                            const tmp = v1;
+                            v1 = v2;
+                            v2 = tmp;
+                        }
 
-                    const range = Math.max(1, highestBound - lowestBound);
-                    const leftPercent = Math.max(0, Math.min(100, ((v1 - lowestBound) / range) * 100));
-                    const rightPercent = Math.max(0, Math.min(100, ((v2 - lowestBound) / range) * 100));
-                    const widthPercent = Math.max(0, rightPercent - leftPercent);
+                        const range = Math.max(1, highestBound - lowestBound);
+                        const leftPercent = Math.max(0, Math.min(100, ((v1 - lowestBound) / range) * 100));
+                        const rightPercent = Math.max(0, Math.min(100, ((v2 - lowestBound) / range) * 100));
+                        const widthPercent = Math.max(0, rightPercent - leftPercent);
 
-                    highlightBar.style.left = leftPercent + '%';
-                    highlightBar.style.width = widthPercent + '%';
+                        highlightBar.style.left = leftPercent + '%';
+                        highlightBar.style.width = widthPercent + '%';
 
-                    if (minText) minText.textContent = v1;
-                    if (maxText) maxText.textContent = v2;
-                    if (hiddenMinPrice) hiddenMinPrice.value = v1;
-                    if (hiddenMaxPrice) hiddenMaxPrice.value = v2;
+                        if (minText) minText.textContent = v1;
+                        if (maxText) maxText.textContent = v2;
+                        if (hiddenMinPrice) hiddenMinPrice.value = v1;
+                        if (hiddenMaxPrice) hiddenMaxPrice.value = v2;
 
-                    if (sortInput.value === 'price_range') {
-                        selectedLabel.textContent = `Price Range: ₹${v1} – ₹${v2}`;
-                    }
-                };
+                        if (sortInput && sortInput.value === 'price_range' && selectedLabel) {
+                            selectedLabel.textContent = `Price Range: ₹${v1} – ₹${v2}`;
+                        }
+                    };
 
-                minSlider?.addEventListener('input', () => {
-                    if (parseInt(minSlider.value) > parseInt(maxSlider.value) - 5) {
-                        minSlider.value = parseInt(maxSlider.value) - 5;
-                    }
-                    minSlider.style.zIndex = '25';
-                    if (maxSlider) maxSlider.style.zIndex = '20';
+                    minSlider?.addEventListener('input', () => {
+                        if (parseInt(minSlider.value, 10) > parseInt(maxSlider.value, 10) - 5) {
+                            minSlider.value = parseInt(maxSlider.value, 10) - 5;
+                        }
+                        minSlider.style.zIndex = '25';
+                        if (maxSlider) maxSlider.style.zIndex = '20';
+                        updateSliderTrack();
+                    });
+
+                    maxSlider?.addEventListener('input', () => {
+                        if (parseInt(maxSlider.value, 10) < parseInt(minSlider.value, 10) + 5) {
+                            maxSlider.value = parseInt(minSlider.value, 10) + 5;
+                        }
+                        maxSlider.style.zIndex = '25';
+                        if (minSlider) minSlider.style.zIndex = '20';
+                        updateSliderTrack();
+                    });
+
                     updateSliderTrack();
-                });
 
-                maxSlider?.addEventListener('input', () => {
-                    if (parseInt(maxSlider.value) < parseInt(minSlider.value) + 5) {
-                        maxSlider.value = parseInt(minSlider.value) + 5;
-                    }
-                    maxSlider.style.zIndex = '25';
-                    if (minSlider) minSlider.style.zIndex = '20';
-                    updateSliderTrack();
-                });
+                    const openMenu = () => {
+                        isOpen = true;
+                        menu.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
+                        menu.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+                        chevron?.classList.add('rotate-180');
+                        trigger.setAttribute('aria-expanded', 'true');
+                    };
 
-                updateSliderTrack();
+                    const closeMenu = () => {
+                        isOpen = false;
+                        menu.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                        menu.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+                        chevron?.classList.remove('rotate-180');
+                        trigger.setAttribute('aria-expanded', 'false');
+                        setTimeout(() => {
+                            if (!isOpen) menu.classList.add('invisible');
+                        }, 200);
+                    };
 
-                const openMenu = () => {
-                    isOpen = true;
-                    menu.classList.remove('invisible', 'opacity-0', 'scale-95', 'pointer-events-none');
-                    menu.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
-                    chevron?.classList.add('rotate-180');
-                    trigger.setAttribute('aria-expanded', 'true');
-                };
+                    trigger.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        isOpen ? closeMenu() : openMenu();
+                    });
 
-                const closeMenu = () => {
-                    isOpen = false;
-                    menu.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
-                    menu.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
-                    chevron?.classList.remove('rotate-180');
-                    trigger.setAttribute('aria-expanded', 'false');
-                    setTimeout(() => {
-                        if (!isOpen) menu.classList.add('invisible');
-                    }, 200);
-                };
-
-                trigger.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    isOpen ? closeMenu() : openMenu();
-                });
-
-                document.addEventListener('click', (e) => {
-                    if (isOpen && !menu.contains(e.target) && !trigger.contains(e.target)) {
-                        closeMenu();
-                    }
-                });
-
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && isOpen) {
-                        closeMenu();
-                        trigger.focus();
-                    }
-                });
-
-                options.forEach((opt) => {
-                    opt.addEventListener('click', (e) => {
-                        const val = opt.getAttribute('data-value');
-                        const labelText = opt.querySelector('span')?.textContent?.trim() || '';
-                        
-                        sortInput.value = val;
-
-                        options.forEach(o => {
-                            const isSelected = o === opt;
-                            o.setAttribute('aria-selected', isSelected ? 'true' : 'false');
-                            const icon = o.querySelectorAll('svg')[o.querySelectorAll('svg').length - 1];
-                            if (isSelected) {
-                                o.className = 'sort-option group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all duration-150 bg-amber-50/90 font-semibold text-brand-primary';
-                                if (icon) icon.className = 'h-4 w-4 text-brand-primary opacity-100';
-                            } else {
-                                o.className = 'sort-option group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all duration-150 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950';
-                                if (icon) icon.className = 'h-4 w-4 text-brand-primary opacity-0 group-hover:opacity-30';
-                            }
-                        });
-
-                        if (val === 'price_range') {
-                            // Expand the embedded price range slider smoothly
-                            priceRangePanel.classList.remove('max-h-0', 'opacity-0');
-                            priceRangePanel.classList.add('max-h-56', 'opacity-100', 'mt-2.5', 'pt-3', 'border-t', 'border-amber-100');
-                            updateSliderTrack();
-                            // Keep menu open so user can drag handles or click Apply
-                        } else {
-                            // Collapse price range slider
-                            priceRangePanel.classList.add('max-h-0', 'opacity-0');
-                            priceRangePanel.classList.remove('max-h-56', 'opacity-100', 'mt-2.5', 'pt-3', 'border-t', 'border-amber-100');
-                            selectedLabel.textContent = labelText;
-                            if (hiddenMinPrice) hiddenMinPrice.value = '';
-                            if (hiddenMaxPrice) hiddenMaxPrice.value = '';
+                    document.addEventListener('click', (e) => {
+                        if (isOpen && !menu.contains(e.target) && !trigger.contains(e.target)) {
                             closeMenu();
                         }
                     });
-                });
 
-                form?.addEventListener('submit', () => {
-                    if (gridContainer) {
-                        gridContainer.classList.add('opacity-50', 'scale-[0.99]');
-                    }
-                });
-            });
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape' && isOpen) {
+                            closeMenu();
+                            trigger.focus();
+                        }
+                    });
+
+                    options.forEach((opt) => {
+                        opt.addEventListener('click', (e) => {
+                            const val = opt.getAttribute('data-value');
+                            const labelText = opt.querySelector('span')?.textContent?.trim() || '';
+                            
+                            if (sortInput) sortInput.value = val;
+
+                            options.forEach(o => {
+                                const isSelected = o === opt;
+                                o.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+                                const checkIcon = o.querySelector('svg:last-of-type');
+                                if (isSelected) {
+                                    o.className = 'sort-option group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all duration-150 bg-amber-50/90 font-semibold text-brand-primary';
+                                    if (checkIcon) {
+                                        checkIcon.classList.remove('opacity-0', 'group-hover:opacity-30');
+                                        checkIcon.classList.add('opacity-100');
+                                    }
+                                } else {
+                                    o.className = 'sort-option group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all duration-150 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950';
+                                    if (checkIcon) {
+                                        checkIcon.classList.remove('opacity-100');
+                                        checkIcon.classList.add('opacity-0', 'group-hover:opacity-30');
+                                    }
+                                }
+                            });
+
+                            if (val === 'price_range') {
+                                if (priceRangePanel) {
+                                    priceRangePanel.classList.remove('max-h-0', 'opacity-0');
+                                    priceRangePanel.classList.add('max-h-56', 'opacity-100', 'mt-2.5', 'pt-3', 'border-t', 'border-amber-100');
+                                }
+                                updateSliderTrack();
+                            } else {
+                                if (priceRangePanel) {
+                                    priceRangePanel.classList.add('max-h-0', 'opacity-0');
+                                    priceRangePanel.classList.remove('max-h-56', 'opacity-100', 'mt-2.5', 'pt-3', 'border-t', 'border-amber-100');
+                                }
+                                if (selectedLabel) selectedLabel.textContent = labelText;
+                                if (hiddenMinPrice) hiddenMinPrice.value = '';
+                                if (hiddenMaxPrice) hiddenMaxPrice.value = '';
+                                closeMenu();
+                            }
+                        });
+                    });
+
+                    form?.addEventListener('submit', () => {
+                        if (sortInput && sortInput.value !== 'price_range') {
+                            if (hiddenMinPrice) hiddenMinPrice.value = '';
+                            if (hiddenMaxPrice) hiddenMaxPrice.value = '';
+                        }
+                        if (gridContainer) {
+                            gridContainer.classList.add('opacity-50', 'scale-[0.99]');
+                        }
+                    });
+                };
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initSortDropdown);
+                } else {
+                    initSortDropdown();
+                }
+            })();
         </script>
     @endif
 </section>
-

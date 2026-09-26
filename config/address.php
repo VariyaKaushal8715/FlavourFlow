@@ -1,4 +1,5 @@
 <?php
+
 return [
     // Enable India‑only delivery restriction (toggle via .env)
     'india_only' => env('INDIA_ONLY', true),
@@ -12,4 +13,3 @@ return [
     // Optional external geocode provider class (must implement GeocodeProviderInterface)
     'geocode_provider' => env('GEOCODE_PROVIDER', null),
 ];
-

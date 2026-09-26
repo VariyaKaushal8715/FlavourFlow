@@ -2,23 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderPlaced;
 use App\Models\DeliverySetting;
-use App\Models\Offer;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
-
+use App\Services\AddressValidationService;
+use App\Services\CouponService;
 use App\Support\CartState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
+    public function __construct(
+        protected CouponService $couponService
+    ) {}
+
     public function index(Request $request, CartState $cart): View|RedirectResponse
     {
         if ($cart->count() === 0) {
@@ -31,6 +38,7 @@ class CheckoutController extends Controller
         $subtotal = $cart->subtotal();
         $deliveryCharge = ($subtotal < 300.00) ? 30.00 : 0.00;
         $total = $subtotal + $deliveryCharge;
+        $availableCoupons = $this->couponService->getAvailableCouponsForUser($user);
 
         return view('checkout.index', [
             'site' => config('personal_site'),
@@ -40,6 +48,7 @@ class CheckoutController extends Controller
             'total' => $total,
             'profile' => $profile,
             'user' => $user,
+            'availableCoupons' => $availableCoupons,
         ]);
     }
 
@@ -58,14 +67,54 @@ class CheckoutController extends Controller
             'state' => ['required', 'string', 'max:100'],
             'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
             'country' => ['required', 'string', 'max:100'],
-            'payment_method' => ['required', 'string', 'in:cod,online'],
+            'payment_method' => ['required', 'string', 'in:cod,online,upi,card,netbanking,wallet'],
+            'online_payment_method' => ['nullable', 'string', 'in:upi,card,netbanking,wallet'],
+            'delivery_option' => ['nullable', 'string', 'in:standard,express'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
+            // Conditional fields for online payment methods
+            'upi_id' => ['required_if:payment_method,upi', 'required_if:online_payment_method,upi', 'string', 'max:255'],
+            'card_number' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'max:255'],
+            'card_name' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'max:255'],
+            'card_expiry' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'regex:/^(0[1-9]|1[0-2])\/\d{2}$/'],
+            'card_cvv' => ['required_if:payment_method,card', 'required_if:online_payment_method,card', 'string', 'regex:/^[0-9]{3,4}$/'],
+            'netbanking_bank' => ['required_if:payment_method,netbanking', 'required_if:online_payment_method,netbanking', 'string', 'max:255'],
+            'wallet_provider' => ['required_if:payment_method,wallet', 'required_if:online_payment_method,wallet', 'string', 'max:255'],
         ]);
 
+        $onlinePaymentMethods = ['upi', 'card', 'netbanking', 'wallet'];
+        $selectedPaymentMethod = $validated['payment_method'];
+        $onlinePaymentMethod = $validated['online_payment_method'] ?? null;
+
+        if (in_array($selectedPaymentMethod, $onlinePaymentMethods, true)) {
+            $onlinePaymentMethod = $selectedPaymentMethod;
+            $validated['payment_method'] = 'online';
+        }
+
+        $deliverySetting = DeliverySetting::current();
+        if (! $deliverySetting->isDeliverable($validated['country'], $validated['state'] ?? null, $validated['city'] ?? null)) {
+            throw ValidationException::withMessages([
+                'country' => 'Sorry, we don’t deliver to this location.',
+            ]);
+        }
+
+        foreach ($cart->items() as $item) {
+            /** @var Product $itemProduct */
+            $itemProduct = $item['product'];
+
+            if (! $itemProduct->isDeliverableTo($validated['country'], $validated['state'], $validated['city'])) {
+                $location = implode(', ', array_filter([$validated['city'], $validated['state'], $validated['country']]));
+
+                throw ValidationException::withMessages([
+                    'country' => "Sorry, '{$itemProduct->name}' cannot be delivered to {$location}.",
+                ]);
+            }
+        }
+
         try {
-            $order = DB::transaction(function () use ($validated, $cart, $request) {
+            $order = DB::transaction(function () use ($validated, $cart, $request, $onlinePaymentMethod) {
                 // Generate a unique Order Number
                 $orderNumber = 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
+
                 // Calculate checkout totals based on selected delivery option
                 $subtotal = $cart->subtotal();
                 $deliveryOption = $validated['delivery_option'] ?? 'standard';
@@ -74,38 +123,40 @@ class CheckoutController extends Controller
 
                 $couponCode = $validated['coupon_code'] ?? null;
                 $discountAmount = 0.00;
+                $couponModel = null;
 
                 if ($couponCode) {
-                    $codeClean = Str::upper(str_replace(' ', '', $couponCode));
-                    $coupon = Offer::whereNotNull('coupon_code')
-                        ->get()
-                        ->first(function ($offer) use ($codeClean) {
-                            return Str::upper(str_replace(' ', '', $offer->coupon_code)) === $codeClean;
-                        });
+                    $couponResult = $this->couponService->validateCoupon(
+                        $couponCode,
+                        $request->user(),
+                        $subtotal,
+                        $validated['payment_method']
+                    );
 
-                    if ($coupon && $coupon->isValidFor($subtotal)) {
-                        $discountAmount = $coupon->calculateDiscount($subtotal);
-                    } else {
+                    if (! $couponResult['valid']) {
                         throw ValidationException::withMessages([
-                            'coupon_code' => 'The coupon code is invalid, expired, or does not meet the requirements.',
+                            'coupon_code' => $couponResult['error'] ?: 'The coupon code is invalid or expired.',
                         ]);
                     }
+
+                    $discountAmount = $couponResult['discount'];
+                    $couponModel = $couponResult['coupon'];
                 }
 
                 $totalAmount = max(0.00, $subtotal - $discountAmount + $deliveryCharge);
 
                 // Additional address validation using the new service
-                $addressResult = \App\Services\AddressValidationService::validate($validated);
-                if ($addressResult !== \App\Services\AddressValidationService::VALID) {
+                $addressResult = AddressValidationService::validate($validated);
+                if ($addressResult !== AddressValidationService::VALID) {
                     throw ValidationException::withMessages([
-                        'address' => \App\Services\AddressValidationService::message($addressResult),
+                        'address' => AddressValidationService::message($addressResult),
                     ]);
                 }
 
                 $order = Order::create([
                     'order_number' => $orderNumber,
                     'user_id' => $request->user()->id,
-                    'status' => 'Pending',
+                    'status' => $validated['payment_method'] === 'online' ? 'Confirmed' : 'Pending',
                     'name' => $validated['name'],
                     'mobile' => $validated['mobile'],
                     'email' => $validated['email'],
@@ -122,7 +173,31 @@ class CheckoutController extends Controller
                     'subtotal' => $subtotal,
                     'delivery_charge' => $deliveryCharge,
                     'total_amount' => $totalAmount,
+                    'confirmed_at' => $validated['payment_method'] === 'online' ? now() : null,
                 ]);
+
+                // Record coupon usage if applied
+                if ($couponModel) {
+                    $this->couponService->recordUsage($couponModel, $request->user(), $order, $discountAmount);
+                }
+
+                if ($validated['payment_method'] === 'online') {
+                    Payment::create([
+                        'order_id' => $order->id,
+                        'user_id' => $request->user()->id,
+                        'payment_method' => $onlinePaymentMethod ?? 'card',
+                        'provider' => 'demo',
+                        'transaction_id' => 'DEMO-'.strtoupper(Str::random(12)),
+                        'amount' => $totalAmount,
+                        'currency' => 'INR',
+                        'status' => 'successful',
+                        'paid_at' => now(),
+                        'payment_details' => [
+                            'mode' => 'checkout_demo',
+                            'selected_method' => $onlinePaymentMethod,
+                        ],
+                    ]);
+                }
 
                 // Validate stock, decrement inventory, and save Order Items
                 foreach ($cart->items() as $item) {
@@ -151,6 +226,11 @@ class CheckoutController extends Controller
                     ]);
                 }
 
+                // Generate automatic reward coupon on confirmed online payment
+                if ($order->payment_method === 'online') {
+                    $this->couponService->generateRewardCouponForOrder($order);
+                }
+
                 // Clear the Cart
                 $cart->clear();
 
@@ -159,9 +239,9 @@ class CheckoutController extends Controller
 
             // Dispatch Order Confirmation Notifications (WhatsApp + Email for Customer and Admin)
             try {
-                \App\Events\OrderPlaced::dispatch($order);
+                OrderPlaced::dispatch($order);
             } catch (\Throwable $notificationException) {
-                \Illuminate\Support\Facades\Log::error('OrderPlaced event error: ' . $notificationException->getMessage());
+                Log::error('OrderPlaced event error: '.$notificationException->getMessage());
             }
 
             return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
@@ -182,11 +262,12 @@ class CheckoutController extends Controller
             return redirect()->route('home');
         }
 
-        $order = Order::with('items')->findOrFail($orderId);
+        $order = Order::with(['items', 'earnedCoupon'])->findOrFail($orderId);
 
         return view('checkout.success', [
             'site' => config('personal_site'),
             'order' => $order,
+            'earnedCoupon' => $order->earnedCoupon,
         ]);
     }
 
@@ -195,44 +276,45 @@ class CheckoutController extends Controller
         $validated = $request->validate([
             'coupon_code' => ['required', 'string', 'max:50'],
             'delivery_option' => ['nullable', 'string', 'in:standard,express'],
+            'payment_method' => ['nullable', 'string', 'in:cod,online'],
         ]);
 
-        $code = $validated['coupon_code'];
-        $codeClean = Str::upper(str_replace(' ', '', $code));
-        $coupon = Offer::whereNotNull('coupon_code')
-            ->get()
-            ->first(function ($offer) use ($codeClean) {
-                return Str::upper(str_replace(' ', '', $offer->coupon_code)) === $codeClean;
-            });
-
-        if (! $coupon) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid coupon code.',
-            ], 422);
-        }
-
         $subtotal = $cart->subtotal();
-        $error = null;
-        if (! $coupon->isValidFor($subtotal, $error)) {
+        $paymentMethod = $validated['payment_method'] ?? 'cod';
+        $couponResult = $this->couponService->validateCoupon(
+            $validated['coupon_code'],
+            $request->user(),
+            $subtotal,
+            $paymentMethod
+        );
+
+        if (! $couponResult['valid']) {
             return response()->json([
                 'success' => false,
-                'message' => $error ?: 'This coupon is not valid.',
+                'message' => $couponResult['error'] ?: 'Invalid coupon code.',
             ], 422);
         }
 
-        $discount = $coupon->calculateDiscount($subtotal);
+        $discount = $couponResult['discount'];
         $deliveryOption = $validated['delivery_option'] ?? 'standard';
         $deliveryCharge = $deliveryOption === 'express' ? 99.00 : ($subtotal < 300.00 ? 30.00 : 0.00);
         $total = max(0.0, $subtotal - $discount + $deliveryCharge);
+
+        $coupon = $couponResult['coupon'];
+        $code = $couponResult['type'] === 'coupon' ? $coupon->code : $coupon->coupon_code;
+        $type = $couponResult['type'] === 'coupon' ? $coupon->discount_type : $coupon->getDiscountType();
+        $value = $couponResult['type'] === 'coupon' ? (float) $coupon->discount_value : (float) $coupon->getDiscountValue();
+        $paymentEligibility = $couponResult['type'] === 'coupon' ? $coupon->payment_method_eligibility : 'both';
 
         return response()->json([
             'success' => true,
             'message' => 'Coupon applied successfully!',
             'coupon' => [
-                'code' => $coupon->coupon_code,
-                'type' => $coupon->getDiscountType(),
-                'value' => (float) $coupon->getDiscountValue(),
+                'code' => $code,
+                'type' => $type,
+                'value' => $value,
+                'formatted' => $couponResult['type'] === 'coupon' ? $coupon->formattedDiscount() : $coupon->discount_label,
+                'payment_method_eligibility' => $paymentEligibility,
             ],
             'discount' => $discount,
             'subtotal' => $subtotal,
