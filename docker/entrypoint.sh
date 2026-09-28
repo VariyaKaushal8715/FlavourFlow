@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# Default PORT to 80 if not set (Render provides PORT dynamically e.g. 10000)
+# Default PORT to 80 if not set (Render sets PORT e.g. 10000)
 PORT="${PORT:-80}"
 
 # Configure Apache listening port
@@ -12,47 +12,67 @@ if [ ! -f /var/www/html/.env ]; then
     cp /var/www/html/.env.example /var/www/html/.env
 fi
 
-# Ensure database directory and SQLite file exist
-if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
-    mkdir -p /var/www/html/database
-    if [ ! -f /var/www/html/database/database.sqlite ]; then
-        touch /var/www/html/database/database.sqlite
-    fi
-    chown -R www-data:www-data /var/www/html/database
-    chmod -R 775 /var/www/html/database
+# If DB_CONNECTION is not explicitly mysql/pgsql, force sqlite defaults in .env
+if [ -z "$DB_CONNECTION" ] || [ "$DB_CONNECTION" = "sqlite" ]; then
+    sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/g" /var/www/html/.env
+    sed -i "s/^DB_HOST=/# DB_HOST=/g" /var/www/html/.env
+    sed -i "s/^DB_PORT=/# DB_PORT=/g" /var/www/html/.env
+    sed -i "s|^DB_DATABASE=.*|DB_DATABASE=/var/www/html/database/database.sqlite|g" /var/www/html/.env
+    sed -i "s/^DB_USERNAME=/# DB_USERNAME=/g" /var/www/html/.env
+    sed -i "s/^DB_PASSWORD=/# DB_PASSWORD=/g" /var/www/html/.env
 fi
 
-# Ensure storage directories exist with proper permissions
+# Ensure LOG_CHANNEL outputs to stderr so it shows in Render logs
+sed -i "s/^LOG_CHANNEL=.*/LOG_CHANNEL=stderr/g" /var/www/html/.env
+
+# Update APP_URL if RENDER_EXTERNAL_URL is available
+if [ -n "$RENDER_EXTERNAL_URL" ]; then
+    sed -i "s|^APP_URL=.*|APP_URL=${RENDER_EXTERNAL_URL}|g" /var/www/html/.env
+fi
+
+# Create SQLite database directory and file with full write permissions
+mkdir -p /var/www/html/database
+if [ ! -f /var/www/html/database/database.sqlite ]; then
+    touch /var/www/html/database/database.sqlite
+fi
+chmod 777 /var/www/html/database
+chmod 666 /var/www/html/database/database.sqlite
+chown -R www-data:www-data /var/www/html/database
+
+# Ensure storage directories exist with full permissions
 mkdir -p /var/www/html/storage/framework/cache/data \
          /var/www/html/storage/framework/sessions \
          /var/www/html/storage/framework/views \
          /var/www/html/storage/logs \
          /var/www/html/bootstrap/cache
 
+chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Remove any stale cached manifests
 rm -f /var/www/html/bootstrap/cache/*.php
 
-# Discover packages now that autoloader is active
-php artisan package:discover --ansi || true
+# Clear caches first
+php artisan config:clear || true
+php artisan route:clear || true
+php artisan view:clear || true
 
-# Generate application key if not set
-if [ -z "$APP_KEY" ]; then
+# Generate application key if missing
+if ! grep -q "^APP_KEY=base64:" /var/www/html/.env; then
     echo "Generating application encryption key..."
-    php artisan key:generate --force || true
+    php artisan key:generate --force
 fi
+
+# Discover packages
+php artisan package:discover --ansi || true
 
 # Run database migrations
 echo "Running database migrations..."
-php artisan migrate --force || true
+php artisan migrate --force
 
-# Run database seeders if enabled
-if [ "${RUN_SEEDS:-true}" = "true" ]; then
-    echo "Seeding database with initial data..."
-    php artisan db:seed --force || true
-fi
+# Run database seeders
+echo "Seeding database..."
+php artisan db:seed --force || true
 
 # Cache config, routes, and views for production performance
 php artisan config:cache || true
