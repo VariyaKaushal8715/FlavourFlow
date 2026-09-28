@@ -31,6 +31,47 @@
 }
 
 @layer components {
+    .review-rating-group {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .review-star {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        color: #d4d4d8;
+        cursor: pointer;
+        outline: none;
+        transition: color 180ms ease, transform 180ms ease;
+    }
+
+    .review-star svg {
+        height: 1.75rem;
+        width: 1.75rem;
+        fill: currentColor;
+    }
+
+    .review-star.is-preview {
+        color: #f0b429;
+    }
+
+    .review-star.is-selected {
+        color: #c97808;
+        transform: scale(1.04);
+    }
+
+    .review-star.is-hovered {
+        transform: scale(1.1);
+    }
+
+    .review-star:focus-visible {
+        box-shadow: 0 0 0 3px rgb(244 185 66 / 0.28);
+        color: #b35f05;
+    }
+
     .wishlist-button[data-wishlisted='true'] {
         color: #dc2626;
     }

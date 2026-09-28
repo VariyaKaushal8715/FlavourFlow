@@ -35,7 +35,9 @@ class Order extends Model
         'out_for_delivery_at',
         'delivered_at',
         'coupon_code',
+        'coupon_id',
         'discount_amount',
+        'earned_coupon_id',
         'cancelled_at',
         'cancellation_reason',
     ];
@@ -104,8 +106,23 @@ class Order extends Model
         return $this->hasOne(RefundRequest::class);
     }
 
-    public function deliveryNotifications(): HasMany
+    public function payment(): HasOne
     {
-        return $this->hasMany(OrderDeliveryNotification::class);
+        return $this->hasOne(Payment::class);
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
+    }
+
+    public function earnedCoupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class, 'earned_coupon_id');
+    }
+
+    public function generatedCoupons(): HasMany
+    {
+        return $this->hasMany(Coupon::class, 'source_order_id');
     }
 }

@@ -97,6 +97,36 @@
                 </div>
             </div>
 
+            @if (! auth()->user()->privacyConsent()->exists())
+                <div class="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-zinc-950/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="privacy-consent-title" aria-describedby="privacy-consent-description">
+                    <div class="w-full max-w-lg rounded-3xl border border-amber-200/70 bg-white p-6 shadow-2xl sm:p-8">
+                        <div class="flex items-start gap-4">
+                            <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-50 text-brand-primary" aria-hidden="true">
+                                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 19 6v6c0 4.8-3.1 8.6-7 10-3.9-1.4-7-5.2-7-10V6l7-3Z"/><path d="M9.5 12.1 11.2 14l3.5-4"/></svg>
+                            </span>
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-primary">Your privacy matters</p>
+                                <h2 id="privacy-consent-title" class="mt-1 text-2xl font-semibold text-zinc-950">Choose your cookie preference</h2>
+                            </div>
+                        </div>
+                        <p id="privacy-consent-description" class="mt-5 text-sm leading-6 text-zinc-600">FlavourFlow uses essential cookies to keep your account, cart, and checkout working. Optional activity tracking helps us understand product interactions and improve recommendations.</p>
+                        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                            <form method="POST" action="{{ route('privacy-consent.store') }}" class="sm:flex-1">
+                                @csrf
+                                <input type="hidden" name="consent_status" value="allowed">
+                                <button class="w-full rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-primary/20" type="submit">Allow Cookies & Activity Tracking</button>
+                            </form>
+                            <form method="POST" action="{{ route('privacy-consent.store') }}" class="sm:flex-1">
+                                @csrf
+                                <input type="hidden" name="consent_status" value="declined">
+                                <button class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-800 transition hover:border-brand-primary hover:text-brand-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-primary/15" type="submit">Decline Non-Essential Tracking</button>
+                            </form>
+                        </div>
+                        <a class="mt-5 inline-flex text-sm font-semibold text-brand-primary underline decoration-amber-300 underline-offset-4 hover:text-zinc-950 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-primary/15" href="{{ route('privacy-policy') }}" target="_blank" rel="noreferrer">View Privacy Policy</a>
+                    </div>
+                </div>
+            @endif
+
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
                     const modal = document.getElementById('mandatory-review-modal');
@@ -134,10 +164,10 @@
                                             
                                             <div>
                                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 text-center">Your Rating</label>
-                                                <div class="mt-2 flex justify-center gap-2" data-rating-group="${product.id}">
+                                                <div class="review-rating-group mt-2" data-rating-group="${product.id}" role="radiogroup" aria-label="Rating for ${product.name}">
                                                     ${[1,2,3,4,5].map(star => `
-                                                        <button type="button" data-star-value="${star}" data-star-product="${product.id}" class="text-zinc-200 hover:scale-110 transition duration-155">
-                                                            <svg class="h-7 w-7 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                                        <button type="button" data-star-value="${star}" data-star-product="${product.id}" class="review-star" role="radio" aria-checked="false" aria-label="${star} star${star === 1 ? '' : 's'}" tabindex="${star === 1 ? '0' : '-1'}">
+                                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                                                         </button>
                                                     `).join('')}
                                                 </div>
@@ -166,28 +196,102 @@
                             .catch(err => console.error("Error fetching reviews status:", err));
                     };
 
-                    // Handle rating star clicks
+                    const setRatingVisuals = (group, previewRating = 0) => {
+                        const selectedRating = parseInt(group.dataset.selectedRating || '0');
+                        const activeRating = previewRating || selectedRating;
+
+                        group.querySelectorAll('[data-star-value]').forEach(star => {
+                            const value = parseInt(star.dataset.starValue);
+                            star.classList.toggle('is-preview', previewRating > 0 && value <= activeRating);
+                            star.classList.toggle('is-selected', selectedRating > 0 && value <= selectedRating);
+                            star.setAttribute('aria-checked', value === selectedRating ? 'true' : 'false');
+                        });
+                    };
+
+                    const selectRating = (btn) => {
+                        const rating = parseInt(btn.dataset.starValue);
+                        const productId = btn.dataset.starProduct;
+                        const group = reviewsContainer.querySelector(`[data-rating-group="${productId}"]`);
+                        const stars = group.querySelectorAll('[data-star-value]');
+
+                        document.getElementById(`rating-input-${productId}`).value = rating;
+                        group.dataset.selectedRating = rating;
+                        stars.forEach(star => star.tabIndex = star === btn ? 0 : -1);
+                        setRatingVisuals(group);
+                    };
+
+                    // Handle rating star clicks and keyboard selection.
                     reviewsContainer.addEventListener('click', (e) => {
                         const btn = e.target.closest('[data-star-value]');
                         if (btn) {
-                            const rating = parseInt(btn.dataset.starValue);
-                            const productId = btn.dataset.starProduct;
-                            
-                            document.getElementById(`rating-input-${productId}`).value = rating;
-                            
-                            const group = reviewsContainer.querySelector(`[data-rating-group="${productId}"]`);
-                            const stars = group.querySelectorAll('[data-star-value]');
-                            stars.forEach(star => {
-                                const val = parseInt(star.dataset.starValue);
-                                if (val <= rating) {
-                                    star.classList.remove('text-zinc-200');
-                                    star.classList.add('text-amber-400');
-                                } else {
-                                    star.classList.remove('text-amber-400');
-                                    star.classList.add('text-zinc-200');
-                                }
-                            });
+                            selectRating(btn);
                         }
+                    });
+
+                    reviewsContainer.addEventListener('mouseover', (e) => {
+                        const btn = e.target.closest('[data-star-value]');
+                        if (!btn) {
+                            return;
+                        }
+
+                        const group = btn.closest('[data-rating-group]');
+                        group.querySelectorAll('[data-star-value]').forEach(star => star.classList.toggle('is-hovered', star === btn));
+                        setRatingVisuals(group, parseInt(btn.dataset.starValue));
+                    });
+
+                    reviewsContainer.addEventListener('mouseout', (e) => {
+                        const group = e.target.closest('[data-rating-group]');
+                        if (!group || group.contains(e.relatedTarget)) {
+                            return;
+                        }
+
+                        group.querySelectorAll('[data-star-value]').forEach(star => star.classList.remove('is-hovered'));
+                        setRatingVisuals(group);
+                    });
+
+                    reviewsContainer.addEventListener('focusin', (e) => {
+                        const btn = e.target.closest('[data-star-value]');
+                        if (btn) {
+                            setRatingVisuals(btn.closest('[data-rating-group]'), parseInt(btn.dataset.starValue));
+                        }
+                    });
+
+                    reviewsContainer.addEventListener('focusout', (e) => {
+                        const group = e.target.closest('[data-rating-group]');
+                        if (group && !group.contains(e.relatedTarget)) {
+                            setRatingVisuals(group);
+                        }
+                    });
+
+                    reviewsContainer.addEventListener('keydown', (e) => {
+                        const btn = e.target.closest('[data-star-value]');
+                        if (!btn) {
+                            return;
+                        }
+
+                        const group = btn.closest('[data-rating-group]');
+                        const stars = [...group.querySelectorAll('[data-star-value]')];
+                        const currentIndex = stars.indexOf(btn);
+                        let nextIndex = currentIndex;
+
+                        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                            nextIndex = Math.min(currentIndex + 1, stars.length - 1);
+                        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                            nextIndex = Math.max(currentIndex - 1, 0);
+                        } else if (e.key === 'Home') {
+                            nextIndex = 0;
+                        } else if (e.key === 'End') {
+                            nextIndex = stars.length - 1;
+                        } else if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            selectRating(btn);
+                            return;
+                        } else {
+                            return;
+                        }
+
+                        e.preventDefault();
+                        stars[nextIndex].focus();
                     });
 
                     // Lock escape & prevent back button navigation

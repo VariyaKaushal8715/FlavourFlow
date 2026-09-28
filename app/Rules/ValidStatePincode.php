@@ -10,8 +10,7 @@ class ValidStatePincode implements Rule
      * Determine if the validation rule passes.
      *
      * @param  string  $attribute
-     * @param  mixed   $value
-     * @return bool
+     * @param  mixed  $value
      */
     public function passes($attribute, $value): bool
     {
@@ -21,7 +20,7 @@ class ValidStatePincode implements Rule
         }
 
         $prefix = substr($value, 0, 2);
-        $allowed = config('location.pincode_state_prefixes.' . $state, []);
+        $allowed = config('location.pincode_state_prefixes.'.$state, []);
         if (empty($allowed)) {
             return true; // No mapping defined, assume valid.
         }

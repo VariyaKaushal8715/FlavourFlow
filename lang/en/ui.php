@@ -38,6 +38,7 @@ return [
     'collection_title' => 'Flavour worth slowing down for.',
     'collection_desc' => 'Carefully sourced, freshly packed, and balanced for the food you cook every day. Choose a blend and bring a deeper aroma to the table.',
     'sort_products' => 'Sort products',
+    'sort_by' => 'Sort by',
     'apply' => 'Apply',
     'featured' => 'Featured',
     'top_rated' => 'Top rated',

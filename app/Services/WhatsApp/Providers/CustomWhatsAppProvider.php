@@ -11,7 +11,9 @@ use Throwable;
 class CustomWhatsAppProvider implements WhatsAppProviderInterface
 {
     protected ?string $apiUrl;
+
     protected ?string $apiKey;
+
     protected int $timeout;
 
     public function __construct(array $config = [])
@@ -26,13 +28,14 @@ class CustomWhatsAppProvider implements WhatsAppProviderInterface
         if (empty($this->apiUrl)) {
             $error = 'Custom WhatsApp API URL not configured.';
             Log::warning($error);
+
             return WhatsAppSendResult::failure($error);
         }
 
         try {
             $request = Http::timeout($this->timeout);
             if (! empty($this->apiKey)) {
-                $request = $request->withHeaders(['Authorization' => 'Bearer ' . $this->apiKey]);
+                $request = $request->withHeaders(['Authorization' => 'Bearer '.$this->apiKey]);
             }
 
             $response = $request->post($this->apiUrl, [
@@ -43,15 +46,18 @@ class CustomWhatsAppProvider implements WhatsAppProviderInterface
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return WhatsAppSendResult::success($data['id'] ?? $data['message_id'] ?? null, is_array($data) ? $data : []);
             }
 
-            $errorMsg = 'Custom WhatsApp API error: HTTP ' . $response->status() . ' - ' . $response->body();
+            $errorMsg = 'Custom WhatsApp API error: HTTP '.$response->status().' - '.$response->body();
             Log::error($errorMsg);
+
             return WhatsAppSendResult::failure($errorMsg);
         } catch (Throwable $e) {
-            Log::error('Custom WhatsApp dispatch exception: ' . $e->getMessage(), ['exception' => $e]);
-            return WhatsAppSendResult::failure('Custom WhatsApp exception: ' . $e->getMessage());
+            Log::error('Custom WhatsApp dispatch exception: '.$e->getMessage(), ['exception' => $e]);
+
+            return WhatsAppSendResult::failure('Custom WhatsApp exception: '.$e->getMessage());
         }
     }
 }

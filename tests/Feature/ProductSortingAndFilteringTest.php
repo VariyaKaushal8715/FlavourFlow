@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductSortOption;
 
 test('home page sorts products by featured by default', function () {
     Product::factory()->create(['name' => 'Cardamom Regular', 'price' => 200, 'priority' => 10, 'is_featured' => false, 'is_active' => true]);
@@ -135,4 +138,206 @@ test('home page shows empty state when no products match price range', function 
     $products = $response->viewData('products');
     expect($products)->toBeEmpty();
     $response->assertSee(__('ui.no_products_found'));
+});
+
+test('home page loads sort options dynamically from database', function () {
+    $response = $this->get(route('home'));
+    $response->assertSuccessful();
+
+    $sortOptions = $response->viewData('sortOptions');
+    expect($sortOptions)->not->toBeEmpty();
+    expect($sortOptions->pluck('key')->all())->toContain('featured', 'price_asc', 'price_desc', 'rating');
+});
+
+test('disabled sort option disappears from home page and falls back to default', function () {
+    ProductSortOption::where('key', 'newest')->update(['is_active' => false]);
+
+    $response = $this->get(route('home'));
+    $response->assertSuccessful();
+
+    $sortOptions = $response->viewData('sortOptions');
+    expect($sortOptions->pluck('key')->all())->not->toContain('newest');
+
+    // Accessing disabled sort falls back to default
+    $responseWithDisabled = $this->get(route('home', ['sort' => 'newest']));
+    $responseWithDisabled->assertSuccessful();
+    expect($responseWithDisabled->viewData('sort'))->toBe('featured');
+});
+
+test('newly created sort option appears on home page and sorts correctly', function () {
+    Product::factory()->create(['name' => 'Low Priority Herb', 'priority' => 10, 'is_active' => true]);
+    Product::factory()->create(['name' => 'High Priority Spice', 'priority' => 95, 'is_active' => true]);
+
+    ProductSortOption::create([
+        'key' => 'staff_priority',
+        'label' => 'Staff Priority Picks',
+        'sort_field' => 'priority',
+        'sort_direction' => 'desc',
+        'display_order' => 1,
+        'is_active' => true,
+    ]);
+
+    $response = $this->get(route('home', ['sort' => 'staff_priority']));
+    $response->assertSuccessful();
+
+    $sortOptions = $response->viewData('sortOptions');
+    expect($sortOptions->pluck('key')->all())->toContain('staff_priority');
+
+    $products = $response->viewData('products');
+    expect($products[0]['name'])->toBe('High Priority Spice');
+});
+
+test('best selling sort option sorts products by order item quantity sold', function () {
+    $product1 = Product::factory()->create(['name' => 'Low Seller Clove', 'is_active' => true]);
+    $product2 = Product::factory()->create(['name' => 'Top Seller Cardamom', 'is_active' => true]);
+
+    $order = Order::factory()->create();
+    OrderItem::factory()->create([
+        'order_id' => $order->id,
+        'product_id' => $product1->id,
+        'quantity' => 2,
+    ]);
+    OrderItem::factory()->create([
+        'order_id' => $order->id,
+        'product_id' => $product2->id,
+        'quantity' => 25,
+    ]);
+
+    $response = $this->get(route('home', ['sort' => 'best_selling']));
+    $response->assertSuccessful();
+
+    $products = $response->viewData('products');
+    expect($products[0]['name'])->toBe('Top Seller Cardamom');
+});
+
+test('discount sort option sorts products by biggest discount amount', function () {
+    Product::factory()->create([
+        'name' => 'Small Discount Pepper',
+        'price' => 200,
+        'compare_at_price' => 220, // 20 discount
+        'is_active' => true,
+    ]);
+    Product::factory()->create([
+        'name' => 'Huge Discount Saffron',
+        'price' => 500,
+        'compare_at_price' => 1000, // 500 discount
+        'is_active' => true,
+    ]);
+
+    $response = $this->get(route('home', ['sort' => 'discount']));
+    $response->assertSuccessful();
+
+    $products = $response->viewData('products');
+    expect($products[0]['name'])->toBe('Huge Discount Saffron');
+});
+
+test('display order in database controls sort options ordering on home page', function () {
+    ProductSortOption::where('key', 'price_desc')->update(['display_order' => 1]);
+    ProductSortOption::where('key', 'featured')->update(['display_order' => 99]);
+
+    $response = $this->get(route('home'));
+    $response->assertSuccessful();
+
+    $sortOptions = $response->viewData('sortOptions');
+    expect($sortOptions->first()->key)->toBe('price_desc');
+});
+
+test('sort products UI contains filter form, custom trigger, options, sliders, and apply button', function () {
+    $response = $this->get(route('home'));
+    $response->assertSuccessful();
+
+    $response->assertSee('id="product-filter-form"', false);
+    $response->assertSee('id="custom-sort-trigger"', false);
+    $response->assertSee('id="product-sort-input"', false);
+    $response->assertSee('id="sort-dropdown-menu"', false);
+    $response->assertSee('id="filter-apply-btn"', false);
+    $response->assertSee('id="range-min-slider"', false);
+    $response->assertSee('id="range-max-slider"', false);
+    $response->assertSee(__('ui.apply'));
+    $response->assertSee(__('ui.sort_products'));
+});
+
+test('all nine standard sorting options correctly order multiple products', function () {
+    ProductSortOption::seedDefaults();
+
+    $p1 = Product::factory()->create([
+        'name' => 'A Kashmiri Saffron',
+        'price' => 500,
+        'compare_at_price' => 700, // discount: 200
+        'rating' => 4.9,
+        'is_featured' => true,
+        'priority' => 10,
+        'created_at' => now()->subDays(5),
+        'is_active' => true,
+    ]);
+    $p2 = Product::factory()->create([
+        'name' => 'B Organic Turmeric',
+        'price' => 100,
+        'compare_at_price' => 110, // discount: 10
+        'rating' => 4.2,
+        'is_featured' => false,
+        'priority' => 20,
+        'created_at' => now()->subDays(1),
+        'is_active' => true,
+    ]);
+    $p3 = Product::factory()->create([
+        'name' => 'C Black Pepper',
+        'price' => 300,
+        'compare_at_price' => 600, // discount: 300
+        'rating' => 3.8,
+        'is_featured' => false,
+        'priority' => 5,
+        'created_at' => now()->subDays(10),
+        'is_active' => true,
+    ]);
+
+    $order = Order::factory()->create();
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $p3->id, 'quantity' => 50]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $p1->id, 'quantity' => 20]);
+    OrderItem::factory()->create(['order_id' => $order->id, 'product_id' => $p2->id, 'quantity' => 5]);
+
+    // 1. featured
+    $resFeatured = $this->get(route('home', ['sort' => 'featured']));
+    $namesFeatured = collect($resFeatured->viewData('products'))->pluck('name')->all();
+    expect($namesFeatured[0])->toBe('A Kashmiri Saffron');
+
+    // 2. rating (desc)
+    $resRating = $this->get(route('home', ['sort' => 'rating']));
+    $namesRating = collect($resRating->viewData('products'))->pluck('name')->all();
+    expect($namesRating)->toBe(['A Kashmiri Saffron', 'B Organic Turmeric', 'C Black Pepper']);
+
+    // 3. price_asc
+    $resPriceAsc = $this->get(route('home', ['sort' => 'price_asc']));
+    $namesPriceAsc = collect($resPriceAsc->viewData('products'))->pluck('name')->all();
+    expect($namesPriceAsc)->toBe(['B Organic Turmeric', 'C Black Pepper', 'A Kashmiri Saffron']);
+
+    // 4. price_desc
+    $resPriceDesc = $this->get(route('home', ['sort' => 'price_desc']));
+    $namesPriceDesc = collect($resPriceDesc->viewData('products'))->pluck('name')->all();
+    expect($namesPriceDesc)->toBe(['A Kashmiri Saffron', 'C Black Pepper', 'B Organic Turmeric']);
+
+    // 5. name (A-Z)
+    $resName = $this->get(route('home', ['sort' => 'name']));
+    $namesName = collect($resName->viewData('products'))->pluck('name')->all();
+    expect($namesName)->toBe(['A Kashmiri Saffron', 'B Organic Turmeric', 'C Black Pepper']);
+
+    // 6. newest
+    $resNewest = $this->get(route('home', ['sort' => 'newest']));
+    $namesNewest = collect($resNewest->viewData('products'))->pluck('name')->all();
+    expect($namesNewest)->toBe(['B Organic Turmeric', 'A Kashmiri Saffron', 'C Black Pepper']);
+
+    // 7. best_selling
+    $resBestSelling = $this->get(route('home', ['sort' => 'best_selling']));
+    $namesBestSelling = collect($resBestSelling->viewData('products'))->pluck('name')->all();
+    expect($namesBestSelling)->toBe(['C Black Pepper', 'A Kashmiri Saffron', 'B Organic Turmeric']);
+
+    // 8. discount
+    $resDiscount = $this->get(route('home', ['sort' => 'discount']));
+    $namesDiscount = collect($resDiscount->viewData('products'))->pluck('name')->all();
+    expect($namesDiscount)->toBe(['C Black Pepper', 'A Kashmiri Saffron', 'B Organic Turmeric']);
+
+    // 9. price_range with bounds
+    $resPriceRange = $this->get(route('home', ['sort' => 'price_range', 'min_price' => 150, 'max_price' => 550]));
+    $namesPriceRange = collect($resPriceRange->viewData('products'))->pluck('name')->all();
+    expect($namesPriceRange)->toBe(['C Black Pepper', 'A Kashmiri Saffron']);
 });

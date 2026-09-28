@@ -1,4 +1,5 @@
 <?php
+
 return [
     // Feature flag to enable/disable India‑only address restriction
     'india_only' => env('INDIA_ONLY', true),

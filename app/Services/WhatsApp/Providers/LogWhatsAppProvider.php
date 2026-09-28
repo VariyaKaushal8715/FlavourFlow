@@ -11,9 +11,9 @@ class LogWhatsAppProvider implements WhatsAppProviderInterface
 {
     public function send(string $to, string $message, array $metadata = []): WhatsAppSendResult
     {
-        $messageId = 'LOG-WA-' . Str::uuid()->toString();
+        $messageId = 'LOG-WA-'.Str::uuid()->toString();
 
-        Log::info("WhatsApp Notification Dispatched", [
+        Log::info('WhatsApp Notification Dispatched', [
             'to' => $to,
             'message' => $message,
             'message_id' => $messageId,
