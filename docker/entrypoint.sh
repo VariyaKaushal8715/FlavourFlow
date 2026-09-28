@@ -25,10 +25,18 @@ fi
 # Ensure LOG_CHANNEL outputs to stderr so it shows in Render logs
 sed -i "s/^LOG_CHANNEL=.*/LOG_CHANNEL=stderr/g" /var/www/html/.env
 
-# Update APP_URL if RENDER_EXTERNAL_URL is available
+# Update APP_URL and ASSET_URL with HTTPS
 if [ -n "$RENDER_EXTERNAL_URL" ]; then
     sed -i "s|^APP_URL=.*|APP_URL=${RENDER_EXTERNAL_URL}|g" /var/www/html/.env
+    echo "ASSET_URL=${RENDER_EXTERNAL_URL}" >> /var/www/html/.env
+else
+    sed -i "s|^APP_URL=.*|APP_URL=https://flavourflow.onrender.com|g" /var/www/html/.env
+    echo "ASSET_URL=https://flavourflow.onrender.com" >> /var/www/html/.env
 fi
+
+# Ensure production environment
+sed -i "s/^APP_ENV=.*/APP_ENV=production/g" /var/www/html/.env
+sed -i "s/^APP_DEBUG=.*/APP_DEBUG=false/g" /var/www/html/.env
 
 # Create SQLite database directory and file with full write permissions
 mkdir -p /var/www/html/database
