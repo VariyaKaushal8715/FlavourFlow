@@ -9,5 +9,11 @@ vendor
 .phpunit.result.cache
 tests
 storage/*.key
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*.php
+!bootstrap/cache/.gitignore
 npm-debug.log
 yarn-error.log
