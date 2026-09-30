@@ -47,6 +47,13 @@ return [
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'stream' => [
+                'ssl' => [
+                    'cafile' => env('MAIL_CAFILE', storage_path('cacert_with_avg.pem')),
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                ],
+            ],
         ],
 
         'ses' => [
@@ -115,4 +122,5 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    'admin_address' => env('ADMIN_EMAIL', 'urbanzen17@gmail.com'),
 ];

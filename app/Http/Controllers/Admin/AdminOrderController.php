@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AdminOrderCancelledNotification;
+use App\Mail\AdminRefundProcessedNotification;
+use App\Mail\OrderStatusUpdatedCustomer;
+use App\Mail\RefundSuccessfulCustomer;
+use App\Mail\ReturnStatusUpdatedCustomer;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\RefundRequest;
@@ -13,6 +18,8 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class AdminOrderController extends Controller
 {
@@ -120,6 +127,19 @@ class AdminOrderController extends Controller
 
         $order->save();
 
+        try {
+            $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+            if (in_array($status, ['Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'], true) && ! empty($order->email)) {
+                Mail::to($order->email)->send(new OrderStatusUpdatedCustomer($order, $status));
+            }
+
+            if ($status === 'Cancelled' && ! empty($adminEmail)) {
+                Mail::to($adminEmail)->send(new AdminOrderCancelledNotification($order));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch admin status update emails: '.$e->getMessage());
+        }
+
         return redirect()->back()->with('success', 'Order status updated successfully.');
     }
 
@@ -134,6 +154,14 @@ class AdminOrderController extends Controller
         $returnRequest->update([
             'status' => $validated['status'],
         ]);
+
+        try {
+            if ($returnRequest->order && ! empty($returnRequest->order->email)) {
+                Mail::to($returnRequest->order->email)->send(new ReturnStatusUpdatedCustomer($returnRequest));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch return status update email: '.$e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Return request status updated successfully.');
     }
@@ -167,6 +195,20 @@ class AdminOrderController extends Controller
                         ]);
                     }
                 }
+            }
+
+            try {
+                $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+                if ($validated['status'] === 'Completed') {
+                    if (! empty($order->email)) {
+                        Mail::to($order->email)->send(new RefundSuccessfulCustomer($refundRequest));
+                    }
+                    if (! empty($adminEmail)) {
+                        Mail::to($adminEmail)->send(new AdminRefundProcessedNotification($refundRequest));
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::error('Failed to dispatch refund emails: '.$e->getMessage());
             }
         }
 

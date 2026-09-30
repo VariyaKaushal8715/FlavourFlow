@@ -10,7 +10,7 @@ test('visitors can send an email message via contact email endpoint', function (
 
     $response->assertSuccessful()
         ->assertJsonPath('success', true)
-        ->assertJsonPath('message', 'Thank you, John Doe! Your email message has been sent successfully to support@flavourflow.com.');
+        ->assertJsonPath('message', 'Thank you, John Doe! Your email message has been sent successfully.');
 });
 
 test('contact email endpoint validates required input fields', function () {
