@@ -22,7 +22,18 @@ class UserProfile extends Model
         'state',
         'country',
         'postal_code',
+        'pincode',
     ];
+
+    public function setPincodeAttribute($value): void
+    {
+        $this->attributes['postal_code'] = $value;
+    }
+
+    public function getPincodeAttribute(): ?string
+    {
+        return $this->attributes['postal_code'] ?? null;
+    }
 
     public function user(): BelongsTo
     {

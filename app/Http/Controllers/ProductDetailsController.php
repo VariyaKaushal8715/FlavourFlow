@@ -6,19 +6,25 @@ use App\AI\Contracts\AiEventTrackerInterface;
 use App\Models\Product;
 use App\Support\WishlistState;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 
 class ProductDetailsController extends Controller
 {
-    public function __invoke(Product $product, WishlistState $wishlist, AiEventTrackerInterface $tracker): View
+    public function __invoke(Request $request, Product $product, WishlistState $wishlist): View
     {
         abort_unless($product->is_active, 404);
 
-        $tracker->track('product_viewed', 'product', $product->id, [
-            'name' => $product->name,
-            'slug' => $product->slug,
-            'category' => $product->category,
-            'price' => (float) $product->price,
-        ]);
+        $user = $request->user();
+        $profile = $user ? $user->profile()->first() : null;
+
+        $userLocation = null;
+        if ($profile && (! empty($profile->country) || ! empty($profile->state) || ! empty($profile->city))) {
+            $userLocation = [
+                'country' => $profile->country ?: 'India',
+                'state' => $profile->state ?: '',
+                'city' => $profile->city ?: '',
+            ];
+        }
 
         $relatedProducts = Product::query()
             ->active()
@@ -35,6 +41,7 @@ class ProductDetailsController extends Controller
             'product' => $product,
             'relatedProducts' => $relatedProducts,
             'wishlistProductIds' => $wishlist->productIds(),
+            'userLocation' => $userLocation,
         ]);
     }
 }

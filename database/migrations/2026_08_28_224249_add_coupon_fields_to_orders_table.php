@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('admin_orders_last_viewed_at')->nullable()->after('is_admin');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->string('coupon_code')->nullable()->after('payment_method');
+            $table->decimal('discount_amount', 10, 2)->default(0.00)->after('coupon_code');
         });
     }
 
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('admin_orders_last_viewed_at');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->dropColumn(['coupon_code', 'discount_amount']);
         });
     }
 };

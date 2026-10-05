@@ -70,7 +70,6 @@
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
                                     <span>Orders</span>
                                 </div>
-                                <span data-admin-orders-badge class="hidden rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm transition-all duration-300"></span>
                             </a>
 
                             <a @class([
@@ -117,31 +116,71 @@
                                 </div>
                             </a>
 
-                            <!-- TEMPORARY AI ENGINE SIDEBAR ITEM (Step 1 Verification - Isolated for cleanup) -->
+                            <p class="pt-4 px-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Admin Controls</p>
+
                             <a @class([
                                 'flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition',
-                                'bg-white text-zinc-950 shadow-sm' => request()->routeIs('admin.ai*'),
-                                'text-zinc-400 hover:bg-white/5 hover:text-white' => ! request()->routeIs('admin.ai*'),
-                            ]) href="{{ route('admin.ai.index') }}">
+                                'bg-white text-zinc-950 shadow-sm' => request()->routeIs('admin.coupons*'),
+                                'text-zinc-400 hover:bg-white/5 hover:text-white' => ! request()->routeIs('admin.coupons*'),
+                            ]) href="{{ route('admin.coupons.index') }}">
                                 <div class="flex items-center gap-3">
-                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" /></svg>
-                                    <span>AI Engine Status</span>
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" /></svg>
+                                    <span>Coupon Control</span>
                                 </div>
-                                <span class="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">Dev</span>
+                            </a>
+
+                            <a @class([
+                                'flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition',
+                                'bg-white text-zinc-950 shadow-sm' => request()->routeIs('admin.delivery*'),
+                                'text-zinc-400 hover:bg-white/5 hover:text-white' => ! request()->routeIs('admin.delivery*'),
+                            ]) href="{{ route('admin.delivery.index') }}">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.215-9.13A2.25 2.25 0 0016.5 7.5h-3.75V3.75a1.125 1.125 0 00-1.125-1.125H3.375A1.125 1.125 0 002.25 3.75v10.5m17.25 4.5v-3.75a2.25 2.25 0 00-2.25-2.25h-3.75m0 0V7.5" /></svg>
+                                    <span>Delivery Control</span>
+                                </div>
+                            </a>
+
+                            <a @class([
+                                'flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition',
+                                'bg-white text-zinc-950 shadow-sm' => request()->routeIs('admin.sort-options*'),
+                                'text-zinc-400 hover:bg-white/5 hover:text-white' => ! request()->routeIs('admin.sort-options*'),
+                            ]) href="{{ route('admin.sort-options.index') }}">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" /></svg>
+                                    <span>Sort Products</span>
+                                </div>
+                            </a>
+
+                            <p class="pt-4 px-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Settings</p>
+
+                            <a @class([
+                                'flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-semibold transition',
+                                'bg-white text-zinc-950 shadow-sm' => request()->routeIs('admin.profile*'),
+                                'text-zinc-400 hover:bg-white/5 hover:text-white' => ! request()->routeIs('admin.profile*'),
+                            ]) href="{{ route('admin.profile.edit') }}">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                                    <span>Admin Profile</span>
+                                </div>
                             </a>
                         </div>
                     </nav>
 
                     <div class="border-t border-white/10 p-4">
-                        <div class="mb-3 flex items-center gap-3 px-2">
-                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
-                                {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
+                        @php
+                            $adminUser = auth()->user();
+                        @endphp
+
+                        <a href="{{ route('admin.profile.edit') }}" class="mb-3 flex items-center gap-3 rounded-xl p-2 transition hover:bg-white/5 group">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white shadow-sm">
+                                {{ strtoupper(substr($adminUser->name ?? 'A', 0, 1)) }}
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-xs font-semibold text-white">{{ auth()->user()->name ?? 'Admin' }}</p>
-                                <p class="truncate text-[11px] text-zinc-400">{{ auth()->user()->email ?? '' }}</p>
+                                <p class="truncate text-xs font-semibold text-white group-hover:text-red-400 transition">{{ $adminUser->name ?? 'Admin' }}</p>
+                                <p class="truncate text-[11px] text-zinc-400">{{ $adminUser->email ?? '' }}</p>
                             </div>
-                        </div>
+                            <svg class="h-3.5 w-3.5 text-zinc-500 group-hover:text-zinc-300 transition" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                        </a>
 
                         <div class="flex gap-2">
                             <a href="{{ route('home') }}" target="_blank" class="flex flex-1 items-center justify-center rounded-lg border border-white/10 bg-white/5 py-2 text-xs font-semibold text-zinc-300 transition hover:bg-white/10 hover:text-white">
@@ -158,76 +197,202 @@
                 </aside>
 
                 <div class="min-w-0 flex-1">
-                    <div class="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
-                        <button
-                            class="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-900 shadow-sm transition hover:border-zinc-300"
-                            type="button"
-                            data-admin-sidebar-toggle
-                            aria-label="Open menu"
-                            aria-expanded="false"
-                            aria-controls="admin-sidebar"
-                        >
-                            <span class="flex flex-col gap-1">
-                                <span class="h-0.5 w-4 rounded-full bg-current"></span>
-                                <span class="h-0.5 w-4 rounded-full bg-current"></span>
-                                <span class="h-0.5 w-4 rounded-full bg-current"></span>
-                            </span>
-                        </button>
-                    </div>
-                    {{ $slot }}
-
-                    <!-- Dynamic Admin Order Notification Toast -->
-                    <aside
-                        id="admin-order-notification-toast"
-                        data-admin-order-notification
-                        data-summary-url="{{ route('admin.orders.unread_summary') }}"
-                        data-mark-viewed-url="{{ route('admin.orders.mark_viewed') }}"
-                        data-orders-url="{{ route('admin.orders.index') }}"
-                        data-is-orders-page="{{ request()->routeIs('admin.orders.index') ? 'true' : 'false' }}"
-                        aria-live="polite"
-                        class="fixed bottom-6 right-6 z-50 hidden max-w-md transition-all duration-300 ease-out"
-                    >
-                        <div class="flex items-center gap-3.5 rounded-2xl border border-zinc-700/60 bg-zinc-950/95 p-4 text-white shadow-2xl backdrop-blur-md ring-1 ring-white/10 hover:border-zinc-500 transition cursor-pointer" data-admin-order-notification-card>
-                            <div class="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-600/20 text-red-400 ring-1 ring-red-500/30">
-                                <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                                    <span class="relative inline-flex h-3 w-3 rounded-full bg-red-500"></span>
-                                </span>
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                                </svg>
-                            </div>
-
-                            <div class="min-w-0 flex-1">
-                                <p class="text-[11px] font-bold uppercase tracking-wider text-red-400">New Order Alert</p>
-                                <p data-admin-order-notification-message class="mt-0.5 text-sm font-semibold text-zinc-100 leading-snug">
-                                    You have new orders. Tap to view orders.
-                                </p>
-                            </div>
-
-                            <div class="flex items-center gap-1.5 flex-shrink-0">
-                                <a
-                                    href="{{ route('admin.orders.index') }}"
-                                    data-admin-order-notification-action
-                                    class="inline-flex items-center justify-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400"
-                                >
-                                    View
-                                </a>
+                    <header class="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur lg:px-8">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
                                 <button
+                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-900 shadow-sm transition hover:border-zinc-300 lg:hidden"
                                     type="button"
-                                    data-admin-order-notification-close
-                                    aria-label="Dismiss notification"
-                                    class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition"
+                                    data-admin-sidebar-toggle
+                                    aria-label="Open menu"
+                                    aria-expanded="false"
+                                    aria-controls="admin-sidebar"
                                 >
-                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
+                                    <span class="flex flex-col gap-1">
+                                        <span class="h-0.5 w-4 rounded-full bg-current"></span>
+                                        <span class="h-0.5 w-4 rounded-full bg-current"></span>
+                                        <span class="h-0.5 w-4 rounded-full bg-current"></span>
+                                    </span>
                                 </button>
+                                <span class="text-xs font-medium text-zinc-500 hidden sm:inline">FlavourFlow E-Commerce Operations</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <!-- Live Notification Dropdown -->
+                                <div class="relative" id="admin-notification-container">
+                                    <button type="button" id="notification-bell-btn" class="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:text-zinc-900 hover:border-zinc-300">
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                                        </svg>
+                                        <span id="notification-badge" class="absolute -top-1.5 -right-1.5 hidden flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white ring-2 ring-white">0</span>
+                                    </button>
+
+                                    <!-- Dropdown menu -->
+                                    <div id="notification-dropdown" class="absolute right-0 mt-2 hidden w-80 origin-top-right rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl ring-1 ring-black/5 focus:outline-none z-50">
+                                        <div class="border-b border-zinc-100 px-4 py-2.5 flex items-center justify-between">
+                                            <span class="text-xs font-bold text-zinc-900">New Orders</span>
+                                            <button type="button" id="mark-all-read-btn" class="text-[10px] font-bold text-brand-primary hover:underline">Clear</button>
+                                        </div>
+                                        <div class="max-h-64 overflow-y-auto py-1 divide-y divide-zinc-50" id="notification-items-list">
+                                            <p class="text-xs text-zinc-500 text-center py-6">No new notifications</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <a href="{{ route('admin.products.index') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800">
+                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                    Add Product
+                                </a>
+
+                                <a href="{{ route('admin.profile.edit') }}" class="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-sm transition hover:border-zinc-300 hover:ring-2 hover:ring-red-500/20" title="Admin Profile">
+                                    <div class="flex h-7 w-7 items-center justify-center rounded-md bg-red-600 text-[11px] font-bold text-white">
+                                        {{ strtoupper(substr($adminUser->name ?? 'A', 0, 1)) }}
+                                    </div>
+                                </a>
                             </div>
                         </div>
-                    </aside>
+                    </header>
+                    {{ $slot }}
                 </div>
             </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const bellBtn = document.getElementById('notification-bell-btn');
+                    const dropdown = document.getElementById('notification-dropdown');
+                    const badge = document.getElementById('notification-badge');
+                    const listContainer = document.getElementById('notification-items-list');
+                    const markReadBtn = document.getElementById('mark-all-read-btn');
+                    
+                    if (!bellBtn) return;
+
+                    // Load read orders from localStorage to survive page refreshes
+                    let readOrderIds = new Set(JSON.parse(localStorage.getItem('admin_read_order_ids') || '[]'));
+                    let knownOrderIds = new Set();
+                    let isFirstLoad = true;
+
+                    const saveReadOrders = () => {
+                        localStorage.setItem('admin_read_order_ids', JSON.stringify(Array.from(readOrderIds)));
+                    };
+
+                    const renderNotifications = (orders) => {
+                        // Filter orders that have not been read yet
+                        const unreadOrders = orders.filter(order => !readOrderIds.has(order.id));
+                        
+                        // Update badge
+                        if (unreadOrders.length > 0) {
+                            badge.textContent = unreadOrders.length;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+
+                        if (orders.length === 0) {
+                            listContainer.innerHTML = '<p class="text-xs text-zinc-500 text-center py-6">No orders found</p>';
+                            return;
+                        }
+
+                        listContainer.innerHTML = '';
+                        orders.forEach(order => {
+                            const isUnread = !readOrderIds.has(order.id);
+                            const item = document.createElement('a');
+                            item.href = `/admin/orders/${order.order_number}`;
+                            item.className = `flex flex-col gap-1 p-3 text-xs transition hover:bg-zinc-50 rounded-xl ${isUnread ? 'bg-zinc-50/80 border-l-2 border-red-500 font-semibold' : ''}`;
+                            item.innerHTML = `
+                                <div class="flex justify-between items-center">
+                                    <span class="text-zinc-950 font-bold">${order.order_number}</span>
+                                    <span class="text-zinc-400 text-[10px]">${new Date(order.created_at).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</span>
+                                </div>
+                                <div class="flex justify-between items-center text-zinc-500">
+                                    <span>${order.name || 'Customer'}</span>
+                                    <span class="font-bold text-zinc-900">₹${parseFloat(order.total_amount).toFixed(0)}</span>
+                                </div>
+                            `;
+                            
+                            item.addEventListener('click', () => {
+                                readOrderIds.add(order.id);
+                                saveReadOrders();
+                            });
+                            
+                            listContainer.appendChild(item);
+                        });
+                    };
+
+                    const checkNewOrders = () => {
+                        fetch('/admin/api/new-orders')
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.orders) {
+                                    let hasNew = false;
+                                    
+                                    data.orders.forEach(order => {
+                                        // If it's a completely new order ID we haven't seen in this session
+                                        if (!knownOrderIds.has(order.id)) {
+                                            knownOrderIds.add(order.id);
+                                            if (!isFirstLoad && !readOrderIds.has(order.id)) {
+                                                hasNew = true;
+                                                showLiveToast(order);
+                                            }
+                                        }
+                                    });
+
+                                    isFirstLoad = false;
+                                    renderNotifications(data.orders);
+                                }
+                            })
+                            .catch(err => console.error("Error checking new orders:", err));
+                    };
+
+                    const showLiveToast = (order) => {
+                        const toast = document.createElement('div');
+                        toast.className = 'fixed bottom-5 right-5 z-[10000] max-w-sm rounded-2xl border border-red-200 bg-white p-4 shadow-2xl transition-all duration-300 transform translate-y-10 opacity-0 flex gap-3 items-start cursor-pointer';
+                        toast.innerHTML = `
+                            <div class="bg-red-50 p-2 rounded-xl text-red-600">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-zinc-900">New Order Placed!</p>
+                                <p class="text-[11px] text-zinc-500 truncate">Order ${order.order_number} for ₹${parseFloat(order.total_amount).toFixed(0)}</p>
+                            </div>
+                        `;
+                        
+                        toast.addEventListener('click', () => {
+                            readOrderIds.add(order.id);
+                            saveReadOrders();
+                            window.location.href = `/admin/orders/${order.order_number}`;
+                        });
+
+                        document.body.appendChild(toast);
+                        
+                        setTimeout(() => {
+                            toast.classList.remove('translate-y-10', 'opacity-0');
+                        }, 100);
+
+                        setTimeout(() => {
+                            toast.classList.add('translate-y-10', 'opacity-0');
+                            setTimeout(() => toast.remove(), 300);
+                        }, 6000);
+                    };
+
+                    bellBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        dropdown.classList.toggle('hidden');
+                    });
+
+                    document.addEventListener('click', (e) => {
+                        if (!e.target.closest('#admin-notification-container')) {
+                            dropdown.classList.add('hidden');
+                        }
+                    });
+
+                    markReadBtn.addEventListener('click', () => {
+                        knownOrderIds.forEach(id => readOrderIds.add(id));
+                        saveReadOrders();
+                        checkNewOrders();
+                    });
+
+                    checkNewOrders();
+                    setInterval(checkNewOrders, 5000);
+                });
+            </script>
         @else
             {{ $slot }}
         @endif

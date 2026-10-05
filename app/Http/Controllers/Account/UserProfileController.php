@@ -21,6 +21,7 @@ class UserProfileController extends Controller
         return view('account.profile', [
             'site' => config('personal_site'),
             'profile' => $user?->profile()->first(),
+            'privacyConsent' => $user?->privacyConsent()->first(),
         ]);
     }
 

@@ -4,22 +4,32 @@ namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderNotification;
+use App\Models\RefundRequest;
+use App\Models\ReturnRequest;
+use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
 class OrderController extends Controller
 {
     public function index(Request $request): View
     {
-        $orders = Order::where('user_id', $request->user()->id)
+        $user = $request->user();
+        $orders = $user->orders()
             ->withCount('items')
-            ->latest()
+            ->with(['items' => fn ($q) => $q->with('product')->orderBy('id')->limit(1)])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $notifications = $user->orderNotifications()
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return view('account.orders.index', [
             'site' => config('personal_site'),
             'orders' => $orders,
+            'notifications' => $notifications,
         ]);
     }
 
@@ -28,6 +38,12 @@ class OrderController extends Controller
         abort_unless($order->user_id === $request->user()->id, 403);
 
         $order->load('items.product');
+
+        // Mark order notifications as read
+        $request->user()->orderNotifications()
+            ->where('order_id', $order->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
 
         return view('account.orders.show', [
             'site' => config('personal_site'),
@@ -39,7 +55,13 @@ class OrderController extends Controller
     {
         abort_unless($order->user_id === $request->user()->id, 403);
 
-        $steps = $this->buildTrackingSteps($order);
+        // Mark order notifications as read
+        $request->user()->orderNotifications()
+            ->where('order_id', $order->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        $steps = $this->getTrackingSteps($order);
 
         return view('account.orders.track', [
             'site' => config('personal_site'),
@@ -48,50 +70,281 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Build an ordered list of tracking steps based on the order status.
-     *
-     * @return list<array{label: string, description: string, state: string, time: ?Carbon}>
-     */
-    private function buildTrackingSteps(Order $order): array
+    public function trackSigned(Request $request, Order $order): View
     {
-        $statusSequence = ['Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered'];
-        $currentIndex = array_search($order->status, $statusSequence, true);
+        // Must have valid cryptographic signature unless authenticated owner
+        if (! $request->hasValidSignature()) {
+            if (! $request->user() || $order->user_id !== $request->user()->id) {
+                abort(403, 'Invalid or expired tracking link.');
+            }
+        }
 
+        $order->load(['items.product', 'user']);
+
+        if ($request->user() && $order->user_id === $request->user()->id) {
+            $request->user()->orderNotifications()
+                ->where('order_id', $order->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+        }
+
+        $steps = $this->getTrackingSteps($order);
+
+        return view('account.orders.track', [
+            'site' => config('personal_site'),
+            'order' => $order,
+            'steps' => $steps,
+        ]);
+    }
+
+    protected function getTrackingSteps(Order $order): array
+    {
+        if ($order->status === 'Cancelled') {
+            return [
+                [
+                    'name' => 'Confirmed',
+                    'label' => 'Order Confirmed',
+                    'description' => 'Your order has been placed.',
+                    'state' => 'completed',
+                    'time' => $order->confirmed_at ?? $order->created_at,
+                ],
+                [
+                    'name' => 'Cancelled',
+                    'label' => 'Order Cancelled',
+                    'description' => 'Reason: '.($order->cancellation_reason ?? 'Cancelled by admin'),
+                    'state' => 'active',
+                    'time' => $order->cancelled_at ?? $order->updated_at,
+                ],
+            ];
+        }
+
+        $steps = [
+            [
+                'name' => 'Confirmed',
+                'label' => 'Order Confirmed',
+                'description' => 'Your order has been placed and confirmed.',
+            ],
+            [
+                'name' => 'Shipped',
+                'label' => 'Shipped',
+                'description' => 'Your package has been handed over to our courier partner.',
+            ],
+            [
+                'name' => 'Out for Delivery',
+                'label' => 'Out for Delivery',
+                'description' => 'Our delivery partner is on the way to your address.',
+            ],
+            [
+                'name' => 'Delivered',
+                'label' => 'Delivered',
+                'description' => 'The package has been successfully delivered.',
+            ],
+        ];
+
+        $statusList = array_column($steps, 'name');
+        $currentIndex = array_search($order->status, $statusList);
         if ($currentIndex === false) {
             $currentIndex = 0;
         }
 
-        $descriptions = [
-            'Confirmed' => 'Your order has been confirmed and is being prepared.',
-            'Processing' => 'Your order is being packed with care.',
-            'Shipped' => 'Your order has been shipped and is on its way.',
-            'Out for Delivery' => 'Your order is out for delivery and will arrive soon.',
-            'Delivered' => 'Your order has been delivered successfully.',
+        $times = [
+            'Confirmed' => $order->confirmed_at ?? $order->created_at,
+            'Shipped' => $order->shipped_at,
+            'Out for Delivery' => $order->out_for_delivery_at,
+            'Delivered' => $order->delivered_at,
         ];
 
-        $steps = [];
-
-        foreach ($statusSequence as $index => $status) {
-            if ($index < $currentIndex) {
-                $state = 'completed';
-                $time = $order->created_at->copy()->addHours($index * 6);
-            } elseif ($index === $currentIndex) {
-                $state = 'active';
-                $time = $index === 0 ? $order->created_at : $order->updated_at;
-            } else {
-                $state = 'pending';
-                $time = null;
+        if ($order->status === 'Delivered') {
+            foreach ($steps as &$step) {
+                $step['state'] = 'completed';
+                $step['time'] = $times[$step['name']] ?? $order->delivered_at;
             }
-
-            $steps[] = [
-                'label' => $status,
-                'description' => $descriptions[$status],
-                'state' => $state,
-                'time' => $time,
-            ];
+        } else {
+            foreach ($steps as $index => &$step) {
+                $stepTime = $times[$step['name']] ?? null;
+                if ($index < $currentIndex) {
+                    $step['state'] = 'completed';
+                    $step['time'] = $stepTime ?? $order->created_at;
+                } elseif ($index === $currentIndex) {
+                    $step['state'] = 'active';
+                    $step['time'] = $stepTime ?? $order->updated_at;
+                } else {
+                    $step['state'] = 'pending';
+                    $step['time'] = null;
+                }
+            }
         }
 
         return $steps;
+    }
+
+    public function downloadReceipt(Request $request, Order $order)
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        $order->load(['items.product', 'user']);
+
+        $pdfGenerator = new PdfReceiptGenerator;
+        $pdfContent = $pdfGenerator->generate($order);
+
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="Receipt_'.$order->order_number.'.pdf"',
+            'Content-Length' => strlen($pdfContent),
+        ]);
+    }
+
+    public function cancel(Request $request, Order $order)
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        if ($order->status !== 'Confirmed') {
+            return redirect()->back()->with('error', 'Only confirmed orders can be cancelled.');
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $order->update([
+            'status' => 'Cancelled',
+            'cancelled_at' => now(),
+            'cancellation_reason' => $validated['reason'],
+        ]);
+
+        return redirect()->back()->with('success', 'Order cancelled successfully.');
+    }
+
+    public function requestReturn(Request $request, Order $order)
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        if ($order->status !== 'Delivered') {
+            return redirect()->back()->with('error', 'Only delivered orders can be returned.');
+        }
+
+        if (! $order->delivered_at || $order->delivered_at->diffInDays(now()) > 7) {
+            return redirect()->back()->with('error', 'The return period for this order has expired.');
+        }
+
+        if ($order->returnRequest()->exists() || $order->refundRequest()->exists()) {
+            return redirect()->back()->with('error', 'A return or refund request already exists for this order.');
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        ReturnRequest::create([
+            'order_id' => $order->id,
+            'reason' => $validated['reason'],
+            'status' => 'Pending',
+        ]);
+
+        return redirect()->back()->with('success', 'Return request submitted successfully.');
+    }
+
+    public function requestRefund(Request $request, Order $order)
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        if ($order->status !== 'Delivered') {
+            return redirect()->back()->with('error', 'Refund requests can only be placed for delivered orders.');
+        }
+
+        if (! $order->delivered_at || $order->delivered_at->diffInDays(now()) > 7) {
+            return redirect()->back()->with('error', 'The refund period for this order has expired.');
+        }
+
+        if ($order->returnRequest()->exists() || $order->refundRequest()->exists()) {
+            return redirect()->back()->with('error', 'A return or refund request already exists for this order.');
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        RefundRequest::create([
+            'order_id' => $order->id,
+            'amount' => $order->total_amount,
+            'reason' => $validated['reason'],
+            'status' => 'Pending',
+        ]);
+
+        return redirect()->back()->with('success', 'Refund request submitted successfully.');
+    }
+
+    public function sse(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user, 401);
+
+        return response()->stream(function () use ($user) {
+            if (function_exists('set_time_limit')) {
+                @set_time_limit(0);
+            }
+            @ini_set('max_execution_time', '0');
+
+            $lastId = OrderNotification::where('user_id', $user->id)->max('id') ?? 0;
+            // Send retry interval and initial connection message
+            echo "retry: 3000\n\n";
+            echo "event: connected\ndata: {}\n\n";
+            if (ob_get_level() > 0) {
+                ob_flush();
+            }
+            flush();
+
+            // Run stream cycle safely for up to 25 seconds before closing cleanly,
+            // allowing the browser EventSource to auto-reconnect seamlessly
+            $startTime = time();
+
+            while (time() - $startTime < 25) {
+                if (connection_aborted()) {
+                    break;
+                }
+
+                $newNotifications = OrderNotification::with('order')
+                    ->where('user_id', $user->id)
+                    ->where('id', '>', $lastId)
+                    ->orderBy('id', 'asc')
+                    ->get();
+
+                if ($newNotifications->isNotEmpty()) {
+                    foreach ($newNotifications as $notif) {
+                        $lastId = $notif->id;
+
+                        $payload = json_encode([
+                            'id' => $notif->id,
+                            'order_number' => $notif->order?->order_number,
+                            'message' => $notif->message,
+                            'status' => $notif->status,
+                            'created_at' => $notif->created_at?->diffForHumans(),
+                            'url' => $notif->order ? route('account.orders.show', $notif->order->order_number) : '#',
+                            'unread_count' => OrderNotification::where('user_id', $user->id)->whereNull('read_at')->count(),
+                        ]);
+
+                        echo "data: {$payload}\n\n";
+                        if (ob_get_level() > 0) {
+                            ob_flush();
+                        }
+                        flush();
+                    }
+                } else {
+                    // Send a keep-alive heartbeat comment
+                    echo ": keepalive\n\n";
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
+                }
+
+                sleep(1);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection' => 'keep-alive',
+            'X-Accel-Buffering' => 'no',
+        ]);
     }
 }

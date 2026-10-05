@@ -182,7 +182,7 @@
                         <h3 id="trust-dialog-title" class="mt-2 text-2xl font-semibold text-white"></h3>
                     </div>
                     <button
-                        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                         type="button"
                         data-trust-close
                         aria-label="Close"
@@ -219,7 +219,7 @@
                     <p class="mt-1 text-xs text-zinc-400">Direct to {{ $contact['email'] }}</p>
                 </div>
                 <button
-                    class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                     type="button"
                     data-close-email-modal
                     aria-label="Close email modal"

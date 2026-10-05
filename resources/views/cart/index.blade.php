@@ -65,8 +65,19 @@
                         <div class="mt-4 flex items-center justify-between text-lg font-semibold text-zinc-950">
                             <span>{{ __('ui.total') }}</span><span data-cart-total>Rs. {{ number_format($subtotal, 2) }}</span>
                         </div>
+
+                        {{-- Delivery Location Availability Banner in Cart --}}
+                        <div id="cart-delivery-status-box" class="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-zinc-800">Delivery Status</span>
+                                <span id="cart-delivery-badge" class="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-bold text-zinc-700">Checking...</span>
+                            </div>
+                            <p id="cart-delivery-desc" class="mt-1 text-[11px] text-zinc-500">Fast shipping to eligible regions.</p>
+                        </div>
+
                         <a
                             href="{{ route('checkout.index') }}"
+                            id="btn-cart-checkout"
                             class="mt-6 block w-full rounded-lg bg-zinc-950 py-3 text-center text-sm font-semibold text-white transition hover:bg-brand-primary"
                         >
                             Proceed to Checkout
@@ -76,6 +87,59 @@
             @endif
         </div>
     </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const deliveryBox = document.getElementById('cart-delivery-status-box');
+            const deliveryBadge = document.getElementById('cart-delivery-badge');
+            const deliveryDesc = document.getElementById('cart-delivery-desc');
+            const btnCheckout = document.getElementById('btn-cart-checkout');
+
+            if (!deliveryBox || !btnCheckout) return;
+
+            const savedLocStr = localStorage.getItem('flavourflow_delivery_location');
+            if (savedLocStr) {
+                try {
+                    const loc = JSON.parse(savedLocStr);
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+                    const res = await fetch('{{ route('delivery.check') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({ country: loc.country, state: loc.state, city: loc.city })
+                    });
+
+                    const data = await res.json();
+                    if (data.deliverable) {
+                        deliveryBadge.className = 'rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800';
+                        deliveryBadge.textContent = 'Deliverable';
+                        deliveryDesc.textContent = data.message || 'Eligible for delivery';
+                        btnCheckout.classList.remove('opacity-50', 'pointer-events-none');
+                    } else {
+                        deliveryBadge.className = 'rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-800';
+                        deliveryBadge.textContent = 'Undeliverable';
+                        deliveryDesc.textContent = 'Sorry, we don’t deliver to this location.';
+                        deliveryBox.classList.add('border-red-200', 'bg-red-50');
+                        btnCheckout.classList.add('opacity-50', 'cursor-not-allowed');
+                        btnCheckout.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            alert('Sorry, we don’t deliver to this location. Please update your delivery location before checking out.');
+                        });
+                    }
+                } catch (e) {
+                    deliveryBadge.textContent = 'Standard Delivery';
+                }
+            } else {
+                deliveryBadge.className = 'rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800';
+                deliveryBadge.textContent = 'Standard Delivery';
+                deliveryDesc.textContent = 'Location will be verified at checkout.';
+            }
+        });
+    </script>
 
     <!-- Clear Cart Confirmation Modal -->
     <div

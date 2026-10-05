@@ -1,17 +1,22 @@
 <?php
 
 use App\Http\Controllers\Account\OrderController;
+use App\Http\Controllers\Account\UserCouponController;
 use App\Http\Controllers\Account\UserProfileController;
 use App\Http\Controllers\Admin\AdminAiController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminCouponController;
+use App\Http\Controllers\Admin\AdminCouponRewardRuleController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminDeliveryController;
 use App\Http\Controllers\Admin\AdminInventoryController;
 use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminSessionController;
-use App\Http\Controllers\AiAssistantController;
+use App\Http\Controllers\Admin\AdminSortOptionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -19,12 +24,14 @@ use App\Http\Controllers\Auth\UserSessionController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactEmailController;
+use App\Http\Controllers\DeliveryCheckController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OfferDetailsController;
-use App\Http\Controllers\OrderRatingController;
+use App\Http\Controllers\PaymentWebhookController;
+use App\Http\Controllers\PrivacyConsentController;
 use App\Http\Controllers\ProductDetailsController;
-use App\Http\Controllers\RazorpayController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Middleware\PreventAdminResponseCaching;
 use Illuminate\Support\Facades\Route;
@@ -51,9 +58,13 @@ Route::post('/logout', [UserSessionController::class, 'destroy'])
     ->name('logout');
 
 Route::get('/language/{locale}', LocaleController::class)->name('language.switch');
+Route::post('/delivery/check', [DeliveryCheckController::class, 'check'])->name('delivery.check');
+Route::post('/webhook/payment', [PaymentWebhookController::class, 'handle'])->name('payment.webhook');
 
 Route::get('/products/{product:slug}', ProductDetailsController::class)->name('products.show');
 Route::get('/offers/{offer}', OfferDetailsController::class)->name('offers.show');
+Route::view('/privacy-policy', 'privacy')->name('privacy-policy');
+Route::get('/orders/{order:order_number}/track/secure', [OrderController::class, 'trackSigned'])->name('orders.track.signed');
 
 // Step 8: Customer AI Assistant Routes
 Route::prefix('ai')->name('ai.')->group(function () {
@@ -72,9 +83,15 @@ Route::middleware('auth')->group(function () {
             Route::patch('/mobile-number', [UserProfileController::class, 'updateMobileNumber'])->name('profile.mobile_number.update');
             Route::patch('/email-address', [UserProfileController::class, 'updateEmailAddress'])->name('profile.email.update');
             Route::delete('/', [UserProfileController::class, 'destroy'])->name('profile.destroy');
+            Route::get('/coupons', [UserCouponController::class, 'index'])->name('coupons');
             Route::get('/orders', [OrderController::class, 'index'])->name('orders');
-            Route::get('/orders/{order:order_id}', [OrderController::class, 'show'])->name('orders.show');
-            Route::get('/orders/{order:order_id}/track', [OrderController::class, 'track'])->name('orders.track');
+            Route::get('/orders/{order:order_number}', [OrderController::class, 'show'])->name('orders.show');
+            Route::get('/orders/{order:order_number}/track', [OrderController::class, 'track'])->name('orders.track');
+            Route::get('/orders/{order:order_number}/receipt', [OrderController::class, 'downloadReceipt'])->name('orders.receipt');
+            Route::get('/orders/notifications/sse', [OrderController::class, 'sse'])->name('orders.notifications.sse');
+            Route::post('/orders/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+            Route::post('/orders/{order:order_number}/return', [OrderController::class, 'requestReturn'])->name('orders.return');
+            Route::post('/orders/{order:order_number}/refund', [OrderController::class, 'requestRefund'])->name('orders.refund');
         });
 
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -86,9 +103,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-    Route::get('/checkout/payment/{order}', [CheckoutController::class, 'payment'])->name('checkout.payment');
+    Route::post('/checkout/coupon/apply', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
-    Route::post('/orders/{order}/rate', [OrderRatingController::class, 'store'])->name('orders.rate');
 
     // Razorpay payment routes (authenticated)
     Route::prefix('razorpay')->name('razorpay.')->group(function () {
@@ -98,9 +114,14 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/privacy-consent', [PrivacyConsentController::class, 'store'])->name('privacy-consent.store');
+    Route::put('/account/privacy-consent', [PrivacyConsentController::class, 'update'])->name('privacy-consent.update');
     Route::get('/wishlist/products', [WishlistController::class, 'products'])->name('wishlist.products');
     Route::post('/wishlist/{product:slug}', [WishlistController::class, 'store'])->name('wishlist.store');
     Route::delete('/wishlist/{product:slug}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
+
+    Route::get('/reviews/pending', [ReviewController::class, 'pending'])->name('reviews.pending');
+    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 });
 
 // Razorpay Webhook (no auth, no CSRF — verified via signature)
@@ -123,10 +144,13 @@ Route::prefix('admin')
             });
 
             // Orders
-            Route::get('/orders/unread-summary', [AdminOrderController::class, 'unreadSummary'])->name('orders.unread_summary');
-            Route::post('/orders/mark-viewed', [AdminOrderController::class, 'markViewed'])->name('orders.mark_viewed');
             Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
             Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+            Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus');
+            Route::patch('/return-requests/{returnRequest}/status', [AdminOrderController::class, 'updateReturnStatus'])->name('returnRequests.updateStatus');
+            Route::patch('/refund-requests/{refundRequest}/status', [AdminOrderController::class, 'updateRefundStatus'])->name('refundRequests.updateStatus');
+            Route::get('/orders/{order}/receipt', [AdminOrderController::class, 'downloadReceipt'])->name('orders.receipt.download');
+            Route::get('/api/new-orders', [AdminOrderController::class, 'newOrders'])->name('api.newOrders');
 
             // Inventory
             Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');
@@ -143,12 +167,43 @@ Route::prefix('admin')
             Route::resource('offers', AdminOfferController::class)
                 ->only(['index', 'store', 'edit', 'update', 'destroy']);
 
-            /*
-            |--------------------------------------------------------------------------
-            | Temporary AI Engine Diagnostics (Isolated Step 1 verification)
-            |--------------------------------------------------------------------------
-            */
-            Route::get('/ai-status', [AdminAiController::class, 'index'])->name('ai.index');
+            // Profile
+            Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
+            Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
+
+            // Delivery Control
+            Route::get('/delivery', [AdminDeliveryController::class, 'index'])->name('delivery.index');
+            Route::put('/delivery', [AdminDeliveryController::class, 'update'])->name('delivery.update');
+
+            // Coupon Control
+            Route::prefix('coupons')->name('coupons.')->group(function () {
+                Route::get('/', [AdminCouponController::class, 'index'])->name('index');
+                Route::get('/create', [AdminCouponController::class, 'create'])->name('create');
+                Route::post('/', [AdminCouponController::class, 'store'])->name('store');
+                Route::get('/{coupon}/edit', [AdminCouponController::class, 'edit'])->name('edit');
+                Route::put('/{coupon}', [AdminCouponController::class, 'update'])->name('update');
+                Route::patch('/{coupon}/toggle', [AdminCouponController::class, 'toggle'])->name('toggle');
+                Route::delete('/{coupon}', [AdminCouponController::class, 'destroy'])->name('destroy');
+
+                // Reward Rules
+                Route::post('/reward-rules', [AdminCouponRewardRuleController::class, 'store'])->name('rewardRules.store');
+                Route::put('/reward-rules/{rewardRule}', [AdminCouponRewardRuleController::class, 'update'])->name('rewardRules.update');
+                Route::patch('/reward-rules/{rewardRule}/toggle', [AdminCouponRewardRuleController::class, 'toggle'])->name('rewardRules.toggle');
+                Route::delete('/reward-rules/{rewardRule}', [AdminCouponRewardRuleController::class, 'destroy'])->name('rewardRules.destroy');
+            });
+
+            // Sort Products Management
+            Route::prefix('sort-options')->name('sort-options.')->group(function () {
+                Route::get('/', [AdminSortOptionController::class, 'index'])->name('index');
+                Route::post('/', [AdminSortOptionController::class, 'store'])->name('store');
+                Route::put('/{sortOption}', [AdminSortOptionController::class, 'update'])->name('update');
+                Route::patch('/{sortOption}/toggle', [AdminSortOptionController::class, 'toggle'])->name('toggle');
+                Route::patch('/{sortOption}/default', [AdminSortOptionController::class, 'setDefault'])->name('set-default');
+                Route::post('/{sortOption}/move', [AdminSortOptionController::class, 'move'])->name('move');
+                Route::post('/reorder', [AdminSortOptionController::class, 'reorder'])->name('reorder');
+                Route::post('/reset', [AdminSortOptionController::class, 'reset'])->name('reset');
+                Route::delete('/{sortOption}', [AdminSortOptionController::class, 'destroy'])->name('destroy');
+            });
 
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
         });
