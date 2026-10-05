@@ -419,7 +419,7 @@ class AiBrain implements AiBrainInterface
         $intentLevel = $analysis['purchase_intent']['level'] ?? 'none';
 
         $reasoning = $totalOrders > 0
-            ? "Sales overview: {$totalOrders} orders totalling ₹".number_format($totalSpent, 2).". Average order value: ₹".number_format($avgOrderValue, 2).". Current purchase intent level: {$intentLevel}."
+            ? "Sales overview: {$totalOrders} orders totalling ₹".number_format($totalSpent, 2).'. Average order value: ₹'.number_format($avgOrderValue, 2).". Current purchase intent level: {$intentLevel}."
             : 'No sales data recorded yet. Drive traffic to the store to generate insights.';
 
         return new AiReasoningResponse(

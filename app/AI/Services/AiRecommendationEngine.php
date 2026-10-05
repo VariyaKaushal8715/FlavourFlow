@@ -139,11 +139,11 @@ class AiRecommendationEngine implements AiRecommendationEngineInterface
             if (count($recommended) < $limit && isset($context['personalization_profile']['preferred_products'])) {
                 foreach ($context['personalization_profile']['preferred_products'] as $p) {
                     $pid = $p['product_id'] ?? null;
-                    if (!$pid || isset($usedIds[$pid])) {
+                    if (! $pid || isset($usedIds[$pid])) {
                         continue;
                     }
                     $product = Product::find($pid);
-                    if (!$product || ($product->stock ?? 0) <= 0) {
+                    if (! $product || ($product->stock ?? 0) <= 0) {
                         continue;
                     }
                     $recommended[] = [

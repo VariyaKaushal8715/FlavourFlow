@@ -2,14 +2,14 @@
 
 namespace Tests\Unit;
 
+use App\AI\Models\AiEvent;
 use App\AI\Services\CustomerPersonalizationService;
-use App\Models\User;
-use App\Models\Product;
+use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\User;
 use App\Models\Wishlist;
-use App\Models\Cart;
-use App\AI\Models\AiEvent;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -58,7 +58,7 @@ class CustomerPersonalizationServiceTest extends TestCase
         // Ensure cache is clear for this test
         Cache::forget("customer_personalization_profile:{$user->id}");
 
-        $service = new CustomerPersonalizationService();
+        $service = new CustomerPersonalizationService;
         $profile = $service->getProfile($user->id);
 
         // Verify top‑level keys exist
@@ -89,7 +89,7 @@ class CustomerPersonalizationServiceTest extends TestCase
     {
         $user = User::factory()->create();
         Cache::forget("customer_personalization_profile:{$user->id}");
-        $service = new CustomerPersonalizationService();
+        $service = new CustomerPersonalizationService;
         $profile = $service->getProfile($user->id);
         // All list‑type keys should be empty arrays
         $this->assertEmpty($profile['preferred_categories']);

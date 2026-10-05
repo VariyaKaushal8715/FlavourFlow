@@ -3,12 +3,12 @@
 namespace App\AI\Services;
 
 use App\AI\Models\AiEvent;
-use App\Models\Order;
-use App\Models\Wishlist;
 use App\Models\Cart;
+use App\Models\Order;
 use App\Models\Product;
-use Illuminate\Support\Facades\Cache;
+use App\Models\Wishlist;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Service to build a deterministic personalization profile for a customer.
@@ -85,7 +85,7 @@ class CustomerPersonalizationService
                 default => 1,
             };
             $productScores[$productId] = ($productScores[$productId] ?? 0) + $weight * $base;
-            if (!isset($productNames[$productId]) && isset($event->metadata['name'])) {
+            if (! isset($productNames[$productId]) && isset($event->metadata['name'])) {
                 $productNames[$productId] = (string) $event->metadata['name'];
             }
         }
@@ -153,6 +153,7 @@ class CustomerPersonalizationService
     protected function recencyWeight(Carbon $timestamp): float
     {
         $days = Carbon::now()->diffInDays($timestamp);
+
         return pow(0.5, $days / 30);
     }
 

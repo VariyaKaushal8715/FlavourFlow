@@ -37,11 +37,11 @@ test('online checkout creates order with awaiting_payment status and redirects t
         ]);
 
     $order = Order::query()->where('user_id', $user->id)->first();
-    
+
     expect($order)->not->toBeNull();
     expect($order->status)->toBe('Confirmed');
     expect($order->payment_status)->toBe('awaiting_payment');
-    
+
     $response->assertRedirect(route('checkout.payment', $order));
 });
 
@@ -49,7 +49,7 @@ test('webhook without signature returns error', function () {
     $response = $this->postJson(route('razorpay.webhook'), [
         'event' => 'payment.captured',
     ]);
-    
+
     // It should either return 500 if no secret configured or 403 if signature is invalid
-    $response->assertStatus(500); 
+    $response->assertStatus(500);
 });

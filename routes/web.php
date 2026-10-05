@@ -3,7 +3,6 @@
 use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\Account\UserCouponController;
 use App\Http\Controllers\Account\UserProfileController;
-use App\Http\Controllers\Admin\AdminAiController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCouponController;

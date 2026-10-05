@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\AI\Contracts\AiEventTrackerInterface;
 use App\Models\Product;
 use App\Support\WishlistState;
 use Illuminate\Contracts\View\View;
