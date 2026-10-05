@@ -65,8 +65,10 @@ class CheckoutController extends Controller
             'payment_method' => ['required', 'string', 'in:cod,online'],
         ]);
 
+        $isOnlinePayment = $validated['payment_method'] === 'online';
+
         try {
-            $order = DB::transaction(function () use ($validated, $cart, $request) {
+            $order = DB::transaction(function () use ($validated, $cart, $request, $isOnlinePayment) {
                 // Generate a unique Order ID
                 $orderId = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
@@ -75,12 +77,16 @@ class CheckoutController extends Controller
                 $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
                 $total = $subtotal + $deliveryCharge;
 
+                // For online payments: 'awaiting_payment' until Razorpay confirms
+                // For COD: 'pending' as before
+                $paymentStatus = $isOnlinePayment ? 'awaiting_payment' : 'pending';
+
                 $order = Order::create([
                     'order_id' => $orderId,
                     'order_number' => $orderId,
                     'user_id' => $request->user()->id,
                     'status' => 'Confirmed',
-                    'payment_status' => ($validated['payment_method'] === 'cod' ? 'pending' : 'paid'),
+                    'payment_status' => $paymentStatus,
                     'name' => $validated['name'],
                     'mobile' => $validated['mobile'],
                     'email' => $validated['email'],
@@ -137,10 +143,38 @@ class CheckoutController extends Controller
                 'payment_method' => $order->payment_method,
             ]);
 
+            // For online payments, redirect to the payment page where Razorpay Checkout opens
+            if ($isOnlinePayment) {
+                return redirect()->route('checkout.payment', $order)->with('razorpay_order', $order->id);
+            }
+
             return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
         } catch (ValidationException $e) {
             return redirect()->route('cart.index')->withErrors($e->errors());
         }
+    }
+
+    public function payment(Order $order): View|RedirectResponse
+    {
+        // Ensure the order belongs to the current user
+        if ($order->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        // Only allow payment for online orders awaiting payment or failed (retry)
+        if ($order->payment_method !== 'online' || ! in_array($order->payment_status, ['awaiting_payment', 'failed'])) {
+            if ($order->payment_status === 'paid') {
+                return redirect()->route('checkout.success')->with('placed_order_id', $order->id);
+            }
+
+            return redirect()->route('home');
+        }
+
+        return view('checkout.payment', [
+            'site' => config('personal_site'),
+            'order' => $order,
+            'razorpayKeyId' => config('razorpay.key_id'),
+        ]);
     }
 
     public function success(): View|RedirectResponse

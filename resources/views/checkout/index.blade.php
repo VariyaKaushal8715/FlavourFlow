@@ -177,36 +177,22 @@
                                 </div>
                             </label>
 
-                            <div id="online-payment-ui" class="hidden rounded-2xl border border-dashed border-amber-300/60 bg-amber-50/30 p-5 space-y-4 transition">
-                                <p class="text-xs font-semibold uppercase tracking-wider text-brand-primary">Simulated Secure Payment Gateway</p>
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Card Number"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
-                                    <input
-                                        type="text"
-                                        placeholder="Name on Card"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
+                            <div id="online-payment-ui" class="hidden rounded-2xl border border-dashed border-amber-300/60 bg-amber-50/30 p-5 space-y-3 transition">
+                                <div class="flex items-center gap-3">
+                                    <svg class="h-7 w-7 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="2" y="5" width="20" height="14" rx="2"/>
+                                        <path d="M2 10h20"/>
+                                    </svg>
+                                    <div>
+                                        <p class="text-sm font-semibold text-zinc-950">Razorpay Secure Checkout</p>
+                                        <p class="text-xs text-zinc-500">You will be prompted to pay via UPI, card, net banking, or wallets after placing the order.</p>
+                                    </div>
                                 </div>
-                                <div class="grid gap-4 sm:grid-cols-3">
-                                    <input
-                                        type="text"
-                                        placeholder="Expiry MM/YY"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
-                                    <input
-                                        type="text"
-                                        placeholder="CVV"
-                                        class="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-brand-primary"
-                                        disabled
-                                    >
-                                    <span class="inline-flex items-center justify-center text-[10px] font-semibold text-zinc-400">Locked Demo Mode</span>
+                                <div class="flex flex-wrap gap-2 pt-1">
+                                    <span class="inline-flex items-center rounded-lg bg-white px-2.5 py-1 text-[10px] font-semibold text-zinc-500 border border-zinc-200 shadow-sm">UPI</span>
+                                    <span class="inline-flex items-center rounded-lg bg-white px-2.5 py-1 text-[10px] font-semibold text-zinc-500 border border-zinc-200 shadow-sm">Cards</span>
+                                    <span class="inline-flex items-center rounded-lg bg-white px-2.5 py-1 text-[10px] font-semibold text-zinc-500 border border-zinc-200 shadow-sm">Net Banking</span>
+                                    <span class="inline-flex items-center rounded-lg bg-white px-2.5 py-1 text-[10px] font-semibold text-zinc-500 border border-zinc-200 shadow-sm">Wallets</span>
                                 </div>
                             </div>
                         </div>

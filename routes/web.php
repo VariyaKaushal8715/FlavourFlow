@@ -24,6 +24,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OfferDetailsController;
 use App\Http\Controllers\OrderRatingController;
 use App\Http\Controllers\ProductDetailsController;
+use App\Http\Controllers\RazorpayController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Middleware\PreventAdminResponseCaching;
 use Illuminate\Support\Facades\Route;
@@ -85,14 +86,25 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/payment/{order}', [CheckoutController::class, 'payment'])->name('checkout.payment');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::post('/orders/{order}/rate', [OrderRatingController::class, 'store'])->name('orders.rate');
+
+    // Razorpay payment routes (authenticated)
+    Route::prefix('razorpay')->name('razorpay.')->group(function () {
+        Route::post('/create-order', [RazorpayController::class, 'createOrder'])->name('create-order');
+        Route::post('/verify', [RazorpayController::class, 'verifyPayment'])->name('verify');
+        Route::post('/failure', [RazorpayController::class, 'handleFailure'])->name('failure');
+    });
 
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::get('/wishlist/products', [WishlistController::class, 'products'])->name('wishlist.products');
     Route::post('/wishlist/{product:slug}', [WishlistController::class, 'store'])->name('wishlist.store');
     Route::delete('/wishlist/{product:slug}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
 });
+
+// Razorpay Webhook (no auth, no CSRF — verified via signature)
+Route::post('/razorpay/webhook', [RazorpayController::class, 'webhook'])->name('razorpay.webhook');
 
 Route::prefix('admin')
     ->name('admin.')
