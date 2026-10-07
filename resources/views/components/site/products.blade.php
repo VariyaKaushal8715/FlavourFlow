@@ -7,6 +7,11 @@
     'tone' => 'default',
     'wishlistProductIds' => [],
     'sort' => 'featured',
+    'sortOptions' => null,
+    'minPrice' => null,
+    'maxPrice' => null,
+    'lowestPrice' => 0,
+    'highestPrice' => 1000,
 ])
 
 @php
@@ -92,9 +97,14 @@
                 {{ $displayDescription }}
             </p>
             @if ($tone === 'default')
-                <form class="flex flex-col gap-2 lg:justify-self-end" method="GET" action="{{ route('home') }}" data-reveal>
-                    <label class="text-[0.65rem] sm:text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500" for="product-sort">{{ __('ui.sort_products') }}</label>
-                    @foreach (request()->except('sort') as $key => $value)
+                <form
+                    id="product-filter-form"
+                    class="flex flex-col gap-2.5 lg:justify-self-end w-full lg:w-auto"
+                    method="GET"
+                    action="{{ route('home') }}#{{ $sectionId }}"
+                    data-reveal
+                >
+                    @foreach (request()->except(['sort', 'min_price', 'max_price', 'page']) as $key => $value)
                         @if (is_array($value))
                             @foreach ($value as $item)
                                 <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
@@ -103,19 +113,129 @@
                             <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                         @endif
                     @endforeach
-                    <div class="flex items-center gap-2 sm:gap-3">
-                        <select
-                            id="product-sort"
-                            name="sort"
-                            class="min-h-9 sm:min-h-12 rounded-lg border border-zinc-300 bg-white px-2 sm:px-4 text-xs sm:text-sm outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+
+                    <div class="flex items-center justify-between gap-2">
+                        <label class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500" for="custom-sort-trigger">
+                            {{ __('ui.sort_products') }}
+                        </label>
+                        @if ($hasActiveFilters)
+                            <a
+                                href="{{ route('home') }}#{{ $sectionId }}"
+                                class="text-xs font-semibold text-brand-primary hover:text-amber-700 underline transition-colors"
+                            >
+                                {{ __('ui.clear_filters') }}
+                            </a>
+                        @endif
+                    </div>
+
+                    <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
+                        <!-- Custom Animated Sort Dropdown with embedded Price Range Slider -->
+                        <div class="relative w-full sm:w-72" id="sort-dropdown-container">
+                            <input type="hidden" name="sort" id="product-sort-input" value="{{ $currentSort }}">
+                            <input type="hidden" name="min_price" id="hidden-min-price" value="{{ $minPrice ?? '' }}">
+                            <input type="hidden" name="max_price" id="hidden-max-price" value="{{ $maxPrice ?? '' }}">
+
+                            <button
+                                type="button"
+                                id="custom-sort-trigger"
+                                aria-haspopup="listbox"
+                                aria-expanded="false"
+                                class="flex w-full min-h-12 items-center justify-between rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-900 shadow-sm transition hover:border-amber-400 focus:border-brand-primary focus:outline-none focus:ring-4 focus:ring-amber-500/10"
+                            >
+                                <span id="selected-sort-label" class="truncate">{{ $triggerLabel }}</span>
+                                <svg id="sort-chevron" class="ml-2 h-4 w-4 shrink-0 text-zinc-500 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <!-- Dropdown Menu with animation and embedded slider -->
+                            <div
+                                id="sort-dropdown-menu"
+                                role="listbox"
+                                tabindex="-1"
+                                class="absolute left-0 right-0 z-30 mt-2 origin-top rounded-2xl border border-amber-200/80 bg-white p-2 shadow-2xl transition-all duration-200 ease-out invisible opacity-0 scale-95 pointer-events-none"
+                            >
+                                <div class="space-y-1">
+                                    @foreach ($formattedOptions as $key => $label)
+                                        <div
+                                            role="option"
+                                            data-value="{{ $key }}"
+                                            aria-selected="{{ $currentSort === $key ? 'true' : 'false' }}"
+                                            class="sort-option group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all duration-150 {{ $currentSort === $key ? 'bg-amber-50/90 font-semibold text-brand-primary' : 'text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950' }}"
+                                        >
+                                            <span class="flex items-center gap-2">
+                                                @if ($key === 'price_range')
+                                                    <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                                                    </svg>
+                                                @endif
+                                                {{ $label }}
+                                            </span>
+                                            <svg class="h-4 w-4 text-brand-primary {{ $currentSort === $key ? 'opacity-100' : 'opacity-0 group-hover:opacity-30' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <!-- Embedded Horizontal Dual Range Slider Section -->
+                                <div
+                                    id="price-range-panel"
+                                    class="transition-all duration-300 ease-out overflow-hidden {{ $currentSort === 'price_range' ? 'max-h-56 opacity-100 mt-2.5 pt-3 border-t border-amber-100 px-2' : 'max-h-0 opacity-0 px-2' }}"
+                                >
+                                    <div class="flex items-center justify-between text-xs font-semibold mb-2">
+                                        <span class="text-zinc-500 uppercase tracking-wider text-[10px]">Price Filter:</span>
+                                        <span class="text-brand-primary font-bold text-sm">
+                                            ₹<span id="slider-min-text">{{ $curMin }}</span> – ₹<span id="slider-max-text">{{ $curMax }}</span>
+                                        </span>
+                                    </div>
+
+                                    <!-- Dual range bar container -->
+                                    <div class="relative w-full py-3">
+                                        <!-- Base Track -->
+                                        <div class="relative h-2 w-full rounded-full bg-zinc-200">
+                                            <!-- Highlight Track -->
+                                            <div id="slider-highlight-bar" class="absolute h-2 rounded-full bg-brand-primary transition-all duration-75"></div>
+                                        </div>
+
+                                        <!-- Min Handle Input -->
+                                        <input
+                                            type="range"
+                                            id="range-min-slider"
+                                            min="{{ $lowest }}"
+                                            max="{{ $highest }}"
+                                            step="5"
+                                            value="{{ $curMin }}"
+                                            class="dual-range-input"
+                                            aria-label="Minimum price"
+                                        >
+
+                                        <!-- Max Handle Input -->
+                                        <input
+                                            type="range"
+                                            id="range-max-slider"
+                                            min="{{ $lowest }}"
+                                            max="{{ $highest }}"
+                                            step="5"
+                                            value="{{ $curMax }}"
+                                            class="dual-range-input"
+                                            aria-label="Maximum price"
+                                        >
+                                    </div>
+
+                                    <div class="flex justify-between text-[10px] text-zinc-400 font-medium px-1 mt-1">
+                                        <span>₹{{ $lowest }}</span>
+                                        <span>₹{{ $highest }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            id="filter-apply-btn"
+                            class="inline-flex min-h-12 items-center justify-center rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-primary active:scale-95 focus:outline-none focus:ring-4 focus:ring-zinc-900/20 shrink-0"
+                            type="submit"
                         >
-                            <option value="featured" @selected($sort === 'featured')>{{ __('ui.featured') }}</option>
-                            <option value="rating" @selected($sort === 'rating')>{{ __('ui.top_rated') }}</option>
-                            <option value="price_asc" @selected($sort === 'price_asc')>{{ __('ui.price_low_high') }}</option>
-                            <option value="price_desc" @selected($sort === 'price_desc')>{{ __('ui.price_high_low') }}</option>
-                            <option value="name" @selected($sort === 'name')>{{ __('ui.name_az') }}</option>
-                        </select>
-                        <button class="inline-flex min-h-9 sm:min-h-12 items-center justify-center rounded-lg bg-zinc-950 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-white transition hover:bg-red-700" type="submit">
                             {{ __('ui.apply') }}
                         </button>
                     </div>
@@ -123,11 +243,33 @@
             @endif
         </div>
 
-        <div @class([
-            'grid grid-cols-2 gap-2.5 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3',
-            'mt-4 sm:mt-10' => $tone === 'default',
-            'mt-4 sm:mt-6' => $tone === 'offer',
-        ])>
+        @if (empty($products))
+            <div class="mt-12 rounded-3xl border border-dashed border-amber-200 bg-amber-50/40 p-12 text-center" data-reveal>
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-brand-primary shadow-sm">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <h3 class="mt-4 text-lg font-semibold text-zinc-950">{{ __('ui.no_products_found') }}</h3>
+                <p class="mt-2 text-sm text-zinc-500">Try adjusting your price range or clearing active filters to view all spices.</p>
+                <div class="mt-6">
+                    <a
+                        href="{{ route('home') }}#{{ $sectionId }}"
+                        class="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-brand-primary active:scale-95"
+                    >
+                        {{ __('ui.clear_filters') }}
+                    </a>
+                </div>
+            </div>
+        @else
+            <div
+                id="products-grid-container"
+                @class([
+                    'grid grid-cols-2 gap-2.5 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3 transition-all duration-300 ease-out opacity-100',
+                    'mt-4 sm:mt-10' => $tone === 'default',
+                    'mt-4 sm:mt-6' => $tone === 'offer',
+                ])
+            >
             @foreach ($products as $index => $product)
                 @php
                     $productId = $product['id'] ?? null;
@@ -216,7 +358,8 @@
                     </button>
                 </article>
             @endforeach
-        </div>
+            </div>
+        @endif
     </div>
 
     @if ($tone === 'default')
