@@ -36,8 +36,8 @@ return [
     ],
 
     'razorpay' => [
-        'key_id' => env('RAZORPAY_KEY_ID', 'rzp_test_dummy_key_id'),
-        'key_secret' => env('RAZORPAY_KEY_SECRET', 'rzp_test_dummy_key_secret'),
+        'key_id' => env('RAZORPAY_KEY_ID') ?: 'rzp_test_dummy_key_id',
+        'key_secret' => env('RAZORPAY_KEY_SECRET') ?: 'rzp_test_dummy_key_secret',
         'mode' => env('RAZORPAY_MODE', 'test'),
     ],
 
