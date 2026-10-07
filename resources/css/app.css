@@ -42,34 +42,40 @@
         align-items: center;
         justify-content: center;
         border-radius: 0.5rem;
-        color: #d4d4d8;
+        padding: 0.25rem;
+        color: #d1d5db;
         cursor: pointer;
         outline: none;
-        transition: color 180ms ease, transform 180ms ease;
+        transition: color 180ms ease, transform 180ms ease, stroke 180ms ease;
     }
 
     .review-star svg {
-        height: 1.75rem;
-        width: 1.75rem;
+        height: 2rem;
+        width: 2rem;
         fill: currentColor;
+        stroke: #9ca3af;
+        stroke-width: 1px;
     }
 
-    .review-star.is-preview {
-        color: #f0b429;
+    .review-star.is-preview,
+    .review-star.is-hovered {
+        color: #facc15;
+        stroke: #ca8a04;
     }
 
     .review-star.is-selected {
-        color: #c97808;
-        transform: scale(1.04);
-    }
-
-    .review-star.is-hovered {
+        color: #eab308;
+        stroke: #a16207;
         transform: scale(1.1);
     }
 
+    .review-star.is-hovered {
+        transform: scale(1.18);
+    }
+
     .review-star:focus-visible {
-        box-shadow: 0 0 0 3px rgb(244 185 66 / 0.28);
-        color: #b35f05;
+        box-shadow: 0 0 0 3px rgb(234 179 8 / 0.35);
+        color: #eab308;
     }
 
     .wishlist-button[data-wishlisted='true'] {

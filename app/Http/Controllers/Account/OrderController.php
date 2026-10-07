@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AdminNewReturnRequestNotification;
+use App\Mail\AdminOrderCancelledNotification;
+use App\Mail\OrderStatusUpdatedCustomer;
+use App\Mail\ReturnRequestSubmittedCustomer;
 use App\Models\Order;
 use App\Models\OrderNotification;
 use App\Models\RefundRequest;
@@ -10,6 +14,8 @@ use App\Models\ReturnRequest;
 use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
@@ -178,6 +184,14 @@ class OrderController extends Controller
             'cancellation_reason' => $validated['reason'],
         ]);
 
+        try {
+            $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+            Mail::to($order->email)->send(new OrderStatusUpdatedCustomer($order, 'Cancelled'));
+            Mail::to($adminEmail)->send(new AdminOrderCancelledNotification($order));
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch order cancellation emails: '.$e->getMessage());
+        }
+
         return redirect()->back()->with('success', 'Order cancelled successfully.');
     }
 
@@ -201,11 +215,19 @@ class OrderController extends Controller
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
-        ReturnRequest::create([
+        $returnRequest = ReturnRequest::create([
             'order_id' => $order->id,
             'reason' => $validated['reason'],
             'status' => 'Pending',
         ]);
+
+        try {
+            $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+            Mail::to($order->email)->send(new ReturnRequestSubmittedCustomer($returnRequest));
+            Mail::to($adminEmail)->send(new AdminNewReturnRequestNotification($returnRequest));
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch return request emails: '.$e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Return request submitted successfully.');
     }
@@ -230,12 +252,24 @@ class OrderController extends Controller
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
-        RefundRequest::create([
+        $refundRequest = RefundRequest::create([
             'order_id' => $order->id,
             'amount' => $order->total_amount,
             'reason' => $validated['reason'],
             'status' => 'Pending',
         ]);
+
+        try {
+            $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+            if (! empty($order->email)) {
+                Mail::to($order->email)->send(new ReturnRequestSubmittedCustomer(new ReturnRequest(['order_id' => $order->id, 'reason' => $validated['reason'], 'status' => 'Pending'])));
+            }
+            if (! empty($adminEmail)) {
+                Mail::to($adminEmail)->send(new AdminNewReturnRequestNotification(new ReturnRequest(['order_id' => $order->id, 'reason' => $validated['reason'], 'status' => 'Pending'])));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch refund request emails: '.$e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Refund request submitted successfully.');
     }

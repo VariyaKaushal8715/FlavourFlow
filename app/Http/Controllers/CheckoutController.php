@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\AdminNewOrderNotification;
+use App\Mail\OrderPlaced;
+use App\Mail\PaymentSuccessful;
 use App\Models\DeliverySetting;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -10,13 +13,13 @@ use App\Models\Product;
 use App\Services\CouponService;
 use App\Services\RazorpayService;
 use App\Support\CartState;
-use App\Support\GujaratLocation;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -284,6 +287,14 @@ class CheckoutController extends Controller
 
                 $cart->clear();
 
+                try {
+                    $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+                    Mail::to($order->email)->send(new OrderPlaced($order));
+                    Mail::to($adminEmail)->send(new AdminNewOrderNotification($order));
+                } catch (\Throwable $e) {
+                    Log::error('Failed to dispatch order placed emails: '.$e->getMessage());
+                }
+
                 return $order;
             });
 
@@ -395,6 +406,15 @@ class CheckoutController extends Controller
             });
 
             $this->couponService->generateRewardCouponForOrder($order->refresh());
+
+            try {
+                $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+                Mail::to($order->email)->send(new OrderPlaced($order));
+                Mail::to($order->email)->send(new PaymentSuccessful($order));
+                Mail::to($adminEmail)->send(new AdminNewOrderNotification($order));
+            } catch (\Throwable $e) {
+                Log::error('Failed to dispatch Razorpay order placed emails: '.$e->getMessage());
+            }
 
             session()->put('placed_order_id', $order->id);
 
