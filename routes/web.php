@@ -186,6 +186,19 @@ Route::prefix('admin')
                 Route::delete('/reward-rules/{rewardRule}', [AdminCouponRewardRuleController::class, 'destroy'])->name('rewardRules.destroy');
             });
 
+            // Sort Products Management
+            Route::prefix('sort-options')->name('sort-options.')->group(function () {
+                Route::get('/', [AdminSortOptionController::class, 'index'])->name('index');
+                Route::post('/', [AdminSortOptionController::class, 'store'])->name('store');
+                Route::put('/{sortOption}', [AdminSortOptionController::class, 'update'])->name('update');
+                Route::patch('/{sortOption}/toggle', [AdminSortOptionController::class, 'toggle'])->name('toggle');
+                Route::patch('/{sortOption}/default', [AdminSortOptionController::class, 'setDefault'])->name('set-default');
+                Route::post('/{sortOption}/move', [AdminSortOptionController::class, 'move'])->name('move');
+                Route::post('/reorder', [AdminSortOptionController::class, 'reorder'])->name('reorder');
+                Route::post('/reset', [AdminSortOptionController::class, 'reset'])->name('reset');
+                Route::delete('/{sortOption}', [AdminSortOptionController::class, 'destroy'])->name('destroy');
+            });
+
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
         });
     });

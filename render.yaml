@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: flavourflow
+    env: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: APP_NAME
+        value: FlavourFlow
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: DB_DATABASE
+        value: /var/www/html/database/database.sqlite
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: RUN_SEEDS
+        value: "true"
+      - key: ADMIN_EMAIL
+        value: admin@flavourflow.test
+      - key: ADMIN_PASSWORD
+        value: FlavourFlow@123

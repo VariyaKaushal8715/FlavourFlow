@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Offer;
 use App\Models\Product;
+use App\Models\ProductSortOption;
 use App\Support\ProductHighlightBuilder;
 use App\Support\WishlistState;
 use Illuminate\Contracts\View\View;
