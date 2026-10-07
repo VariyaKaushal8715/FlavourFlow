@@ -1,22 +1,22 @@
 @props(['offers'])
 
 @if ($offers->isNotEmpty())
-    <section id="offers" class="bg-white py-20 sm:py-24">
-        <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
-            <div class="grid gap-6 border-b border-zinc-200 pb-9 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.65fr)] lg:items-end" data-reveal>
+    <section id="offers" class="bg-white py-10 sm:py-24">
+        <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="grid gap-4 border-b border-zinc-200 pb-6 sm:pb-9 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.65fr)] lg:items-end" data-reveal>
                 <div class="max-w-3xl">
-                    <p class="text-sm font-semibold text-brand-primary">{{ __('ui.offers_eyebrow') }}</p>
-                    <h2 class="mt-3 text-3xl font-semibold leading-tight text-zinc-950 sm:text-5xl">{{ __('ui.offers_title') }}</h2>
+                    <p class="text-xs sm:text-sm font-semibold text-brand-primary">{{ __('ui.offers_eyebrow') }}</p>
+                    <h2 class="mt-2 text-2xl font-semibold leading-tight text-zinc-950 sm:text-5xl">{{ __('ui.offers_title') }}</h2>
                 </div>
-                <p class="max-w-lg text-base leading-8 text-zinc-600 lg:justify-self-end">Seasonal bundles and limited-value picks, kept clear so you always know what you are getting.</p>
+                <p class="max-w-lg text-xs sm:text-base leading-relaxed sm:leading-8 text-zinc-600 lg:justify-self-end">Seasonal bundles and limited-value picks, kept clear so you always know what you are getting.</p>
             </div>
 
-            <div class="offer-stage group relative mt-10 min-h-[42rem] overflow-hidden rounded-lg bg-zinc-950 text-white sm:min-h-[40rem] lg:min-h-[38rem]" data-offer-stage data-reveal>
+            <div class="offer-stage group relative mt-6 sm:mt-10 min-h-[30rem] overflow-hidden rounded-lg bg-zinc-950 text-white sm:min-h-[40rem] lg:min-h-[38rem]" data-offer-stage data-reveal>
                 <img class="offer-stage-image absolute inset-0 h-full w-full object-cover" src="{{ asset('images/flavourflow-offers-composite.png') }}" alt="FlavourFlow spices and brand mark">
                 <div class="offer-stage-shade absolute inset-0" aria-hidden="true"></div>
                 <div class="offer-stage-glow absolute left-0 top-0 h-full w-2/3" aria-hidden="true"></div>
 
-                <div class="relative z-10 min-h-[42rem] sm:min-h-[40rem] lg:min-h-[38rem]">
+                <div class="relative z-10 min-h-[30rem] sm:min-h-[40rem] lg:min-h-[38rem]">
                     @foreach ($offers as $index => $offer)
                         @php
                             $motionName = strtolower($offer->eyebrow.' '.$offer->title);
@@ -31,7 +31,7 @@
                         <article
                             id="offer-panel-{{ $offer->id }}"
                             @class([
-                                'offer-panel absolute inset-x-0 top-0 max-w-2xl px-6 pb-40 pt-10 sm:px-10 sm:pb-36 sm:pt-14 lg:px-14 lg:pb-40 lg:pt-16',
+                                'offer-panel absolute inset-x-0 top-0 max-w-2xl px-4 pb-28 pt-6 sm:px-10 sm:pb-36 sm:pt-14 lg:px-14 lg:pb-40 lg:pt-16',
                                 'is-active' => $loop->first,
                             ])
                             data-offer-panel
@@ -39,22 +39,22 @@
                             aria-hidden="{{ $loop->first ? 'false' : 'true' }}"
                         >
                             <a class="block rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-accent focus:ring-offset-4 focus:ring-offset-zinc-950" href="{{ route('offers.show', $offer) }}" aria-label="View {{ $offer->title }} offer details">
-                                <div class="flex flex-wrap items-center gap-4">
-                                    <span class="offer-discount relative inline-flex min-h-16 min-w-28 items-center justify-center overflow-hidden rounded-lg bg-brand-accent px-5 py-3 text-xl font-semibold text-brand-ink shadow-lg shadow-black/25 sm:text-2xl">
+                                <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+                                    <span class="offer-discount relative inline-flex min-h-12 min-w-20 sm:min-h-16 sm:min-w-28 items-center justify-center overflow-hidden rounded-lg bg-brand-accent px-3 py-2 sm:px-5 sm:py-3 text-lg font-semibold text-brand-ink shadow-lg shadow-black/25 sm:text-2xl">
                                         {{ $offer->discount_label }}
                                     </span>
-                                    <span class="offer-eyebrow text-xs font-semibold uppercase text-brand-accent">{{ $offer->eyebrow }}</span>
+                                    <span class="offer-eyebrow text-[0.65rem] sm:text-xs font-semibold uppercase text-brand-accent">{{ $offer->eyebrow }}</span>
                                 </div>
 
-                                <h3 class="offer-panel-title mt-7 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">{{ $offer->title }}</h3>
-                                <p class="offer-panel-description mt-5 max-w-xl text-base leading-8 text-white/75">{{ $offer->description }}</p>
+                                <h3 class="offer-panel-title mt-4 sm:mt-7 max-w-xl text-2xl font-semibold leading-tight sm:text-5xl">{{ $offer->title }}</h3>
+                                <p class="offer-panel-description mt-2 sm:mt-5 max-w-xl text-xs sm:text-base leading-relaxed sm:leading-8 text-white/75 line-clamp-2 sm:line-clamp-none">{{ $offer->description }}</p>
 
-                                <div class="offer-panel-meta mt-7 flex flex-wrap items-center gap-3 text-xs font-semibold">
+                                <div class="offer-panel-meta mt-4 sm:mt-7 flex flex-wrap items-center gap-2 sm:gap-3 text-[0.65rem] sm:text-xs font-semibold">
                                     @if ($offer->coupon_code)
-                                        <span class="rounded-lg border border-white/25 bg-black/35 px-4 py-3 backdrop-blur">Use code: {{ $offer->coupon_code }}</span>
+                                        <span class="rounded-lg border border-white/25 bg-black/35 px-3 py-2 sm:px-4 sm:py-3 backdrop-blur">Use code: {{ $offer->coupon_code }}</span>
                                     @endif
                                     <span class="text-white/60">{{ $offer->dateRangeLabel() }}</span>
-                                    <span class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-3 text-zinc-950">
+                                    <span class="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg bg-white px-3 py-2 sm:px-4 sm:py-3 text-zinc-950">
                                         {{ __('ui.view_offer_details') }} <span aria-hidden="true">&rarr;</span>
                                     </span>
                                 </div>

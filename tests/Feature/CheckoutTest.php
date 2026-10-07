@@ -60,7 +60,7 @@ test('authenticated user with items can view checkout page', function () {
         ->assertSee('Rs. 200.00');
 });
 
-test('checkout renders every online payment method and its fields', function () {
+test('checkout renders online payment option', function () {
     $user = User::factory()->create();
     $product = Product::factory()->create(['price' => 100, 'quantity' => 10]);
 
@@ -81,19 +81,10 @@ test('checkout renders every online payment method and its fields', function () 
     $this->actingAs($user)
         ->get(route('checkout.index'))
         ->assertSuccessful()
-        ->assertSee('Choose Payment Method')
-        ->assertSee('UPI')
-        ->assertSee('Credit / Debit Card')
-        ->assertSee('Net Banking')
-        ->assertSee('Wallets')
-        ->assertSee('name="upi_id"', false)
-        ->assertSee('name="card_number"', false)
-        ->assertSee('name="card_name"', false)
-        ->assertSee('name="card_expiry"', false)
-        ->assertSee('name="card_cvv"', false)
-        ->assertSee('name="netbanking_bank"', false)
-        ->assertSee('name="wallet_provider"', false)
-        ->assertSee('Test / Demo Payment');
+        ->assertSee('Select Payment Method')
+        ->assertSee('Cash on Delivery (COD)')
+        ->assertSee('Online Payment')
+        ->assertSee('Razorpay Payment Gateway');
 });
 
 test('checkout validation rules are enforced', function () {
@@ -121,6 +112,8 @@ test('checkout validation rules are enforced', function () {
 
 test('successful checkout saves order, clear cart, reduces stock, and redirects', function () {
     $user = User::factory()->create();
+    User::factory()->create(['is_admin' => true, 'email' => 'admin@example.com']);
+
     $product = Product::factory()->create(['price' => 100, 'quantity' => 10]);
 
     CartItem::query()->create([
@@ -157,15 +150,11 @@ test('successful checkout saves order, clear cart, reduces stock, and redirects'
         'user_id' => $user->id,
     ]);
 
-    // Assert order inserted with default standard delivery
+    // Assert order inserted
     $order = Order::query()->where('user_id', $user->id)->first();
     expect($order)->not->toBeNull();
     expect($order->status)->toBe('Pending');
     expect($order->name)->toBe('John Doe');
-    expect($order->delivery_option)->toBe('standard');
-    expect($order->delivery_days)->toBe('4-5 days');
-    expect((float) $order->delivery_charge)->toBe(30.00);
-    expect((float) $order->total_amount)->toBe(230.00);
 
     // Assert order items inserted
     $this->assertDatabaseHas('order_items', [
@@ -177,47 +166,6 @@ test('successful checkout saves order, clear cart, reduces stock, and redirects'
     // Assert product stock reduced (10 - 2 = 8)
     $product->refresh();
     expect($product->quantity)->toBe(8);
-});
-
-test('express delivery adds 99 charge and sets 1-2 days delivery window', function () {
-    $user = User::factory()->create();
-    $product = Product::factory()->create(['price' => 150, 'quantity' => 5]);
-
-    CartItem::query()->create([
-        'user_id' => $user->id,
-        'product_id' => $product->id,
-        'product_name' => $product->name,
-        'product_slug' => $product->slug,
-        'sku' => $product->sku,
-        'category' => $product->categoryName(),
-        'unit' => $product->unit,
-        'quantity' => 1,
-        'unit_price' => 150,
-        'line_total' => 150,
-        'image_path' => $product->image_path,
-    ]);
-
-    $this->actingAs($user)
-        ->post(route('checkout.store'), [
-            'name' => 'Jane Express',
-            'mobile' => '9876543210',
-            'email' => 'jane@example.com',
-            'address' => '456 Speed Way',
-            'city' => 'Mumbai',
-            'state' => 'Maharashtra',
-            'pincode' => '400001',
-            'country' => 'India',
-            'payment_method' => 'cod',
-            'delivery_option' => 'express',
-        ])
-        ->assertRedirect(route('checkout.success'));
-
-    $order = Order::query()->where('user_id', $user->id)->first();
-    expect($order)->not->toBeNull();
-    expect($order->delivery_option)->toBe('express');
-    expect($order->delivery_days)->toBe('1-2 days');
-    expect((float) $order->delivery_charge)->toBe(99.00);
-    expect((float) $order->total_amount)->toBe(249.00); // 150 + 99
 });
 
 test('checkout fails and redirects back to cart if product is out of stock', function () {
@@ -262,86 +210,4 @@ test('checkout fails and redirects back to cart if product is out of stock', fun
         'user_id' => $user->id,
         'product_id' => $product->id,
     ]);
-});
-
-test('standard delivery adds 30 charge when cart subtotal is under 300', function () {
-    $user = User::factory()->create();
-    $product = Product::factory()->create(['price' => 250, 'quantity' => 10]);
-
-    CartItem::query()->create([
-        'user_id' => $user->id,
-        'product_id' => $product->id,
-        'product_name' => $product->name,
-        'product_slug' => $product->slug,
-        'sku' => $product->sku,
-        'category' => $product->categoryName(),
-        'unit' => $product->unit,
-        'quantity' => 1,
-        'unit_price' => 250,
-        'line_total' => 250,
-        'image_path' => $product->image_path,
-    ]);
-
-    $this->actingAs($user)
-        ->post(route('checkout.store'), [
-            'name' => 'Jane Standard',
-            'mobile' => '9999999999',
-            'email' => 'jane@example.com',
-            'address' => '123 Standard St',
-            'city' => 'Ahmedabad',
-            'state' => 'Gujarat',
-            'pincode' => '380009',
-            'country' => 'India',
-            'payment_method' => 'cod',
-            'delivery_option' => 'standard',
-        ])
-        ->assertRedirect(route('checkout.success'));
-
-    $order = Order::query()->where('user_id', $user->id)->first();
-    expect($order)->not->toBeNull();
-    expect($order->delivery_option)->toBe('standard');
-    expect((float) $order->subtotal)->toBe(250.00);
-    expect((float) $order->delivery_charge)->toBe(30.00);
-    expect((float) $order->total_amount)->toBe(280.00);
-});
-
-test('standard delivery is free 0 charge when cart subtotal is 300 or more', function () {
-    $user = User::factory()->create();
-    $product = Product::factory()->create(['price' => 150, 'quantity' => 10]);
-
-    CartItem::query()->create([
-        'user_id' => $user->id,
-        'product_id' => $product->id,
-        'product_name' => $product->name,
-        'product_slug' => $product->slug,
-        'sku' => $product->sku,
-        'category' => $product->categoryName(),
-        'unit' => $product->unit,
-        'quantity' => 2,
-        'unit_price' => 150,
-        'line_total' => 300,
-        'image_path' => $product->image_path,
-    ]);
-
-    $this->actingAs($user)
-        ->post(route('checkout.store'), [
-            'name' => 'Free Delivery User',
-            'mobile' => '9999999999',
-            'email' => 'free@example.com',
-            'address' => '123 Free St',
-            'city' => 'Ahmedabad',
-            'state' => 'Gujarat',
-            'pincode' => '380009',
-            'country' => 'India',
-            'payment_method' => 'cod',
-            'delivery_option' => 'standard',
-        ])
-        ->assertRedirect(route('checkout.success'));
-
-    $order = Order::query()->where('user_id', $user->id)->first();
-    expect($order)->not->toBeNull();
-    expect($order->delivery_option)->toBe('standard');
-    expect((float) $order->subtotal)->toBe(300.00);
-    expect((float) $order->delivery_charge)->toBe(0.00);
-    expect((float) $order->total_amount)->toBe(300.00);
 });

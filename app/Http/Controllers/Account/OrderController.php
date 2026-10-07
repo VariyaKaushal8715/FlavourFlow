@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AdminNewReturnRequestNotification;
+use App\Mail\AdminOrderCancelledNotification;
+use App\Mail\OrderStatusUpdatedCustomer;
+use App\Mail\ReturnRequestSubmittedCustomer;
 use App\Models\Order;
 use App\Models\OrderNotification;
 use App\Models\RefundRequest;
@@ -10,6 +14,8 @@ use App\Models\ReturnRequest;
 use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
@@ -61,46 +67,8 @@ class OrderController extends Controller
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
-        $steps = $this->getTrackingSteps($order);
-
-        return view('account.orders.track', [
-            'site' => config('personal_site'),
-            'order' => $order,
-            'steps' => $steps,
-        ]);
-    }
-
-    public function trackSigned(Request $request, Order $order): View
-    {
-        // Must have valid cryptographic signature unless authenticated owner
-        if (! $request->hasValidSignature()) {
-            if (! $request->user() || $order->user_id !== $request->user()->id) {
-                abort(403, 'Invalid or expired tracking link.');
-            }
-        }
-
-        $order->load(['items.product', 'user']);
-
-        if ($request->user() && $order->user_id === $request->user()->id) {
-            $request->user()->orderNotifications()
-                ->where('order_id', $order->id)
-                ->whereNull('read_at')
-                ->update(['read_at' => now()]);
-        }
-
-        $steps = $this->getTrackingSteps($order);
-
-        return view('account.orders.track', [
-            'site' => config('personal_site'),
-            'order' => $order,
-            'steps' => $steps,
-        ]);
-    }
-
-    protected function getTrackingSteps(Order $order): array
-    {
         if ($order->status === 'Cancelled') {
-            return [
+            $steps = [
                 [
                     'name' => 'Confirmed',
                     'label' => 'Order Confirmed',
@@ -116,66 +84,70 @@ class OrderController extends Controller
                     'time' => $order->cancelled_at ?? $order->updated_at,
                 ],
             ];
-        }
-
-        $steps = [
-            [
-                'name' => 'Confirmed',
-                'label' => 'Order Confirmed',
-                'description' => 'Your order has been placed and confirmed.',
-            ],
-            [
-                'name' => 'Shipped',
-                'label' => 'Shipped',
-                'description' => 'Your package has been handed over to our courier partner.',
-            ],
-            [
-                'name' => 'Out for Delivery',
-                'label' => 'Out for Delivery',
-                'description' => 'Our delivery partner is on the way to your address.',
-            ],
-            [
-                'name' => 'Delivered',
-                'label' => 'Delivered',
-                'description' => 'The package has been successfully delivered.',
-            ],
-        ];
-
-        $statusList = array_column($steps, 'name');
-        $currentIndex = array_search($order->status, $statusList);
-        if ($currentIndex === false) {
-            $currentIndex = 0;
-        }
-
-        $times = [
-            'Confirmed' => $order->confirmed_at ?? $order->created_at,
-            'Shipped' => $order->shipped_at,
-            'Out for Delivery' => $order->out_for_delivery_at,
-            'Delivered' => $order->delivered_at,
-        ];
-
-        if ($order->status === 'Delivered') {
-            foreach ($steps as &$step) {
-                $step['state'] = 'completed';
-                $step['time'] = $times[$step['name']] ?? $order->delivered_at;
-            }
         } else {
-            foreach ($steps as $index => &$step) {
-                $stepTime = $times[$step['name']] ?? null;
-                if ($index < $currentIndex) {
+            $steps = [
+                [
+                    'name' => 'Confirmed',
+                    'label' => 'Order Confirmed',
+                    'description' => 'Your order has been placed and confirmed.',
+                ],
+                [
+                    'name' => 'Shipped',
+                    'label' => 'Shipped',
+                    'description' => 'Your package has been handed over to our courier partner.',
+                ],
+                [
+                    'name' => 'Out for Delivery',
+                    'label' => 'Out for Delivery',
+                    'description' => 'Our delivery partner is on the way to your address.',
+                ],
+                [
+                    'name' => 'Delivered',
+                    'label' => 'Delivered',
+                    'description' => 'The package has been successfully delivered.',
+                ],
+            ];
+
+            $statusList = array_column($steps, 'name');
+            $currentIndex = array_search($order->status, $statusList);
+            if ($currentIndex === false) {
+                $currentIndex = 0;
+            }
+
+            $times = [
+                'Confirmed' => $order->confirmed_at ?? $order->created_at,
+                'Shipped' => $order->shipped_at,
+                'Out for Delivery' => $order->out_for_delivery_at,
+                'Delivered' => $order->delivered_at,
+            ];
+
+            if ($order->status === 'Delivered') {
+                foreach ($steps as &$step) {
                     $step['state'] = 'completed';
-                    $step['time'] = $stepTime ?? $order->created_at;
-                } elseif ($index === $currentIndex) {
-                    $step['state'] = 'active';
-                    $step['time'] = $stepTime ?? $order->updated_at;
-                } else {
-                    $step['state'] = 'pending';
-                    $step['time'] = null;
+                    $step['time'] = $times[$step['name']] ?? $order->delivered_at;
+                }
+            } else {
+                foreach ($steps as $index => &$step) {
+                    $stepTime = $times[$step['name']];
+                    if ($index < $currentIndex) {
+                        $step['state'] = 'completed';
+                        $step['time'] = $stepTime ?? $order->created_at;
+                    } elseif ($index === $currentIndex) {
+                        $step['state'] = 'active';
+                        $step['time'] = $stepTime ?? $order->updated_at;
+                    } else {
+                        $step['state'] = 'pending';
+                        $step['time'] = null;
+                    }
                 }
             }
         }
 
-        return $steps;
+        return view('account.orders.track', [
+            'site' => config('personal_site'),
+            'order' => $order,
+            'steps' => $steps,
+        ]);
     }
 
     public function downloadReceipt(Request $request, Order $order)
@@ -212,6 +184,14 @@ class OrderController extends Controller
             'cancellation_reason' => $validated['reason'],
         ]);
 
+        try {
+            $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+            Mail::to($order->email)->send(new OrderStatusUpdatedCustomer($order, 'Cancelled'));
+            Mail::to($adminEmail)->send(new AdminOrderCancelledNotification($order));
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch order cancellation emails: '.$e->getMessage());
+        }
+
         return redirect()->back()->with('success', 'Order cancelled successfully.');
     }
 
@@ -235,11 +215,19 @@ class OrderController extends Controller
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
-        ReturnRequest::create([
+        $returnRequest = ReturnRequest::create([
             'order_id' => $order->id,
             'reason' => $validated['reason'],
             'status' => 'Pending',
         ]);
+
+        try {
+            $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+            Mail::to($order->email)->send(new ReturnRequestSubmittedCustomer($returnRequest));
+            Mail::to($adminEmail)->send(new AdminNewReturnRequestNotification($returnRequest));
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch return request emails: '.$e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Return request submitted successfully.');
     }
@@ -264,12 +252,24 @@ class OrderController extends Controller
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
-        RefundRequest::create([
+        $refundRequest = RefundRequest::create([
             'order_id' => $order->id,
             'amount' => $order->total_amount,
             'reason' => $validated['reason'],
             'status' => 'Pending',
         ]);
+
+        try {
+            $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+            if (! empty($order->email)) {
+                Mail::to($order->email)->send(new ReturnRequestSubmittedCustomer(new ReturnRequest(['order_id' => $order->id, 'reason' => $validated['reason'], 'status' => 'Pending'])));
+            }
+            if (! empty($adminEmail)) {
+                Mail::to($adminEmail)->send(new AdminNewReturnRequestNotification(new ReturnRequest(['order_id' => $order->id, 'reason' => $validated['reason'], 'status' => 'Pending'])));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch refund request emails: '.$e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Refund request submitted successfully.');
     }

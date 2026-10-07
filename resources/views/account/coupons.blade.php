@@ -244,7 +244,7 @@
                 const toast = document.getElementById('copy-toast');
                 toast.classList.remove('hidden', 'translate-y-4');
                 toast.classList.add('translate-y-0');
-                
+
                 setTimeout(() => {
                     toast.classList.add('translate-y-4');
                     setTimeout(() => toast.classList.add('hidden'), 300);

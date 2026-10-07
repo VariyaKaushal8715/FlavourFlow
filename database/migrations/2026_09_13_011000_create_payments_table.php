@@ -11,21 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payments', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('order_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('payment_method'); // card, netbanking, upi, cod
-            $table->string('provider')->default('demo');
-            $table->string('transaction_id')->unique();
-            $table->string('gateway_order_id')->nullable();
-            $table->decimal('amount', 10, 2);
-            $table->string('currency', 10)->default('INR');
-            $table->string('status')->default('successful'); // successful, pending, failed
-            $table->timestamp('paid_at')->nullable();
-            $table->string('failure_reason')->nullable();
-            $table->json('payment_details')->nullable();
-            $table->timestamps();
+        if (! Schema::hasTable('payments')) {
+            return;
+        }
+
+        Schema::table('payments', function (Blueprint $table) {
+            if (! Schema::hasColumn('payments', 'provider')) {
+                $table->string('provider')->default('demo')->after('payment_method');
+            }
+
+            if (! Schema::hasColumn('payments', 'transaction_id')) {
+                $table->string('transaction_id')->nullable()->unique()->after('provider');
+            }
+
+            if (! Schema::hasColumn('payments', 'gateway_order_id')) {
+                $table->string('gateway_order_id')->nullable()->after('transaction_id');
+            }
+
+            if (! Schema::hasColumn('payments', 'payment_details')) {
+                $table->json('payment_details')->nullable()->after('response_data');
+            }
         });
     }
 
@@ -34,6 +39,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payments');
+        Schema::table('payments', function (Blueprint $table) {
+            foreach (['payment_details', 'gateway_order_id', 'transaction_id', 'provider'] as $column) {
+                if (Schema::hasColumn('payments', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
+        });
     }
 };

@@ -45,6 +45,7 @@ return [
     'products' => [
         [
             'name' => 'Royal Garam Masala',
+            'slug' => 'royal-garam-masala',
             'category' => 'Signature blend',
             'description' => 'A warm, layered masala built for curries, gravies, biryani, and everyday home cooking.',
             'badge' => 'Hero pick',
@@ -64,6 +65,7 @@ return [
         ],
         [
             'name' => 'Red Chilli Powder',
+            'slug' => 'red-chilli-powder',
             'category' => 'Pure spice',
             'description' => 'Bright colour, clean heat, and a bold finish for daily recipes.',
             'badge' => 'Best seller',
@@ -83,6 +85,7 @@ return [
         ],
         [
             'name' => 'Kitchen King Mix',
+            'slug' => 'kitchen-king-mix',
             'category' => 'Everyday blend',
             'description' => 'Balanced spice profile for sabzi, snacks, and quick family meals.',
             'badge' => 'Popular',
@@ -102,6 +105,7 @@ return [
         ],
         [
             'name' => 'Turmeric Powder',
+            'slug' => 'turmeric-powder',
             'category' => 'Essential spice',
             'description' => 'Golden colour and earthy aroma for everyday Indian cooking.',
             'badge' => 'Essential',

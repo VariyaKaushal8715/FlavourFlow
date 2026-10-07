@@ -54,7 +54,7 @@ class Order extends Model
         'cancelled_at' => 'datetime',
     ];
 
-    protected static function booted()
+    protected static function booted(): void
     {
         static::updated(function (Order $order) {
             if ($order->isDirty('status')) {
@@ -104,6 +104,11 @@ class Order extends Model
     public function refundRequest(): HasOne
     {
         return $this->hasOne(RefundRequest::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 
     public function payment(): HasOne

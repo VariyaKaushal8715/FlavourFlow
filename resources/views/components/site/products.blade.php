@@ -75,26 +75,27 @@
 <section
     id="{{ $sectionId }}"
     @class([
-        'bg-zinc-50 py-20 sm:py-24' => $tone === 'default',
-        'bg-brand-surface py-8 sm:py-10' => $tone === 'offer',
+        'bg-zinc-50 py-8 sm:py-20 max-sm:px-2' => $tone === 'default',
+        'bg-brand-surface py-6 sm:py-10 max-sm:px-2' => $tone === 'offer',
     ])
 >
-    <div class="mx-auto w-full max-w-7xl px-6 lg:px-8">
+    <div class="mx-auto w-full max-w-7xl px-2 sm:px-6 lg:px-8">
         <div @class([
-            'flex flex-col gap-6 border-b border-zinc-200 lg:flex-row lg:items-end lg:justify-between',
-            'pb-10' => $tone === 'default',
-            'pb-6' => $tone === 'offer',
+            'grid gap-4 border-b border-zinc-200 lg:grid-cols-[0.8fr_1.2fr_auto] lg:items-end',
+            'pb-4 sm:pb-10' => $tone === 'default',
+            'pb-4 sm:pb-6' => $tone === 'offer',
         ])>
-            <div class="max-w-2xl" data-reveal>
-                <p class="text-sm font-semibold text-brand-primary">{{ $displayEyebrow }}</p>
+            <div data-reveal>
+                <p class="text-xs sm:text-sm font-semibold text-brand-primary">{{ $displayEyebrow }}</p>
                 <h2 @class([
-                    'mt-3 text-3xl font-semibold leading-tight text-zinc-950 sm:text-5xl',
+                    'mt-1 sm:mt-3 text-xl sm:text-3xl font-semibold leading-tight text-zinc-950',
+                    'sm:text-5xl' => $tone === 'default',
                     'sm:text-4xl' => $tone === 'offer',
                 ])>{{ $displayTitle }}</h2>
-                <p class="mt-4 text-base leading-8 text-zinc-600">
-                    {{ $displayDescription }}
-                </p>
             </div>
+            <p class="max-w-2xl text-xs sm:text-base leading-snug sm:leading-8 text-zinc-600 lg:justify-self-end hidden sm:block" data-reveal>
+                {{ $displayDescription }}
+            </p>
             @if ($tone === 'default')
                 <form
                     id="product-filter-form"
@@ -152,7 +153,7 @@
                                 id="sort-dropdown-menu"
                                 role="listbox"
                                 tabindex="-1"
-                                class="absolute left-0 right-0 z-30 mt-2 origin-top rounded-2xl border border-amber-200/80 bg-white p-2 shadow-2xl transition-all duration-200 ease-out invisible opacity-0 scale-95 pointer-events-none max-h-80 overflow-y-auto"
+                                class="absolute left-0 right-0 z-30 mt-2 origin-top rounded-2xl border border-amber-200/80 bg-white p-2 shadow-2xl transition-all duration-200 ease-out invisible opacity-0 scale-95 pointer-events-none"
                             >
                                 <div class="space-y-1">
                                     @foreach ($formattedOptions as $key => $label)
@@ -167,14 +168,6 @@
                                                     <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
                                                     </svg>
-                                                @elseif ($key === 'best_selling')
-                                                    <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /></svg>
-                                                @elseif ($key === 'rating')
-                                                    <svg class="h-4 w-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                                @elseif ($key === 'discount')
-                                                    <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                @elseif ($key === 'newest')
-                                                    <svg class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" /></svg>
                                                 @endif
                                                 {{ $label }}
                                             </span>
@@ -198,11 +191,11 @@
                                     </div>
 
                                     <!-- Dual range bar container -->
-                                    <div class="relative w-full h-8 flex items-center my-1">
+                                    <div class="relative w-full py-3">
                                         <!-- Base Track -->
-                                        <div class="relative h-2.5 w-full rounded-full bg-amber-100/90 border border-amber-200/80 shadow-inner">
+                                        <div class="relative h-2 w-full rounded-full bg-zinc-200">
                                             <!-- Highlight Track -->
-                                            <div id="slider-highlight-bar" class="absolute inset-y-0 rounded-full bg-gradient-to-r from-red-600 via-amber-600 to-red-600 shadow-sm transition-all duration-75"></div>
+                                            <div id="slider-highlight-bar" class="absolute h-2 rounded-full bg-brand-primary transition-all duration-75"></div>
                                         </div>
 
                                         <!-- Min Handle Input -->
@@ -230,7 +223,7 @@
                                         >
                                     </div>
 
-                                    <div class="flex items-center justify-between text-[11px] font-medium text-zinc-400 mt-1 pb-1">
+                                    <div class="flex justify-between text-[10px] text-zinc-400 font-medium px-1 mt-1">
                                         <span>₹{{ $lowest }}</span>
                                         <span>₹{{ $highest }}</span>
                                     </div>
@@ -238,39 +231,31 @@
                             </div>
                         </div>
 
-                        <!-- Apply & Reset Buttons -->
-                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <button
-                                id="filter-apply-btn"
-                                class="inline-flex min-h-12 flex-1 sm:flex-initial items-center justify-center rounded-xl bg-zinc-950 px-6 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-brand-primary active:scale-95 focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                                type="submit"
-                            >
-                                {{ __('ui.apply') }}
-                            </button>
-                            @if ($hasActiveFilters)
-                                <a
-                                    href="{{ route('home') }}#{{ $sectionId }}"
-                                    title="{{ __('ui.clear_filters') }}"
-                                    class="inline-flex min-h-12 items-center justify-center rounded-xl border border-zinc-300 bg-white px-3.5 text-sm font-semibold text-zinc-700 shadow-sm transition hover:border-zinc-400 hover:bg-zinc-50 active:scale-95"
-                                >
-                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </a>
-                            @endif
-                        </div>
+                        <button
+                            id="filter-apply-btn"
+                            class="inline-flex min-h-12 items-center justify-center rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-primary active:scale-95 focus:outline-none focus:ring-4 focus:ring-zinc-900/20 shrink-0"
+                            type="submit"
+                        >
+                            {{ __('ui.apply') }}
+                        </button>
                     </div>
                 </form>
             @endif
         </div>
 
         @if (empty($products))
-            <div class="mt-12 rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center" data-reveal>
-                <h3 class="text-lg font-semibold text-zinc-950">{{ __('ui.no_products_found') }}</h3>
-                <div class="mt-4">
+            <div class="mt-12 rounded-3xl border border-dashed border-amber-200 bg-amber-50/40 p-12 text-center" data-reveal>
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-brand-primary shadow-sm">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <h3 class="mt-4 text-lg font-semibold text-zinc-950">{{ __('ui.no_products_found') }}</h3>
+                <p class="mt-2 text-sm text-zinc-500">Try adjusting your price range or clearing active filters to view all spices.</p>
+                <div class="mt-6">
                     <a
                         href="{{ route('home') }}#{{ $sectionId }}"
-                        class="inline-flex items-center justify-center rounded-lg bg-zinc-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+                        class="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-brand-primary active:scale-95"
                     >
                         {{ __('ui.clear_filters') }}
                     </a>
@@ -280,63 +265,66 @@
             <div
                 id="products-grid-container"
                 @class([
-                    'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 transition-all duration-300 ease-out opacity-100',
-                    'mt-10' => $tone === 'default',
-                    'mt-6' => $tone === 'offer',
+                    'grid grid-cols-2 gap-2.5 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3 transition-all duration-300 ease-out opacity-100',
+                    'mt-4 sm:mt-10' => $tone === 'default',
+                    'mt-4 sm:mt-6' => $tone === 'offer',
                 ])
             >
-                @foreach ($products as $index => $product)
-                    @php
-                        $productId = $product['id'] ?? null;
-                        $isWishlisted = $productId && in_array($productId, $wishlistProductIds, true);
-                    @endphp
-                    <article class="product-tile group relative overflow-hidden rounded-lg border border-zinc-200 bg-white" data-reveal data-reveal-delay="{{ ($index % 3) * 90 }}">
-                        <a class="block h-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500" href="{{ $product['url'] ?? '#products' }}" aria-label="View {{ $product['name'] }} details">
-                            <div class="relative aspect-[4/3] overflow-hidden bg-zinc-900">
-                                <img class="h-full w-full object-cover transition duration-700 group-hover:scale-105" src="{{ asset($product['image']) }}" alt="{{ $product['name'] }}">
-                                <span class="absolute left-4 top-4 rounded-lg bg-white/90 px-3 py-2 text-xs font-semibold text-zinc-950 backdrop-blur">
-                                    {{ $product['badge'] }}
-                                </span>
-                            </div>
+            @foreach ($products as $index => $product)
+                @php
+                    $productId = $product['id'] ?? null;
+                    $isWishlisted = $productId && in_array($productId, $wishlistProductIds, true);
+                @endphp
+                <article class="product-tile group relative flex flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white" data-reveal data-reveal-delay="{{ ($index % 3) * 90 }}">
+                    <a class="flex h-full flex-col focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500" href="{{ $product['url'] ?? '#products' }}" aria-label="View {{ $product['name'] }} details">
+                        <div class="relative aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-zinc-900">
+                            <img class="h-full w-full object-cover transition duration-700 group-hover:scale-105" src="{{ asset($product['image']) }}" alt="{{ $product['name'] }}">
+                            <span class="absolute left-1.5 top-1.5 sm:left-4 sm:top-4 rounded bg-white/90 px-1.5 py-0.5 sm:px-3 sm:py-2 text-[0.6rem] sm:text-xs font-semibold text-zinc-950 backdrop-blur">
+                                {{ $product['badge'] }}
+                            </span>
+                        </div>
 
-                            <div class="p-5">
-                                <div class="flex items-center justify-between gap-4">
-                                    <p class="text-xs font-semibold uppercase text-brand-primary">{{ $product['category'] }}</p>
-                                    <p class="text-xs font-semibold text-emerald-700">{{ $product['metric'] }}</p>
-                                </div>
-                                <h3 class="mt-3 text-xl font-semibold text-zinc-950 transition group-hover:text-brand-primary">{{ $product['name'] }}</h3>
-                                <p class="mt-3 line-clamp-2 text-sm leading-7 text-zinc-600">{{ $product['description'] }}</p>
-                                <div class="mt-5 flex items-end justify-between gap-4 border-t border-zinc-100 pt-4">
+                        <div class="flex flex-1 flex-col p-2.5 sm:p-5">
+                            <div class="flex items-center justify-between gap-1 sm:gap-4">
+                                <p class="text-[0.6rem] sm:text-xs font-semibold uppercase text-brand-primary truncate">{{ $product['category'] }}</p>
+                                <p class="text-[0.6rem] sm:text-xs font-semibold text-emerald-700 shrink-0">{{ $product['metric'] }}</p>
+                            </div>
+                            <h3 class="mt-1 sm:mt-3 text-xs sm:text-xl font-semibold text-zinc-950 transition group-hover:text-brand-primary line-clamp-1 sm:line-clamp-none">{{ $product['name'] }}</h3>
+                            <p class="mt-1 sm:mt-3 line-clamp-1 sm:line-clamp-2 text-[0.68rem] sm:text-sm leading-tight sm:leading-7 text-zinc-600">{{ $product['description'] }}</p>
+                            
+                            <div class="mt-auto pt-2 sm:pt-4 border-t border-zinc-100">
+                                <div class="flex items-end justify-between gap-1 sm:gap-4">
                                     <div>
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <p class="text-sm font-semibold text-zinc-950">{{ $product['price'] }}</p>
+                                        <div class="flex flex-wrap items-center gap-1 sm:gap-2">
+                                            <p class="text-xs sm:text-sm font-semibold text-zinc-950">{{ $product['price'] }}</p>
                                             @if ($product['compare_at_price'])
-                                                <p class="text-xs text-zinc-400 line-through">{{ $product['compare_at_price'] }}</p>
+                                                <p class="text-[0.6rem] sm:text-xs text-zinc-400 line-through">{{ $product['compare_at_price'] }}</p>
                                             @endif
                                         </div>
-                                        <p class="mt-1 text-xs text-zinc-500">{{ $product['unit'] }}</p>
+                                        <p class="text-[0.6rem] sm:text-xs text-zinc-500">{{ $product['unit'] }}</p>
                                     </div>
                                     <p @class([
-                                        'text-xs font-semibold',
+                                        'text-[0.6rem] sm:text-xs font-semibold shrink-0',
                                         'text-emerald-700' => $product['in_stock'],
                                         'text-red-700' => ! $product['in_stock'],
                                     ])>
                                         {{ $product['in_stock'] ? __('ui.in_stock') : __('ui.out_of_stock') }}
                                     </p>
                                 </div>
-                                <div class="mt-4 flex items-center justify-between gap-2">
-                                    <p class="text-xs font-semibold text-zinc-950">View full details <span class="ml-1 text-brand-primary" aria-hidden="true">&rarr;</span></p>
-                                    <div class="flex items-center gap-2">
+                                <div class="mt-2 sm:mt-4 flex items-center justify-between gap-1 sm:gap-2">
+                                    <p class="text-[0.65rem] sm:text-xs font-semibold text-zinc-950 truncate max-sm:hidden">View full details <span class="ml-1 text-brand-primary" aria-hidden="true">&rarr;</span></p>
+                                    <p class="text-[0.65rem] font-semibold text-zinc-950 sm:hidden">Details <span class="text-brand-primary" aria-hidden="true">&rarr;</span></p>
+                                    <div class="flex items-center gap-1 sm:gap-2">
                                         <button
                                             type="button"
                                             data-wishlist-button
                                             data-product-id="{{ $product['id'] ?? '' }}"
                                             data-product-slug="{{ $product['slug'] ?? '' }}"
                                             data-wishlisted="{{ in_array($product['id'] ?? null, $wishlistProductIds, true) ? 'true' : 'false' }}"
-                                            class="wishlist-button inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
+                                            class="wishlist-button inline-flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
                                             aria-label="Toggle wishlist"
                                         >
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <svg class="h-3.5 w-3.5 sm:h-4 sm:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z" />
                                             </svg>
                                         </button>
@@ -345,30 +333,31 @@
                                             data-add-to-cart
                                             data-product-slug="{{ $product['slug'] ?? '' }}"
                                             @disabled(! $product['in_stock'])
-                                            class="inline-flex items-center justify-center rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50"
+                                            class="inline-flex items-center justify-center rounded-md bg-zinc-950 px-2 py-1 sm:px-3 sm:py-2 text-[0.65rem] sm:text-sm font-semibold text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap"
                                         >
-                                            {{ __('Add to cart') }}
+                                            {{ __('Add') }}<span class="max-sm:hidden">&nbsp;to cart</span>
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                        </a>
-                        <button
-                            class="wishlist-button absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-zinc-950 shadow-sm transition hover:bg-white hover:text-red-700 data-[wishlisted=true]:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                            type="button"
-                            data-wishlist-button
-                            data-product-id="{{ $product['id'] ?? '' }}"
-                            data-product-slug="{{ $product['slug'] ?? '' }}"
-                            data-wishlisted="{{ $isWishlisted ? 'true' : 'false' }}"
-                            aria-pressed="{{ $isWishlisted ? 'true' : 'false' }}"
-                            aria-label="{{ $isWishlisted ? 'Remove '.$product['name'].' from wishlist' : 'Add '.$product['name'].' to wishlist' }}"
-                        >
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z" />
-                            </svg>
-                        </button>
-                    </article>
-                @endforeach
+                        </div>
+                    </a>
+                    <button
+                        class="wishlist-button absolute right-1.5 top-1.5 sm:right-4 sm:top-4 z-10 flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white/90 text-zinc-950 shadow-sm transition hover:bg-white hover:text-red-700 data-[wishlisted=true]:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        type="button"
+                        data-wishlist-button
+                        data-product-id="{{ $product['id'] ?? '' }}"
+                        data-product-slug="{{ $product['slug'] ?? '' }}"
+                        data-wishlisted="{{ $isWishlisted ? 'true' : 'false' }}"
+                        aria-pressed="{{ $isWishlisted ? 'true' : 'false' }}"
+                        aria-label="{{ $isWishlisted ? 'Remove '.$product['name'].' from wishlist' : 'Add '.$product['name'].' to wishlist' }}"
+                    >
+                        <svg class="h-3.5 w-3.5 sm:h-5 sm:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z" />
+                        </svg>
+                    </button>
+                </article>
+            @endforeach
             </div>
         @endif
     </div>

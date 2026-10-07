@@ -22,9 +22,6 @@ class OrderFactory extends Factory
             'user_id' => User::factory(),
             'order_number' => 'ORD-'.fake()->unique()->numerify('##########'),
             'total_amount' => fake()->randomFloat(2, 50, 1000),
-            'delivery_option' => 'standard',
-            'delivery_days' => '4-5 days',
-            'delivery_charge' => 0.00,
             'status' => 'pending',
             'payment_status' => 'pending',
         ];

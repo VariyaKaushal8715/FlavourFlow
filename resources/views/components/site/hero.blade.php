@@ -21,38 +21,38 @@
 
     <x-site.nav :brand="$brand" :navigation="$navigation" />
 
-    <div class="relative mx-auto grid min-h-[calc(100svh-5rem)] w-full max-w-7xl items-center gap-12 px-6 pb-28 pt-12 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-32 lg:pt-16">
+    <div class="relative mx-auto grid min-h-[calc(100svh-4rem)] sm:min-h-[calc(100svh-5rem)] w-full max-w-7xl items-center gap-8 lg:gap-12 px-4 pb-16 pt-6 sm:px-6 sm:pb-28 sm:pt-12 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-32 lg:pt-16">
         <div class="relative z-10 max-w-3xl">
-            <div class="hero-intro hero-intro-one inline-flex items-center gap-3 text-sm font-semibold text-brand-accent">
-                <span class="h-px w-10 bg-brand-primary"></span>
+            <div class="hero-intro hero-intro-one inline-flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm font-semibold text-brand-accent">
+                <span class="h-px w-6 sm:w-10 bg-brand-primary"></span>
                 {{ __('ui.hero_eyebrow') }}
             </div>
 
-            <h1 class="hero-intro hero-intro-two mt-6 break-words text-6xl font-semibold leading-none text-white sm:text-7xl lg:text-[5.5rem]">
+            <h1 class="hero-intro hero-intro-two mt-3 sm:mt-6 break-words text-3xl font-semibold leading-tight text-white sm:text-7xl lg:text-[5.5rem]">
                 {{ $hero['title'] }}
             </h1>
-            <p class="hero-intro hero-intro-three mt-6 max-w-2xl text-2xl font-medium leading-snug text-white sm:text-4xl">
+            <p class="hero-intro hero-intro-three mt-3 sm:mt-6 max-w-2xl text-lg sm:text-4xl font-medium leading-snug text-white">
                 {{ __('ui.hero_subtitle') }}
             </p>
-            <p class="hero-intro hero-intro-four mt-5 max-w-xl text-base leading-8 text-white/70 sm:text-lg">
+            <p class="hero-intro hero-intro-four mt-3 sm:mt-5 max-w-xl text-xs sm:text-lg leading-relaxed sm:leading-8 text-white/70">
                 {{ __('ui.hero_description') }}
             </p>
 
-            <div class="hero-intro hero-intro-five mt-9 flex flex-col gap-3 sm:flex-row">
-                <a class="inline-flex min-h-12 items-center justify-center rounded-lg bg-brand-primary px-6 text-sm font-semibold text-white shadow-lg shadow-black/30 transition duration-300 hover:-translate-y-0.5 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:ring-offset-2 focus:ring-offset-zinc-950" href="{{ $hero['primary_action']['href'] }}">
+            <div class="hero-intro hero-intro-five mt-6 sm:mt-9 flex flex-col gap-2.5 sm:flex-row">
+                <a class="inline-flex min-h-10 sm:min-h-12 items-center justify-center rounded-lg bg-brand-primary px-5 sm:px-6 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-black/30 transition duration-300 hover:-translate-y-0.5 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-accent focus:ring-offset-2 focus:ring-offset-zinc-950" href="{{ $hero['primary_action']['href'] }}">
                     {{ __('ui.explore_collection') }}
-                    <span class="ml-3 text-lg" aria-hidden="true">&rarr;</span>
+                    <span class="ml-2 sm:ml-3 text-sm sm:text-lg" aria-hidden="true">&rarr;</span>
                 </a>
-                <a class="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 bg-black/20 px-6 text-sm font-semibold text-white backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-zinc-950" href="{{ $hero['secondary_action']['href'] }}">
+                <a class="inline-flex min-h-10 sm:min-h-12 items-center justify-center rounded-lg border border-white/25 bg-black/20 px-5 sm:px-6 text-xs sm:text-sm font-semibold text-white backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-zinc-950" href="{{ $hero['secondary_action']['href'] }}">
                     {{ __('ui.view_best_sellers') }}
                 </a>
             </div>
 
-            <div class="hero-intro hero-intro-six mt-10 grid max-w-2xl grid-cols-3 border-y border-white/15 py-5">
+            <div class="hero-intro hero-intro-six mt-6 sm:mt-10 grid max-w-2xl grid-cols-3 border-y border-white/15 py-3 sm:py-5">
                 @foreach ($hero['proof_points'] as $point)
-                    <div class="border-white/15 px-3 first:pl-0 not-first:border-l sm:px-5">
-                        <p class="text-lg font-semibold text-white sm:text-xl">{{ $point['value'] }}</p>
-                        <p class="mt-1 text-xs leading-5 text-white/55 sm:text-sm">{{ $proofLabels[$point['label']] ?? $point['label'] }}</p>
+                    <div class="border-white/15 px-2 sm:px-5 first:pl-0 not-first:border-l">
+                        <p class="text-sm font-semibold text-white sm:text-xl">{{ $point['value'] }}</p>
+                        <p class="mt-0.5 sm:mt-1 text-[0.65rem] sm:text-sm leading-tight sm:leading-5 text-white/55">{{ $proofLabels[$point['label']] ?? $point['label'] }}</p>
                     </div>
                 @endforeach
             </div>

@@ -3,14 +3,23 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AdminOrderCancelledNotification;
+use App\Mail\AdminRefundProcessedNotification;
+use App\Mail\OrderStatusUpdatedCustomer;
+use App\Mail\RefundSuccessfulCustomer;
+use App\Mail\ReturnStatusUpdatedCustomer;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\RefundRequest;
 use App\Models\ReturnRequest;
+use App\Services\CashfreeService;
 use App\Support\PdfReceiptGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class AdminOrderController extends Controller
 {
@@ -118,6 +127,19 @@ class AdminOrderController extends Controller
 
         $order->save();
 
+        try {
+            $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+            if (in_array($status, ['Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'], true) && ! empty($order->email)) {
+                Mail::to($order->email)->send(new OrderStatusUpdatedCustomer($order, $status));
+            }
+
+            if ($status === 'Cancelled' && ! empty($adminEmail)) {
+                Mail::to($adminEmail)->send(new AdminOrderCancelledNotification($order));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch admin status update emails: '.$e->getMessage());
+        }
+
         return redirect()->back()->with('success', 'Order status updated successfully.');
     }
 
@@ -133,6 +155,14 @@ class AdminOrderController extends Controller
             'status' => $validated['status'],
         ]);
 
+        try {
+            if ($returnRequest->order && ! empty($returnRequest->order->email)) {
+                Mail::to($returnRequest->order->email)->send(new ReturnStatusUpdatedCustomer($returnRequest));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed to dispatch return status update email: '.$e->getMessage());
+        }
+
         return redirect()->back()->with('success', 'Return request status updated successfully.');
     }
 
@@ -147,6 +177,40 @@ class AdminOrderController extends Controller
         $refundRequest->update([
             'status' => $validated['status'],
         ]);
+
+        $order = $refundRequest->order;
+        if ($order) {
+            // Trigger Cashfree API Refund if payment was completed via Cashfree
+            if ($validated['status'] === 'Completed') {
+                $payment = Payment::where('order_id', $order->id)->whereNotNull('cashfree_order_id')->first();
+                if ($payment && $payment->status === 'captured') {
+                    $cashfreeService = app(CashfreeService::class);
+                    $refundRes = $cashfreeService->initiateRefund($payment, (float) $refundRequest->amount, $refundRequest->reason);
+
+                    if ($refundRes['success'] ?? false) {
+                        $payment->update([
+                            'cashfree_refund_id' => $refundRes['refund_id'] ?? null,
+                            'refund_status' => $refundRes['refund_status'] ?? 'SUCCESS',
+                            'refunded_amount' => $refundRes['refund_amount'] ?? $refundRequest->amount,
+                        ]);
+                    }
+                }
+            }
+
+            try {
+                $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
+                if ($validated['status'] === 'Completed') {
+                    if (! empty($order->email)) {
+                        Mail::to($order->email)->send(new RefundSuccessfulCustomer($refundRequest));
+                    }
+                    if (! empty($adminEmail)) {
+                        Mail::to($adminEmail)->send(new AdminRefundProcessedNotification($refundRequest));
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::error('Failed to dispatch refund emails: '.$e->getMessage());
+            }
+        }
 
         return redirect()->back()->with('success', 'Refund request status updated successfully.');
     }
