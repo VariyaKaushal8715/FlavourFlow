@@ -7,9 +7,11 @@ use App\Models\Product;
 use App\Models\ProductSortOption;
 use App\Support\ProductHighlightBuilder;
 use App\Support\WishlistState;
+use Database\Seeders\ProductSeeder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class HomeController extends Controller
 {
@@ -44,12 +46,24 @@ class HomeController extends Controller
         $maxPrice = $request->filled('max_price') ? (float) $request->input('max_price') : null;
 
         $hasActiveProducts = Product::query()->active()->exists();
+        if (! $hasActiveProducts && ! app()->environment('testing')) {
+            (new ProductSeeder)->run();
+            $hasActiveProducts = Product::query()->active()->exists();
+        }
+
         $storedProducts = $this->sortedProducts($selectedSortOption, $sort, $minPrice, $maxPrice);
 
         if ($hasActiveProducts) {
             $products = $storedProducts->map->toHighlightData()->all();
         } else {
-            $products = $site['products'];
+            $products = array_map(function ($product) {
+                $slug = $product['slug'] ?? Str::slug($product['name']);
+
+                return array_merge($product, [
+                    'slug' => $slug,
+                    'url' => route('products.show', ['product' => $slug]),
+                ]);
+            }, $site['products']);
         }
 
         $heroProducts = ! empty($products)

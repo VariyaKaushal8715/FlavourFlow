@@ -288,7 +288,10 @@ const initializeWishlist = () => {
     }
 
     buttons.forEach((button) => {
-        button.addEventListener('click', async () => {
+        button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
             if (!wishlistEndpoint) {
                 return;
             }
