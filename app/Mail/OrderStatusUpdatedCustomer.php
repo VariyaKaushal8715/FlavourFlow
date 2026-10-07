@@ -21,6 +21,7 @@ class OrderStatusUpdatedCustomer extends Mailable
     public function envelope(): Envelope
     {
         $subject = match ($this->status) {
+            'Confirmed' => 'Your Order #'.$this->order->order_number.' Has Been Confirmed - FlavourFlow',
             'Shipped' => 'Your Order #'.$this->order->order_number.' Has Been Shipped - FlavourFlow',
             'Out for Delivery' => 'Your Order #'.$this->order->order_number.' Is Out for Delivery - FlavourFlow',
             'Delivered' => 'Your Order #'.$this->order->order_number.' Has Been Delivered - FlavourFlow',

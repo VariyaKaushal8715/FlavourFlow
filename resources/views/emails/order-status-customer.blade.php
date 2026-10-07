@@ -1,7 +1,9 @@
 <x-mail::message>
 # Hello {{ $order->name }},
 
-@if ($status === 'Shipped')
+@if ($status === 'Confirmed')
+Great news! Your order **#{{ $order->order_number }}** has been approved and confirmed by our team. We are preparing it for shipment.
+@elseif ($status === 'Shipped')
 Great news! Your order **#{{ $order->order_number }}** has been shipped and is on its way.
 @elseif ($status === 'Out for Delivery')
 Your order **#{{ $order->order_number }}** is out for delivery today! Please ensure someone is available at your address.

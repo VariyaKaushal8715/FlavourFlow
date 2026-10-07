@@ -89,7 +89,7 @@ test('dispatches customer payment successful email on online payment completion'
     Mail::assertSent(PaymentSuccessful::class, fn ($mail) => $mail->hasTo('jane.customer@example.com'));
 });
 
-test('dispatches customer order status update emails for Shipped, Out for Delivery, Delivered', function () {
+test('dispatches customer order status update emails for Confirmed, Shipped, Out for Delivery, Delivered', function () {
     Mail::fake();
 
     $user = User::factory()->create();
@@ -111,11 +111,12 @@ test('dispatches customer order status update emails for Shipped, Out for Delive
         'total_amount' => 600.00,
     ]);
 
+    Mail::to($order->email)->send(new OrderStatusUpdatedCustomer($order, 'Confirmed'));
     Mail::to($order->email)->send(new OrderStatusUpdatedCustomer($order, 'Shipped'));
     Mail::to($order->email)->send(new OrderStatusUpdatedCustomer($order, 'Out for Delivery'));
     Mail::to($order->email)->send(new OrderStatusUpdatedCustomer($order, 'Delivered'));
 
-    Mail::assertSent(OrderStatusUpdatedCustomer::class, 3);
+    Mail::assertSent(OrderStatusUpdatedCustomer::class, 4);
 });
 
 test('dispatches customer and admin emails when order is cancelled', function () {
@@ -257,4 +258,55 @@ test('dispatches refund processed emails to customer and admin', function () {
 
     Mail::assertSent(RefundSuccessfulCustomer::class, fn ($mail) => $mail->hasTo('eva.customer@example.com'));
     Mail::assertSent(AdminRefundProcessedNotification::class, fn ($mail) => $mail->hasTo($adminEmail));
+});
+
+test('admin updating order status triggers email notification to customer', function () {
+    Mail::fake();
+
+    $admin = User::factory()->create(['is_admin' => true]);
+    $user = User::factory()->create();
+    $order = Order::create([
+        'order_number' => 'ORD-ADMIN-STATUS-1',
+        'user_id' => $user->id,
+        'status' => 'Pending',
+        'name' => 'Rahul Sharma',
+        'mobile' => '9876543210',
+        'email' => 'rahul.customer@example.com',
+        'address' => '505 Spice Way',
+        'city' => 'Ahmedabad',
+        'state' => 'Gujarat',
+        'pincode' => '380001',
+        'country' => 'India',
+        'payment_method' => 'cod',
+        'subtotal' => 400.00,
+        'delivery_charge' => 50.00,
+        'total_amount' => 450.00,
+    ]);
+
+    // Admin accepts / confirms order
+    $this->actingAs($admin)
+        ->patch(route('admin.orders.updateStatus', $order), [
+            'status' => 'Confirmed',
+        ])
+        ->assertRedirect();
+
+    Mail::assertSent(OrderStatusUpdatedCustomer::class, fn ($mail) => $mail->hasTo('rahul.customer@example.com') && $mail->status === 'Confirmed');
+
+    // Admin marks order Shipped
+    $this->actingAs($admin)
+        ->patch(route('admin.orders.updateStatus', $order), [
+            'status' => 'Shipped',
+        ])
+        ->assertRedirect();
+
+    Mail::assertSent(OrderStatusUpdatedCustomer::class, fn ($mail) => $mail->hasTo('rahul.customer@example.com') && $mail->status === 'Shipped');
+
+    // Admin marks order Delivered
+    $this->actingAs($admin)
+        ->patch(route('admin.orders.updateStatus', $order), [
+            'status' => 'Delivered',
+        ])
+        ->assertRedirect();
+
+    Mail::assertSent(OrderStatusUpdatedCustomer::class, fn ($mail) => $mail->hasTo('rahul.customer@example.com') && $mail->status === 'Delivered');
 });
