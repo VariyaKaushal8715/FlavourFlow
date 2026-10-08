@@ -16,6 +16,7 @@ class AdminUserSeeder extends Seeder
             'email' => config('admin.email', env('ADMIN_EMAIL', 'admin@flavourflow.test')),
         ], [
             'name' => 'FlavourFlow Admin',
+            'username' => 'admin',
             'password' => config('admin.password', env('ADMIN_PASSWORD', 'FlavourFlow@123')),
             'is_admin' => true,
         ]);

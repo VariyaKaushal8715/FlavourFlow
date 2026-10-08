@@ -34,6 +34,10 @@ class UserSessionController extends Controller
             $cart->migrateGuestCartToUser(Auth::user());
         }
 
+        if (Auth::user()?->is_admin) {
+            return redirect()->intended(route('admin.index'));
+        }
+
         return redirect()->intended(route('home'));
     }
 
