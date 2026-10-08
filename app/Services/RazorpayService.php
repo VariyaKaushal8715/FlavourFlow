@@ -100,4 +100,112 @@ class RazorpayService
 
         return hash_equals($expectedSignature, $signature);
     }
+
+    /**
+     * Safely validate Razorpay credentials against Razorpay API without charging.
+     *
+     * @return array{valid: bool, mode: string, message: string}
+     */
+    public function validateCredentials(string $keyId, string $keySecret): array
+    {
+        $keyId = trim($keyId);
+        $keySecret = trim($keySecret);
+
+        if ($keyId === '' || $keySecret === '') {
+            return [
+                'valid' => false,
+                'mode' => 'unknown',
+                'message' => 'Razorpay Key ID and Key Secret cannot be empty.',
+            ];
+        }
+
+        if (! preg_match('/^rzp_(test|live)_[A-Za-z0-9]+$/', $keyId)) {
+            return [
+                'valid' => false,
+                'mode' => 'unknown',
+                'message' => 'Invalid Razorpay Key ID format. It must start with rzp_test_ or rzp_live_ followed by alphanumeric characters.',
+            ];
+        }
+
+        if (strlen($keySecret) < 8 || preg_match('/\s/', $keySecret)) {
+            return [
+                'valid' => false,
+                'mode' => 'unknown',
+                'message' => 'Invalid Razorpay Key Secret format. Key Secret must be at least 8 characters with no spaces.',
+            ];
+        }
+
+        $mode = str_starts_with($keyId, 'rzp_live_') ? 'live' : 'test';
+
+        try {
+            if (app()->environment('testing') && ($keyId === 'rzp_test_dummy_key_id' || $keySecret === 'rzp_test_dummy_key_secret')) {
+                return [
+                    'valid' => true,
+                    'mode' => $mode,
+                    'message' => 'Credentials verified successfully (test mock).',
+                ];
+            }
+
+            $response = Http::withBasicAuth($keyId, $keySecret)
+                ->timeout(8)
+                ->get('https://api.razorpay.com/v1/orders', ['count' => 1]);
+
+            if ($response->successful()) {
+                return [
+                    'valid' => true,
+                    'mode' => $mode,
+                    'message' => 'Razorpay API authentication successful.',
+                ];
+            }
+
+            if ($response->status() === 401) {
+                return [
+                    'valid' => false,
+                    'mode' => $mode,
+                    'message' => 'Razorpay authentication failed: Invalid Key ID or Key Secret.',
+                ];
+            }
+
+            $errorDesc = $response->json('error.description') ?? 'Authentication failed.';
+
+            return [
+                'valid' => false,
+                'mode' => $mode,
+                'message' => 'Razorpay API returned an error: '.$errorDesc,
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'valid' => false,
+                'mode' => $mode,
+                'message' => 'Unable to connect to Razorpay payment gateway: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    public function isConfigured(): bool
+    {
+        return $this->hasRealCredentials();
+    }
+
+    public function getMaskedSecret(): string
+    {
+        $secret = $this->getKeySecret();
+
+        if (empty($secret) || $secret === 'rzp_test_dummy_key_secret') {
+            return '';
+        }
+
+        return '••••••••••••••••';
+    }
+
+    public function getMode(): string
+    {
+        $keyId = $this->getKeyId();
+
+        if (str_starts_with($keyId, 'rzp_live_')) {
+            return 'live';
+        }
+
+        return (string) config('services.razorpay.mode', 'test');
+    }
 }

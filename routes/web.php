@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\AdminInventoryController;
 use App\Http\Controllers\Admin\AdminOfferController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminPaymentController;
+use App\Http\Controllers\Admin\AdminPaymentSettingController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminSessionController;
@@ -145,8 +146,11 @@ Route::prefix('admin')
             Route::get('/orders/{order}/receipt', [AdminOrderController::class, 'downloadReceipt'])->name('orders.receipt.download');
             Route::get('/api/new-orders', [AdminOrderController::class, 'newOrders'])->name('api.newOrders');
 
-            // Payments
+            // Payments & Settings
             Route::get('/payments', [AdminPaymentController::class, 'index'])->name('payments.index');
+            Route::get('/payments/settings', [AdminPaymentSettingController::class, 'index'])->name('payments.settings');
+            Route::put('/payments/settings', [AdminPaymentSettingController::class, 'update'])->name('payments.settings.update');
+            Route::post('/payments/settings/test', [AdminPaymentSettingController::class, 'testConnection'])->name('payments.settings.test');
 
             // Inventory
             Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');
