@@ -108,3 +108,19 @@ it('sends a password reset link for a registered email address', function (): vo
 
     Notification::assertSentTo($user, ResetPassword::class);
 });
+
+it('redirects an administrator to the admin dashboard after signing in through the customer login form', function (): void {
+    $admin = User::factory()->admin()->create([
+        'username' => 'admin_user',
+        'email' => 'admin_user@example.com',
+        'password' => Hash::make('Password123!'),
+    ]);
+
+    $response = $this->post(route('login.submit'), [
+        'login' => 'admin_user',
+        'password' => 'Password123!',
+    ]);
+
+    $response->assertRedirect(route('admin.index'));
+    $this->assertAuthenticatedAs($admin);
+});

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\AdminUserSeeder;
 
 test('admin login and dashboard responses cannot be restored from browser cache', function () {
     $admin = User::factory()->admin()->create();
@@ -44,4 +45,17 @@ test('logging out invalidates the session and keeps the redirect out of cache', 
         ->assertSuccessful()
         ->assertSee('Restricted access')
         ->assertDontSee('Catalog, inventory, and offers');
+});
+
+test('admin can log in using environment configured credentials seeded by AdminUserSeeder', function () {
+    $this->seed(AdminUserSeeder::class);
+
+    $response = $this->post(route('admin.login'), [
+        'email' => config('admin.email'),
+        'password' => config('admin.password'),
+    ]);
+
+    $response->assertRedirect(route('admin.index'));
+    $this->assertAuthenticated();
+    expect(auth()->user()->is_admin)->toBeTrue();
 });

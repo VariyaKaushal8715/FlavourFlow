@@ -275,28 +275,28 @@
                     $productId = $product['id'] ?? null;
                     $isWishlisted = $productId && in_array($productId, $wishlistProductIds, true);
                 @endphp
-                <article class="product-tile group relative flex flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white" data-reveal data-reveal-delay="{{ ($index % 3) * 90 }}">
-                    <a class="flex h-full flex-col focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500" href="{{ $product['url'] ?? '#products' }}" aria-label="View {{ $product['name'] }} details">
-                        <div class="relative aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-zinc-900">
-                            <img class="h-full w-full object-cover transition duration-700 group-hover:scale-105" src="{{ asset($product['image']) }}" alt="{{ $product['name'] }}">
-                            <span class="absolute left-1.5 top-1.5 sm:left-4 sm:top-4 rounded bg-white/90 px-1.5 py-0.5 sm:px-3 sm:py-2 text-[0.6rem] sm:text-xs font-semibold text-zinc-950 backdrop-blur">
+                <article class="product-tile group relative flex flex-col overflow-hidden rounded-xl border border-zinc-200/80 bg-white shadow-sm transition hover:shadow-md" data-reveal data-reveal-delay="{{ ($index % 3) * 90 }}">
+                    <a class="flex h-full flex-col focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-primary" href="{{ $product['url'] ?? '#products' }}" aria-label="View {{ $product['name'] }} details">
+                        <div class="relative aspect-[4/3] overflow-hidden bg-zinc-900">
+                            <img class="h-full w-full object-cover transition duration-500 group-hover:scale-105" src="{{ asset($product['image']) }}" alt="{{ $product['name'] }}" loading="lazy">
+                            <span class="absolute left-1.5 top-1.5 sm:left-3 sm:top-3 rounded-md bg-white/95 px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[0.6rem] sm:text-xs font-semibold text-zinc-900 shadow-sm backdrop-blur">
                                 {{ $product['badge'] }}
                             </span>
                         </div>
 
-                        <div class="flex flex-1 flex-col p-2.5 sm:p-5">
-                            <div class="flex items-center justify-between gap-1 sm:gap-4">
-                                <p class="text-[0.6rem] sm:text-xs font-semibold uppercase text-brand-primary truncate">{{ $product['category'] }}</p>
+                        <div class="flex flex-1 flex-col p-2 sm:p-4">
+                            <div class="flex items-center justify-between gap-1">
+                                <p class="text-[0.6rem] sm:text-xs font-semibold uppercase tracking-wider text-brand-primary truncate">{{ $product['category'] }}</p>
                                 <p class="text-[0.6rem] sm:text-xs font-semibold text-emerald-700 shrink-0">{{ $product['metric'] }}</p>
                             </div>
-                            <h3 class="mt-1 sm:mt-3 text-xs sm:text-xl font-semibold text-zinc-950 transition group-hover:text-brand-primary line-clamp-1 sm:line-clamp-none">{{ $product['name'] }}</h3>
-                            <p class="mt-1 sm:mt-3 line-clamp-1 sm:line-clamp-2 text-[0.68rem] sm:text-sm leading-tight sm:leading-7 text-zinc-600">{{ $product['description'] }}</p>
+                            <h3 class="mt-1 text-xs sm:text-base font-semibold text-zinc-950 transition group-hover:text-brand-primary line-clamp-1 leading-tight sm:leading-snug">{{ $product['name'] }}</h3>
+                            <p class="mt-1 text-xs leading-relaxed text-zinc-500 line-clamp-2 hidden sm:block">{{ $product['description'] }}</p>
                             
-                            <div class="mt-auto pt-2 sm:pt-4 border-t border-zinc-100">
-                                <div class="flex items-end justify-between gap-1 sm:gap-4">
+                            <div class="mt-auto pt-2 sm:pt-3 border-t border-zinc-100">
+                                <div class="flex items-baseline justify-between gap-1">
                                     <div>
-                                        <div class="flex flex-wrap items-center gap-1 sm:gap-2">
-                                            <p class="text-xs sm:text-sm font-semibold text-zinc-950">{{ $product['price'] }}</p>
+                                        <div class="flex items-baseline gap-1">
+                                            <p class="text-xs sm:text-base font-bold text-zinc-950">{{ $product['price'] }}</p>
                                             @if ($product['compare_at_price'])
                                                 <p class="text-[0.6rem] sm:text-xs text-zinc-400 line-through">{{ $product['compare_at_price'] }}</p>
                                             @endif
@@ -311,39 +311,23 @@
                                         {{ $product['in_stock'] ? __('ui.in_stock') : __('ui.out_of_stock') }}
                                     </p>
                                 </div>
-                                <div class="mt-2 sm:mt-4 flex items-center justify-between gap-1 sm:gap-2">
-                                    <p class="text-[0.65rem] sm:text-xs font-semibold text-zinc-950 truncate max-sm:hidden">View full details <span class="ml-1 text-brand-primary" aria-hidden="true">&rarr;</span></p>
-                                    <p class="text-[0.65rem] font-semibold text-zinc-950 sm:hidden">Details <span class="text-brand-primary" aria-hidden="true">&rarr;</span></p>
-                                    <div class="flex items-center gap-1 sm:gap-2">
-                                        <button
-                                            type="button"
-                                            data-wishlist-button
-                                            data-product-id="{{ $product['id'] ?? '' }}"
-                                            data-product-slug="{{ $product['slug'] ?? '' }}"
-                                            data-wishlisted="{{ in_array($product['id'] ?? null, $wishlistProductIds, true) ? 'true' : 'false' }}"
-                                            class="wishlist-button inline-flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border border-zinc-300 bg-white text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950"
-                                            aria-label="Toggle wishlist"
-                                        >
-                                            <svg class="h-3.5 w-3.5 sm:h-4 sm:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z" />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            data-add-to-cart
-                                            data-product-slug="{{ $product['slug'] ?? '' }}"
-                                            @disabled(! $product['in_stock'])
-                                            class="inline-flex items-center justify-center rounded-md bg-zinc-950 px-2 py-1 sm:px-3 sm:py-2 text-[0.65rem] sm:text-sm font-semibold text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap"
-                                        >
-                                            {{ __('Add') }}<span class="max-sm:hidden">&nbsp;to cart</span>
-                                        </button>
-                                    </div>
+                                <div class="mt-2 sm:mt-3">
+                                    <button
+                                        type="button"
+                                        data-add-to-cart
+                                        data-product-slug="{{ $product['slug'] ?? '' }}"
+                                        @disabled(! $product['in_stock'])
+                                        class="w-full inline-flex items-center justify-center rounded-lg bg-zinc-950 py-1.5 sm:py-2 px-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-brand-primary active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+                                    >
+                                        <span class="sm:hidden">+ Add</span>
+                                        <span class="hidden sm:inline">Add to cart</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </a>
                     <button
-                        class="wishlist-button absolute right-1.5 top-1.5 sm:right-4 sm:top-4 z-10 flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white/90 text-zinc-950 shadow-sm transition hover:bg-white hover:text-red-700 data-[wishlisted=true]:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        class="wishlist-button absolute right-1.5 top-1.5 sm:right-3 sm:top-3 z-10 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-white/90 text-zinc-700 shadow-sm transition hover:bg-white hover:text-red-600 data-[wishlisted=true]:text-red-600 focus:outline-none focus:ring-2 focus:ring-brand-primary"
                         type="button"
                         data-wishlist-button
                         data-product-id="{{ $product['id'] ?? '' }}"
@@ -352,7 +336,7 @@
                         aria-pressed="{{ $isWishlisted ? 'true' : 'false' }}"
                         aria-label="{{ $isWishlisted ? 'Remove '.$product['name'].' from wishlist' : 'Add '.$product['name'].' to wishlist' }}"
                     >
-                        <svg class="h-3.5 w-3.5 sm:h-5 sm:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <svg class="h-3.5 w-3.5 sm:h-4 sm:w-4" viewBox="0 0 24 24" fill="{{ $isWishlisted ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path d="m12 21-1.45-1.32C5.4 15 2 11.92 2 8.15 2 5.07 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.07 22 8.15c0 3.77-3.4 6.85-8.55 11.54L12 21Z" />
                         </svg>
                     </button>

@@ -147,6 +147,13 @@
                         <svg class="h-3 w-3 shrink-0 transition duration-200 group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
                     </summary>
                     <div class="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/95 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+                        @if (auth()->user()?->is_admin)
+                            <a class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-amber-400 transition hover:bg-white/[0.06]" href="{{ route('admin.index') }}">
+                                <span>Admin Panel</span>
+                                <span class="rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] text-amber-300">ADMIN</span>
+                            </a>
+                            <div class="my-1 border-t border-white/[0.07]"></div>
+                        @endif
                         <a class="flex rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.profile') }}</a>
                         <a class="flex rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white" href="{{ route('account.coupons') }}">My Coupons</a>
                         <div class="my-1 border-t border-white/[0.07]"></div>
@@ -192,6 +199,12 @@
                             <svg class="h-3.5 w-3.5 transition duration-200 group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
                         </summary>
                         <div class="px-2 pb-2">
+                            @if (auth()->user()?->is_admin)
+                                <a class="flex items-center justify-between rounded-xl px-4 py-3 font-semibold text-amber-400 transition hover:bg-white/5" href="{{ route('admin.index') }}">
+                                    <span>Admin Panel</span>
+                                    <span class="rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] text-amber-300">ADMIN</span>
+                                </a>
+                            @endif
                             <a class="block rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('account.profile') }}">{{ __('ui.profile') }}</a>
                             <a class="block rounded-xl px-4 py-3 transition hover:bg-white/5 hover:text-white" href="{{ route('account.coupons') }}">My Coupons</a>
                             <form method="POST" action="{{ route('logout') }}">

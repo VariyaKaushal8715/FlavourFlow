@@ -61,28 +61,38 @@
         <div class="hero-product-stage relative z-10 mx-auto w-full max-w-2xl lg:ml-auto" data-reveal>
             <div class="hero-product-lines" aria-hidden="true"></div>
 
-            <div class="relative ml-auto w-[min(86vw,25rem)]">
+            <div class="relative mx-auto w-full max-w-sm sm:max-w-none sm:ml-auto sm:w-[min(86vw,25rem)]">
                 <a class="hero-product-card block overflow-hidden rounded-lg border border-white/15 bg-zinc-950/80 shadow-2xl shadow-black/50 backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-brand-accent" href="{{ $featuredProduct['url'] ?? '#products' }}" aria-label="View {{ $featuredProduct['name'] }} details" data-tilt>
-                <div class="relative aspect-[4/3] overflow-hidden bg-zinc-900">
+                <div class="relative aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-zinc-900">
                     <img class="h-full w-full object-cover transition duration-700" src="{{ asset($featuredProduct['image']) }}" alt="{{ $featuredProduct['name'] }}">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                    <div class="absolute left-4 top-4 rounded-lg border border-brand-accent/30 bg-black/50 px-3 py-2 text-xs font-semibold text-brand-accent backdrop-blur">
+                    <div class="absolute left-3 top-3 sm:left-4 sm:top-4 rounded-lg border border-brand-accent/30 bg-black/50 px-2.5 py-1 sm:px-3 sm:py-2 text-[0.65rem] sm:text-xs font-semibold text-brand-accent backdrop-blur">
                         {{ $featuredProduct['badge'] }}
                     </div>
-                    <div class="absolute bottom-5 left-5 right-5">
-                        <p class="text-xs font-semibold uppercase text-brand-accent">{{ $featuredProduct['category'] }}</p>
-                        <h2 class="mt-2 text-2xl font-semibold leading-8 text-white">{{ $featuredProduct['name'] }}</h2>
+                    <div class="absolute bottom-3 left-3 right-3 sm:bottom-5 sm:left-5 sm:right-5">
+                        <p class="text-[0.65rem] sm:text-xs font-semibold uppercase text-brand-accent">{{ $featuredProduct['category'] }}</p>
+                        <h2 class="mt-1 sm:mt-2 text-lg sm:text-2xl font-semibold leading-snug sm:leading-8 text-white">{{ $featuredProduct['name'] }}</h2>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-[1fr_auto] items-end gap-4 p-5">
-                    <p class="text-sm leading-6 text-white/60">{{ $featuredProduct['description'] }}</p>
-                    <div class="text-right">
-                        <p class="text-base font-semibold text-white">{{ $featuredProduct['price'] }}</p>
-                        <p class="mt-1 text-xs text-emerald-300">{{ $featuredProduct['in_stock'] ? __('ui.in_stock') : __('ui.out_of_stock') }} &middot; {{ $featuredProduct['unit'] }}</p>
+                <div class="grid grid-cols-[1fr_auto] items-center gap-3 p-3.5 sm:p-5">
+                    <p class="text-xs sm:text-sm leading-snug sm:leading-6 text-white/60 line-clamp-1 sm:line-clamp-none">{{ $featuredProduct['description'] }}</p>
+                    <div class="text-right shrink-0">
+                        <p class="text-sm sm:text-base font-semibold text-white">{{ $featuredProduct['price'] }}</p>
+                        <p class="mt-0.5 sm:mt-1 text-[0.65rem] sm:text-xs text-emerald-300">{{ $featuredProduct['in_stock'] ? __('ui.in_stock') : __('ui.out_of_stock') }} &middot; {{ $featuredProduct['unit'] }}</p>
                     </div>
                 </div>
                 </a>
+            </div>
+
+            {{-- Mobile supporting spices quick-pills --}}
+            <div class="mt-3 flex items-center gap-2 overflow-x-auto pb-1 sm:hidden">
+                @foreach ($supportingProducts as $product)
+                    <a href="{{ $product['url'] ?? '#products' }}" class="flex shrink-0 items-center gap-2 rounded-lg border border-white/15 bg-black/60 px-3 py-1.5 text-xs text-white backdrop-blur transition active:scale-95">
+                        <span class="font-medium text-white/90 text-[0.72rem]">{{ $product['name'] }}</span>
+                        <span class="rounded bg-brand-accent/20 px-1.5 py-0.5 text-[0.6rem] font-semibold text-brand-accent">{{ $product['metric'] }}</span>
+                    </a>
+                @endforeach
             </div>
 
             <div class="hero-supporting-products absolute -left-2 top-10 hidden w-48 gap-3 sm:grid lg:-left-16">
@@ -98,7 +108,7 @@
                 @endforeach
             </div>
 
-            <div class="hero-rank-badge absolute -bottom-5 right-4 rounded-lg border border-white/15 bg-brand-accent px-4 py-3 text-brand-ink shadow-xl shadow-black/30">
+            <div class="hero-rank-badge absolute -bottom-5 right-4 rounded-lg border border-white/15 bg-brand-accent px-4 py-3 text-brand-ink shadow-xl shadow-black/30 hidden sm:block">
                 <p class="text-[0.65rem] font-semibold uppercase">{{ __('ui.house_favourite') }}</p>
                 <p class="mt-1 text-sm font-semibold">{{ __('ui.fresh_selection') }}</p>
             </div>

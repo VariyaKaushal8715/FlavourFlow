@@ -129,7 +129,7 @@ class AdminOrderController extends Controller
 
         try {
             $adminEmail = config('mail.admin_address', env('ADMIN_EMAIL', 'urbanzen17@gmail.com'));
-            if (in_array($status, ['Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'], true) && ! empty($order->email)) {
+            if (in_array($status, ['Confirmed', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'], true) && ! empty($order->email)) {
                 Mail::to($order->email)->send(new OrderStatusUpdatedCustomer($order, $status));
             }
 
