@@ -274,12 +274,22 @@ document.addEventListener('DOMContentLoaded', function () {
             `).join('') + `</div>`;
         }
 
+        let followUpsHtml = '';
+        if (resp.follow_up_suggestions && resp.follow_up_suggestions.length > 0) {
+            followUpsHtml = `<div class="mt-2.5 pt-2 border-t border-zinc-200/60 flex flex-wrap gap-1.5">` +
+                `<span class="w-full text-[9px] uppercase font-bold text-zinc-400 tracking-wider">Suggested questions:</span>` +
+                resp.follow_up_suggestions.map(s => `
+                    <button type="button" class="ai-followup-pill rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] text-zinc-700 hover:border-amber-500 hover:text-amber-800 transition" onclick="document.getElementById('ai-chat-input').value='${escapeHtml(s)}'; document.getElementById('ai-chat-form').dispatchEvent(new Event('submit'));">${escapeHtml(s)}</button>
+                `).join('') + `</div>`;
+        }
+
         div.innerHTML = `
             <div class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-amber-600 text-white font-bold text-xs">AI</div>
             <div class="rounded-2xl rounded-tl-none bg-zinc-100 p-3 text-zinc-800 leading-relaxed max-w-[88%]">
                 <div>${escapeHtml(resp.message).replace(/\n/g, '<br>')}</div>
                 ${productsHtml}
                 ${actionsHtml}
+                ${followUpsHtml}
             </div>
         `;
         messagesContainer.appendChild(div);

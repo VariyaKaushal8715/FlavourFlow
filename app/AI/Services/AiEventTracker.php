@@ -17,6 +17,14 @@ class AiEventTracker implements AiEventTrackerInterface
     ): ?AiEvent {
         try {
             $userId = auth()->check() ? auth()->id() : null;
+
+            if ($userId !== null) {
+                $user = auth()->user();
+                if ($user && method_exists($user, 'allowsActivityTracking') && $user->privacyConsent && ! $user->allowsActivityTracking()) {
+                    return null;
+                }
+            }
+
             $sessionId = session()->isStarted() ? session()->getId() : 'cli-session';
 
             $sanitizedMetadata = $this->sanitizeMetadata($metadata);

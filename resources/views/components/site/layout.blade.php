@@ -394,5 +394,6 @@
                 });
             </script>
         @endauth
+        <x-site.ai-assistant />
     </body>
 </html>

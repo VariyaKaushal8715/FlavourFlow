@@ -3,6 +3,8 @@
 namespace App\AI\Services;
 
 use App\AI\Contracts\AiProviderInterface;
+use App\AI\Providers\GeminiProvider;
+use App\AI\Providers\GroqProvider;
 use App\AI\Providers\NullProvider;
 use App\AI\Providers\OpenRouterProvider;
 use InvalidArgumentException;
@@ -29,8 +31,10 @@ class AiProviderManager
 
         $provider = match ($driverName) {
             'openrouter' => new OpenRouterProvider(config('ai.providers.openrouter', [])),
+            'groq' => new GroqProvider(config('ai.providers.groq', [])),
+            'gemini' => new GeminiProvider(config('ai.providers.gemini', [])),
             'null' => new NullProvider,
-            'groq', 'gemini', 'openai', 'ollama' => $this->createPlaceholderDriver($driverName),
+            'openai', 'ollama' => $this->createPlaceholderDriver($driverName),
             default => throw new InvalidArgumentException("Unsupported AI provider driver [{$driverName}]."),
         };
 
@@ -78,6 +82,26 @@ class AiProviderManager
     }
 
     /**
+     * Safely run a connection test against any supported provider.
+     *
+     * @return array{success: bool, message: string, details: array<string, mixed>}
+     */
+    public function testProvider(string $name): array
+    {
+        try {
+            $instance = $this->resolveDriverInstance($name);
+
+            return $instance->testConnection();
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'message' => "Provider test error for [{$name}]: ".$e->getMessage(),
+                'details' => ['provider' => $name],
+            ];
+        }
+    }
+
+    /**
      * If requested provider is unavailable (e.g. missing API key), fallback to NullProvider.
      */
     private function resolveAvailableDriver(AiProviderInterface $provider): AiProviderInterface
@@ -96,6 +120,8 @@ class AiProviderManager
     {
         return match ($name) {
             'openrouter' => new OpenRouterProvider(config('ai.providers.openrouter', [])),
+            'groq' => new GroqProvider(config('ai.providers.groq', [])),
+            'gemini' => new GeminiProvider(config('ai.providers.gemini', [])),
             'null' => new NullProvider,
             default => $this->createPlaceholderDriver($name),
         };

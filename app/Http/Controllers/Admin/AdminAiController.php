@@ -25,6 +25,8 @@ use App\AI\Services\AiProviderManager;
 use App\AI\Services\CustomerAiAssistantService;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -388,6 +390,9 @@ class AdminAiController extends Controller
             'app/AI/Services/AiProviderManager.php' => app_path('AI/Services/AiProviderManager.php'),
             'app/AI/Services/AiLanguageUnderstanding.php' => app_path('AI/Services/AiLanguageUnderstanding.php'),
             'app/AI/Providers/OpenRouterProvider.php' => app_path('AI/Providers/OpenRouterProvider.php'),
+            'app/AI/Providers/GroqProvider.php' => app_path('AI/Providers/GroqProvider.php'),
+            'app/AI/Providers/GeminiProvider.php' => app_path('AI/Providers/GeminiProvider.php'),
+            'app/AI/Providers/NullProvider.php' => app_path('AI/Providers/NullProvider.php'),
         ];
 
         $missing = [];
@@ -1179,34 +1184,74 @@ class AdminAiController extends Controller
     }
 
     /**
+     * Endpoint to test connectivity of any configured or candidate AI provider safely.
+     */
+    public function testProvider(Request $request): JsonResponse
+    {
+        Gate::authorize('access-admin');
+
+        $validated = $request->validate([
+            'provider' => ['required', 'string', 'in:openrouter,groq,gemini,openai,ollama,null'],
+        ]);
+
+        /** @var AiProviderManager $manager */
+        $manager = app(AiProviderManager::class);
+        $result = $manager->testProvider($validated['provider']);
+
+        return response()->json([
+            'provider' => $validated['provider'],
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'details' => $result['details'] ?? [],
+        ]);
+    }
+
+    /**
      * @return array{name: string, description: string, passed: bool, details: string}
      */
     private function checkProviderConfiguration(): array
     {
         try {
-            $defaultProvider = config('ai.default_provider', 'openrouter');
-            $openRouterKey = config('ai.providers.openrouter.api_key', '');
-            $isConfigured = $openRouterKey !== '';
+            $defaultProvider = (string) config('ai.default_provider', 'openrouter');
+            $providerConfig = config("ai.providers.{$defaultProvider}", []);
 
-            if (! $isConfigured && $defaultProvider === 'openrouter') {
+            $envVarName = match ($defaultProvider) {
+                'openrouter' => 'OPENROUTER_API_KEY',
+                'groq' => 'GROQ_API_KEY',
+                'gemini' => 'GEMINI_API_KEY',
+                'openai' => 'OPENAI_API_KEY',
+                'ollama' => 'OLLAMA_BASE_URL',
+                default => 'AI_PROVIDER',
+            };
+
+            $isConfigured = match ($defaultProvider) {
+                'openrouter', 'groq', 'gemini', 'openai' => ! empty($providerConfig['api_key'] ?? ''),
+                'ollama' => ! empty($providerConfig['base_url'] ?? ''),
+                'null' => true,
+                default => false,
+            };
+
+            if (! $isConfigured && $defaultProvider !== 'null') {
                 return [
-                    'name' => 'AI Provider Configuration (OpenRouter)',
-                    'description' => 'Verifies provider driver, config structure, and .env OPENROUTER_API_KEY environment configuration.',
+                    'name' => "AI Provider Configuration ({$defaultProvider})",
+                    'description' => "Verifies provider driver, config structure, and .env {$envVarName} environment configuration.",
                     'passed' => false,
-                    'details' => 'Not Configured — Set OPENROUTER_API_KEY in .env to enable live LLM models.',
+                    'details' => "Not Configured — Set {$envVarName} in .env to enable live LLM models.",
                 ];
             }
 
+            $modelName = $providerConfig['model'] ?? 'default';
+
             return [
-                'name' => 'AI Provider Configuration (OpenRouter)',
-                'description' => 'Verifies provider driver, config structure, and .env OPENROUTER_API_KEY environment configuration.',
+                'name' => "AI Provider Configuration ({$defaultProvider})",
+                'description' => "Verifies provider driver, config structure, and .env {$envVarName} environment configuration.",
                 'passed' => true,
-                'details' => "Default Provider: '{$defaultProvider}', API Key configured in .env.",
+                'details' => "Default Provider: '{$defaultProvider}', Active Model: '{$modelName}', Configured in .env.",
             ];
         } catch (Throwable $e) {
             return [
-                'name' => 'AI Provider Configuration (OpenRouter)',
-                'description' => 'Verifies provider driver, config structure, and .env OPENROUTER_API_KEY environment configuration.',
+                'name' => 'AI Provider Configuration',
+                'description' => 'Verifies provider driver, config structure, and environment configuration.',
                 'passed' => false,
                 'details' => 'Error: '.$e->getMessage(),
             ];
@@ -1221,14 +1266,15 @@ class AdminAiController extends Controller
         try {
             /** @var AiProviderManager $manager */
             $manager = app(AiProviderManager::class);
-            $openRouterProvider = $manager->resolveDriverInstance('openrouter');
+            $defaultProvider = (string) config('ai.default_provider', 'openrouter');
+            $activeDriver = $manager->resolveDriverInstance($defaultProvider);
 
-            $testResult = $openRouterProvider->testConnection();
+            $testResult = $activeDriver->testConnection();
 
             if (! $testResult['success']) {
                 return [
                     'name' => 'API Connectivity & Auth Test',
-                    'description' => 'Performs a live ping test to OpenRouter API endpoint.',
+                    'description' => "Performs a live connectivity test to the active ({$defaultProvider}) provider endpoint.",
                     'passed' => false,
                     'details' => $testResult['message'],
                 ];
@@ -1236,14 +1282,14 @@ class AdminAiController extends Controller
 
             return [
                 'name' => 'API Connectivity & Auth Test',
-                'description' => 'Performs a live ping test to OpenRouter API endpoint.',
+                'description' => "Performs a live connectivity test to the active ({$defaultProvider}) provider endpoint.",
                 'passed' => true,
                 'details' => $testResult['message'],
             ];
         } catch (Throwable $e) {
             return [
                 'name' => 'API Connectivity & Auth Test',
-                'description' => 'Performs a live ping test to OpenRouter API endpoint.',
+                'description' => 'Performs a live ping test to the active provider API endpoint.',
                 'passed' => false,
                 'details' => 'Connectivity test exception: '.$e->getMessage(),
             ];

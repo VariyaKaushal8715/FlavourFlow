@@ -163,16 +163,16 @@
             </div>
 
             <!-- Provider Connection Status Banner -->
-            <div @class([
-                'rounded-xl border p-4 text-xs font-mono',
+            <div id="provider-test-status" @class([
+                'rounded-xl border p-4 text-xs font-mono transition',
                 'bg-emerald-50 border-emerald-200 text-emerald-900' => $providerConnectionTest['success'] ?? false,
                 'bg-zinc-50 border-zinc-200 text-zinc-700' => ! ($providerConnectionTest['success'] ?? false),
             ])>
                 <div class="flex items-center justify-between">
-                    <span class="font-bold uppercase tracking-wider">Live Active Connection Test:</span>
-                    <span class="font-bold">{{ ($providerConnectionTest['success'] ?? false) ? 'Connected' : 'Deterministic Fallback Active' }}</span>
+                    <span id="provider-test-title" class="font-bold uppercase tracking-wider">Live Active Connection Test ({{ config('ai.default_provider', 'openrouter') }}):</span>
+                    <span id="provider-test-badge" class="font-bold">{{ ($providerConnectionTest['success'] ?? false) ? 'Connected' : 'Deterministic Fallback Active' }}</span>
                 </div>
-                <p class="mt-1.5 leading-relaxed">{{ $providerConnectionTest['message'] ?? 'No connection test available.' }}</p>
+                <p id="provider-test-message" class="mt-1.5 leading-relaxed">{{ $providerConnectionTest['message'] ?? 'No connection test available.' }}</p>
             </div>
 
             <!-- Supported Drivers Matrix -->
@@ -196,12 +196,15 @@
                                 {{ $driverInfo['model'] }}
                             </p>
                         </div>
-                        <div class="mt-2 text-[10px] font-bold">
+                        <div class="mt-2 flex items-center justify-between text-[10px]">
                             @if($driverInfo['available'])
-                                <span class="text-emerald-700">Available</span>
+                                <span class="font-bold text-emerald-700">Available</span>
                             @else
-                                <span class="text-zinc-400">Not Configured</span>
+                                <span class="font-bold text-zinc-400">Not Configured</span>
                             @endif
+                            <button type="button" onclick="runProviderTest('{{ $driverKey }}')" class="font-semibold text-brand-primary hover:underline">
+                                Ping
+                            </button>
                         </div>
                     </div>
                 @endforeach
@@ -312,4 +315,52 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function runProviderTest(provider) {
+            const statusBox = document.getElementById('provider-test-status');
+            const title = document.getElementById('provider-test-title');
+            const badge = document.getElementById('provider-test-badge');
+            const message = document.getElementById('provider-test-message');
+
+            if (message) {
+                message.innerText = 'Pinging provider [' + provider + '] endpoint...';
+            }
+            if (badge) {
+                badge.innerText = 'Testing...';
+            }
+
+            fetch('{{ route("admin.ai.providerTest") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ provider: provider })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (title) title.innerText = 'Provider Connectivity Test: ' + data.provider.toUpperCase();
+                if (badge) badge.innerText = data.success ? 'Connected' : 'Failed / Inactive';
+                if (message) message.innerText = data.message;
+
+                if (statusBox) {
+                    if (data.success) {
+                        statusBox.className = 'rounded-xl border p-4 text-xs font-mono transition bg-emerald-50 border-emerald-200 text-emerald-900';
+                    } else {
+                        statusBox.className = 'rounded-xl border p-4 text-xs font-mono transition bg-rose-50 border-rose-200 text-rose-900';
+                    }
+                }
+            })
+            .catch(err => {
+                if (title) title.innerText = 'Provider Test Error: ' + provider;
+                if (badge) badge.innerText = 'Error';
+                if (message) message.innerText = 'Network error during provider test: ' + err.message;
+                if (statusBox) {
+                    statusBox.className = 'rounded-xl border p-4 text-xs font-mono transition bg-rose-50 border-rose-200 text-rose-900';
+                }
+            });
+        }
+    </script>
 </x-admin.layout>

@@ -2,11 +2,16 @@
 
 namespace App\AI\Services;
 
+use App\AI\Contracts\AiAdapterInterface;
 use App\AI\Contracts\AiAnalyzerInterface;
 use App\AI\Contracts\AiBrainInterface;
 use App\AI\Contracts\AiContextBuilderInterface;
+use App\AI\Contracts\AiEventTrackerInterface;
 use App\AI\Contracts\AiLanguageUnderstandingInterface;
+use App\AI\Contracts\AiProviderInterface;
 use App\AI\Contracts\AiRecommendationEngineInterface;
+use App\AI\Core\AiParsedIntent;
+use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -14,16 +19,29 @@ use Throwable;
 
 class CustomerAiAssistantService
 {
+    private AiEventTrackerInterface $tracker;
+
+    private AiAdapterInterface $adapter;
+
+    private AiProviderInterface $provider;
+
     public function __construct(
         private AiLanguageUnderstandingInterface $nlu,
         private AiContextBuilderInterface $contextBuilder,
         private AiAnalyzerInterface $analyzer,
         private AiBrainInterface $brain,
         private AiRecommendationEngineInterface $recEngine,
-    ) {}
+        ?AiEventTrackerInterface $tracker = null,
+        ?AiAdapterInterface $adapter = null,
+        ?AiProviderInterface $provider = null,
+    ) {
+        $this->tracker = $tracker ?? app(AiEventTrackerInterface::class);
+        $this->adapter = $adapter ?? app(AiAdapterInterface::class);
+        $this->provider = $provider ?? app(AiProviderInterface::class);
+    }
 
     /**
-     * Process a customer chat message and generate a rich AI response.
+     * Process a customer chat message and generate a grounded, multilingual AI response.
      *
      * @return array{
      *     id: string,
@@ -33,6 +51,7 @@ class CustomerAiAssistantService
      *     intent: string,
      *     products: list<array<string, mixed>>,
      *     actions: list<array<string, mixed>>,
+     *     follow_up_suggestions: list<string>,
      *     timestamp: string
      * }
      */
@@ -42,7 +61,7 @@ class CustomerAiAssistantService
             $effectiveUserId = $userId ?? (auth()->check() ? auth()->id() : null);
             $effectiveSessionId = $sessionId ?? (session()->isStarted() ? session()->getId() : 'guest-'.Str::random(8));
 
-            // 1. Understand input query & language
+            // 1. Multilingual Natural Language Understanding
             $parsedIntent = $this->nlu->understand($message);
             $language = $parsedIntent->language;
             $intent = $parsedIntent->intent;
@@ -52,38 +71,82 @@ class CustomerAiAssistantService
             $context = $this->contextBuilder->buildContext($effectiveUserId, $effectiveSessionId);
             $analysis = $this->analyzer->analyze($context);
 
-            // 3. Obtain real DB products based on extracted intent & entities
-            $products = $this->findRealProducts($intent, $entities, $analysis);
+            $products = collect();
+            $actions = [];
+            $responseText = '';
+            $found = true;
 
-            // 4. Generate Brain Reasoning
-            $brainResponse = $this->brain->reasonForCustomer($context, $message, $language);
+            // 3. Dispatch by Intent with strict grounding on real FlavourFlow data
+            if ($intent === 'order_tracking') {
+                [$responseText, $actions] = $this->handleOrderTracking($effectiveUserId, $language);
+            } elseif ($intent === 'product_comparison') {
+                [$responseText, $products, $actions] = $this->handleProductComparison($entities, $language, $message);
+            } elseif (in_array($intent, ['price_query', 'stock_query', 'cooking_usage'], true)) {
+                [$responseText, $products, $actions, $found] = $this->handleProductAttributeQuery($intent, $entities, $language, $message);
+            } elseif ($intent === 'cart_query') {
+                $responseText = $this->nlu->formatResponse('cart_query', $language);
+                $actions[] = [
+                    'action' => 'view_cart',
+                    'label' => 'Go to Shopping Cart',
+                    'url' => route('cart.index'),
+                ];
+            } elseif ($intent === 'greeting') {
+                $responseText = $this->nlu->formatResponse('greeting', $language);
+                $products = Product::query()->active()->orderByDesc('priority')->take(3)->get();
+                $actions[] = [
+                    'action' => 'browse_catalog',
+                    'label' => 'Browse Catalog',
+                    'url' => route('home'),
+                ];
+            } else {
+                // Product search or general recommendations
+                [$responseText, $products, $actions, $found] = $this->handleProductSearch($intent, $entities, $analysis, $language, $message);
+            }
 
-            // 5. Build localized message response text
-            $responseText = $this->buildResponseText($message, $parsedIntent, $brainResponse->reasoning, $products, $language);
-
-            // 6. Format rich product cards
+            // 4. Format rich, safe product cards
             $productCards = $this->formatProductCards($products, $parsedIntent);
 
-            // 7. Recommended actions
-            $actions = $this->buildRecommendedActions($intent, $products, $language);
+            // 5. Contextual follow-up prompt suggestions
+            $followUps = $this->buildFollowUpSuggestions($intent, $language, $products->first()?->name);
+
+            // 6. Safe Activity Tracking with Privacy Consent check
+            $this->tracker->track(
+                eventType: 'ai_assistant_query',
+                entityType: $products->first()?->getMorphClass() ?? 'product',
+                entityId: $products->first()?->getKey(),
+                metadata: [
+                    'intent' => $intent,
+                    'language' => $language,
+                    'found' => $found,
+                    'products_count' => $products->count(),
+                    'is_authenticated' => $effectiveUserId !== null,
+                ]
+            );
+
+            $finalResponseText = $this->synthesizeProviderResponse($message, $intent, $language, $products, $responseText, $found);
 
             $responsePayload = [
                 'id' => (string) Str::uuid(),
                 'sender' => 'assistant',
-                'message' => $responseText,
+                'message' => $finalResponseText,
                 'language' => $language,
                 'intent' => $intent,
                 'products' => $productCards,
                 'actions' => $actions,
+                'follow_up_suggestions' => $followUps,
                 'timestamp' => now()->toIso8601String(),
             ];
 
-            // Record conversation turn in session memory
+            // 7. Store conversation turn in session memory
             $this->storeInSessionHistory($message, $responsePayload);
 
             return $responsePayload;
         } catch (Throwable $e) {
-            logger()->error('Customer AI Assistant Exception: '.$e->getMessage());
+            logger()->error('Customer AI Assistant Exception: '.$e->getMessage(), [
+                'message' => $message,
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
 
             return [
                 'id' => (string) Str::uuid(),
@@ -93,6 +156,7 @@ class CustomerAiAssistantService
                 'intent' => 'error',
                 'products' => [],
                 'actions' => [],
+                'follow_up_suggestions' => ['Recommend best spices', 'View shopping cart'],
                 'timestamp' => now()->toIso8601String(),
             ];
         }
@@ -117,87 +181,377 @@ class CustomerAiAssistantService
     }
 
     /**
-     * Find real database products matching parsed entities or recommendations.
+     * Handle order tracking with strict authorization protection.
+     * Guests are directed to login; private order details are NEVER exposed to guests.
      *
-     * @param  array{category: ?string, product_name: ?string, max_budget: ?float, keywords: list<string>}  $entities
-     * @return Collection<int, Product>
+     * @return array{0: string, 1: list<array<string, mixed>>}
      */
-    private function findRealProducts(string $intent, array $entities, array $analysis): Collection
+    private function handleOrderTracking(?int $userId, string $language): array
     {
-        $query = Product::query()->active();
+        if ($userId === null) {
+            // Guest protection
+            $text = $this->nlu->formatResponse('order_tracking', $language, ['is_guest' => true]);
+            $actions = [
+                [
+                    'action' => 'login',
+                    'label' => 'Log In to View Orders',
+                    'url' => route('login'),
+                ],
+            ];
 
-        // Specific product entity matched
-        if (! empty($entities['product_name'])) {
-            $matched = (clone $query)->where('name', 'like', "%{$entities['product_name']}%")->get();
-            if ($matched->isNotEmpty()) {
-                return $matched->take(4);
-            }
+            return [$text, $actions];
         }
 
-        // Category matched
-        if (! empty($entities['category'])) {
-            $query->where('category', $entities['category']);
+        // Authenticated customer: fetch their latest order only
+        $latestOrder = Order::query()->where('user_id', $userId)->latest()->first();
+
+        if ($latestOrder !== null) {
+            $statusLabel = ucfirst(str_replace('_', ' ', (string) $latestOrder->status));
+            $text = $this->nlu->formatResponse('order_tracking', $language, [
+                'is_guest' => false,
+                'order_number' => $latestOrder->order_number,
+                'order_status' => $statusLabel,
+            ]);
+
+            $actions = [
+                [
+                    'action' => 'view_order',
+                    'label' => "View Order #{$latestOrder->order_number}",
+                    'url' => route('account.orders.show', ['order' => $latestOrder->order_number]),
+                ],
+                [
+                    'action' => 'track_order',
+                    'label' => 'Track Delivery Status',
+                    'url' => route('account.orders.track', ['order' => $latestOrder->order_number]),
+                ],
+            ];
+
+            return [$text, $actions];
         }
 
-        // Max budget constraint matched
-        if (! empty($entities['max_budget']) && $entities['max_budget'] > 0) {
-            $query->where('price', '<=', $entities['max_budget']);
-        }
+        $text = $this->nlu->formatResponse('order_tracking', $language, [
+            'is_guest' => false,
+            'order_number' => '',
+        ]);
 
-        // Keywords matched
-        if (! empty($entities['keywords']) && empty($entities['category']) && empty($entities['product_name'])) {
-            $query->where(function ($q) use ($entities): void {
-                foreach ($entities['keywords'] as $kw) {
-                    $q->orWhere('name', 'like', "%{$kw}%")
-                        ->orWhere('description', 'like', "%{$kw}%")
-                        ->orWhere('category', 'like', "%{$kw}%");
-                }
-            });
-        }
+        $actions = [
+            [
+                'action' => 'browse_spices',
+                'label' => 'Explore Spices',
+                'url' => route('home'),
+            ],
+        ];
 
-        $results = $query->orderByDesc('is_featured')->orderByDesc('priority')->take(4)->get();
-
-        // If no items match query constraints, fallback to top active products
-        if ($results->isEmpty()) {
-            return Product::query()->active()->orderByDesc('priority')->take(4)->get();
-        }
-
-        return $results;
+        return [$text, $actions];
     }
 
     /**
-     * Build natural response text in target language.
+     * Handle side-by-side product comparisons using actual database models.
      *
-     * @param  Collection<int, Product>  $products
+     * @param  array{compare_products?: list<string>, product_name?: ?string, keywords?: list<string>}  $entities
+     * @return array{0: string, 1: Collection<int, Product>, 2: list<array<string, mixed>>}
      */
-    private function buildResponseText(string $query, $parsedIntent, string $brainReasoning, Collection $products, string $language): string
+    private function handleProductComparison(array $entities, string $language, string $query): array
     {
-        $intent = $parsedIntent->intent;
+        $targetTerms = $entities['compare_products'] ?? [];
 
-        if ($intent === 'order_tracking') {
-            return $this->nlu->formatResponse('order_tracking', $language);
+        if (count($targetTerms) < 2) {
+            // Fallback keywords search for comparison
+            $words = $entities['keywords'] ?? [];
+            foreach ($words as $word) {
+                if (mb_strlen($word) > 3 && ! in_array($word, ['compare', 'difference', 'farak', 'antar', 'versus', 'with'], true)) {
+                    $targetTerms[] = $word;
+                }
+            }
         }
 
-        if ($intent === 'cart_query') {
-            return $this->nlu->formatResponse('cart_query', $language);
+        $matchedProducts = collect();
+        foreach ($targetTerms as $term) {
+            $p = Product::query()->active()
+                ->where(function ($q) use ($term): void {
+                    $q->where('name', 'like', "%{$term}%")
+                        ->orWhere('description', 'like', "%{$term}%")
+                        ->orWhere('category', 'like', "%{$term}%");
+                })
+                ->first();
+
+            if ($p !== null && ! $matchedProducts->contains('id', $p->id)) {
+                $matchedProducts->push($p);
+            }
+
+            if ($matchedProducts->count() >= 2) {
+                break;
+            }
+        }
+
+        if ($matchedProducts->count() >= 2) {
+            $pA = $matchedProducts[0];
+            $pB = $matchedProducts[1];
+
+            $priceDiff = abs((float) $pA->price - (float) $pB->price);
+            $diffText = "• {$pA->name}: ₹".number_format((float) $pA->price, 2)." ({$pA->unit}), Category: {$pA->categoryName()}, Status: {$pA->stockLabel()}\n".
+                "• {$pB->name}: ₹".number_format((float) $pB->price, 2)." ({$pB->unit}), Category: {$pB->categoryName()}, Status: {$pB->stockLabel()}\n".
+                '• Price Difference: ₹'.number_format($priceDiff, 2);
+
+            $text = $this->nlu->formatResponse('product_comparison', $language, [
+                'compare_a' => $pA->name,
+                'compare_b' => $pB->name,
+                'compare_text' => $diffText,
+            ]);
+
+            $actions = [
+                [
+                    'action' => 'view_product_a',
+                    'label' => "View {$pA->name}",
+                    'url' => route('products.show', ['product' => $pA->slug]),
+                ],
+                [
+                    'action' => 'view_product_b',
+                    'label' => "View {$pB->name}",
+                    'url' => route('products.show', ['product' => $pB->slug]),
+                ],
+            ];
+
+            return [$text, $matchedProducts, $actions];
+        }
+
+        // If fewer than 2 matched, provide available products for discovery
+        $available = Product::query()->active()->orderByDesc('priority')->take(2)->get();
+        $text = $this->nlu->formatResponse('recommendation', $language);
+        $actions = [
+            [
+                'action' => 'view_cart',
+                'label' => 'View Cart',
+                'url' => route('cart.index'),
+            ],
+        ];
+
+        return [$text, $available, $actions];
+    }
+
+    /**
+     * Handle pricing, stock, and cooking usage queries grounded in real database columns.
+     *
+     * @param  array{product_name?: ?string, keywords?: list<string>}  $entities
+     * @return array{0: string, 1: Collection<int, Product>, 2: list<array<string, mixed>>, 3: bool}
+     */
+    private function handleProductAttributeQuery(string $intent, array $entities, string $language, string $query): array
+    {
+        $product = $this->findSingleProduct($entities);
+
+        if ($product === null) {
+            // Honest response: Product not found in database! Never hallucinate products or prices.
+            $fallbackProducts = Product::query()->active()->orderByDesc('priority')->take(3)->get();
+            $searchTerm = $this->extractSearchTerm($query, $entities);
+            $text = $this->nlu->formatResponse('product_search', $language, [
+                'product_name' => $searchTerm,
+                'found' => false,
+            ]);
+
+            $actions = [
+                [
+                    'action' => 'browse_catalog',
+                    'label' => 'Explore All Spices',
+                    'url' => route('home'),
+                ],
+            ];
+
+            return [$text, $fallbackProducts, $actions, false];
+        }
+
+        $stockStatus = $product->quantity > 0 ? 'in stock' : 'out of stock';
+        $usageInstructions = $product->usage_instructions ?: ($product->description ?: 'Use as needed in daily cooking.');
+
+        $text = $this->nlu->formatResponse($intent, $language, [
+            'product_name' => $product->name,
+            'price' => number_format((float) $product->price, 2),
+            'unit' => $product->unit,
+            'stock_status' => $stockStatus,
+            'stock_quantity' => $product->quantity,
+            'usage_instructions' => $usageInstructions,
+            'found' => true,
+        ]);
+
+        $actions = [
+            [
+                'action' => 'view_product',
+                'label' => "View {$product->name}",
+                'url' => route('products.show', ['product' => $product->slug]),
+            ],
+            [
+                'action' => 'view_cart',
+                'label' => 'Go to Cart',
+                'url' => route('cart.index'),
+            ],
+        ];
+
+        return [$text, collect([$product]), $actions, true];
+    }
+
+    /**
+     * Handle general search, recommendations, and category discovery.
+     *
+     * @param  array{category: ?string, product_name: ?string, max_budget: ?float, keywords: list<string>}  $entities
+     * @return array{0: string, 1: Collection<int, Product>, 2: list<array<string, mixed>>, 3: bool}
+     */
+    private function handleProductSearch(string $intent, array $entities, array $analysis, string $language, string $query): array
+    {
+        $products = $this->queryDatabaseProducts($entities);
+        $found = $products->isNotEmpty();
+
+        if (! $found) {
+            // Real grounding: if requested term not found, honestly tell user and suggest top active spices
+            $products = Product::query()->active()->orderByDesc('priority')->take(3)->get();
+            $searchTerm = $this->extractSearchTerm($query, $entities);
+            $text = $this->nlu->formatResponse('product_search', $language, [
+                'product_name' => $searchTerm,
+                'found' => false,
+            ]);
+
+            $actions = [
+                [
+                    'action' => 'browse_home',
+                    'label' => 'Browse All Spices',
+                    'url' => route('home'),
+                ],
+            ];
+
+            return [$text, $products, $actions, false];
         }
 
         $baseText = $this->nlu->formatResponse($intent, $language, [
             'product_name' => $products->first()?->name ?? 'spices',
+            'found' => true,
         ]);
 
-        if ($products->isNotEmpty()) {
-            $count = $products->count();
-            $text = "{$baseText} ({$count} item(s) found)";
+        $actions = [
+            [
+                'action' => 'view_cart',
+                'label' => 'View Cart',
+                'url' => route('cart.index'),
+            ],
+        ];
 
-            if ($brainReasoning !== '' && ! str_contains($brainReasoning, 'Unable to process')) {
-                $text .= "\n\n".$brainReasoning;
-            }
-
-            return $text;
+        if ($products->count() === 1) {
+            $single = $products->first();
+            $actions[] = [
+                'action' => 'view_product',
+                'label' => "View {$single->name}",
+                'url' => route('products.show', ['product' => $single->slug]),
+            ];
         }
 
-        return $baseText;
+        return [$baseText, $products, $actions, true];
+    }
+
+    /**
+     * Look up a single product matching entity name or keywords.
+     *
+     * @param  array{product_name?: ?string, keywords?: list<string>}  $entities
+     */
+    private function findSingleProduct(array $entities): ?Product
+    {
+        $query = Product::query()->active();
+
+        if (! empty($entities['product_name'])) {
+            $matched = (clone $query)->where('name', 'like', "%{$entities['product_name']}%")->first();
+            if ($matched !== null) {
+                return $matched;
+            }
+        }
+
+        if (! empty($entities['keywords'])) {
+            foreach ($entities['keywords'] as $kw) {
+                if (mb_strlen($kw) > 3) {
+                    $matched = (clone $query)
+                        ->where('name', 'like', "%{$kw}%")
+                        ->orWhere('description', 'like', "%{$kw}%")
+                        ->first();
+                    if ($matched !== null) {
+                        return $matched;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Query database products strictly matching criteria.
+     *
+     * @param  array{category: ?string, product_name: ?string, max_budget: ?float, keywords: list<string>}  $entities
+     * @return Collection<int, Product>
+     */
+    private function queryDatabaseProducts(array $entities): Collection
+    {
+        $query = Product::query()->active();
+
+        // 1. Specific product name match
+        if (! empty($entities['product_name'])) {
+            $matched = (clone $query)->where('name', 'like', "%{$entities['product_name']}%")->get();
+            if ($matched->isNotEmpty()) {
+                if (! empty($entities['max_budget']) && $entities['max_budget'] > 0) {
+                    $matched = $matched->filter(fn ($p) => (float) $p->price <= $entities['max_budget']);
+                }
+
+                return $matched->take(4);
+            }
+        }
+
+        // 2. Category match
+        if (! empty($entities['category'])) {
+            $query->where('category', 'like', "%{$entities['category']}%");
+        }
+
+        // 3. Max budget constraint
+        if (! empty($entities['max_budget']) && $entities['max_budget'] > 0) {
+            $query->where('price', '<=', $entities['max_budget']);
+        }
+
+        // 4. Keyword search across name, description, ingredients, highlights
+        if (! empty($entities['keywords']) && empty($entities['category']) && empty($entities['product_name'])) {
+            $query->where(function ($q) use ($entities): void {
+                foreach ($entities['keywords'] as $kw) {
+                    if (mb_strlen($kw) > 2) {
+                        $q->orWhere('name', 'like', "%{$kw}%")
+                            ->orWhere('description', 'like', "%{$kw}%")
+                            ->orWhere('category', 'like', "%{$kw}%");
+                    }
+                }
+            });
+        }
+
+        return $query->orderByDesc('is_featured')->orderByDesc('priority')->take(4)->get();
+    }
+
+    /**
+     * Extract meaningful product search term from query, filtering out common conversational stop words.
+     *
+     * @param  array{product_name?: ?string, keywords?: list<string>}  $entities
+     */
+    private function extractSearchTerm(string $query, array $entities): string
+    {
+        if (! empty($entities['product_name'])) {
+            return $entities['product_name'];
+        }
+
+        $stopWords = [
+            'do', 'you', 'sell', 'have', 'any', 'available', 'looking', 'for',
+            'please', 'show', 'tell', 'me', 'about', 'what', 'is', 'the', 'price',
+            'of', 'how', 'much', 'can', 'i', 'get', 'buy', 'want', 'need', 'there',
+            'kya', 'hai', 'milega', 'bhai', 'su', 'che', 'joiye', 'aapo', 'batao',
+        ];
+
+        $cleanedWords = array_values(array_filter($entities['keywords'] ?? [], function ($w) use ($stopWords) {
+            return ! in_array(mb_strtolower($w, 'UTF-8'), $stopWords, true) && mb_strlen($w) > 2;
+        }));
+
+        if (! empty($cleanedWords)) {
+            return implode(' ', $cleanedWords);
+        }
+
+        return 'spices';
     }
 
     /**
@@ -206,14 +560,16 @@ class CustomerAiAssistantService
      * @param  Collection<int, Product>  $products
      * @return list<array<string, mixed>>
      */
-    private function formatProductCards(Collection $products, $parsedIntent): array
+    private function formatProductCards(Collection $products, AiParsedIntent $parsedIntent): array
     {
         $cards = [];
 
         foreach ($products as $p) {
-            $reason = "Matches your request for {$p->category}.";
-            if ($parsedIntent->entities['max_budget']) {
+            $reason = "Category: {$p->categoryName()}.";
+            if (! empty($parsedIntent->entities['max_budget'])) {
                 $reason .= " Fits within your ₹{$parsedIntent->entities['max_budget']} budget.";
+            } else {
+                $reason .= " {$p->stockLabel()}.";
             }
 
             $cards[] = [
@@ -222,11 +578,13 @@ class CustomerAiAssistantService
                 'slug' => $p->slug,
                 'price' => (float) $p->price,
                 'formatted_price' => '₹'.number_format((float) $p->price, 2),
-                'category' => $p->category,
-                'image_url' => asset($p->image ?? 'images/flavourflow-mark.png'),
+                'category' => $p->categoryName(),
+                'unit' => $p->unit,
+                'image_url' => asset($p->image_path ?: 'images/flavourflow-mark.png'),
                 'is_active' => (bool) $p->is_active,
                 'in_stock' => $p->quantity > 0,
                 'stock_quantity' => $p->quantity,
+                'stock_label' => $p->stockLabel(),
                 'reason' => $reason,
                 'url' => route('products.show', ['product' => $p->slug]),
                 'store_cart_url' => route('cart.store', ['product' => $p->slug]),
@@ -238,44 +596,127 @@ class CustomerAiAssistantService
     }
 
     /**
-     * Build interactive action buttons.
+     * Build contextual follow-up prompt questions.
      *
-     * @param  Collection<int, Product>  $products
-     * @return list<array{action: string, label: string, url: string}>
+     * @return list<string>
      */
-    private function buildRecommendedActions(string $intent, Collection $products, string $language): array
+    private function buildFollowUpSuggestions(string $intent, string $language, ?string $productName = null): array
     {
-        $actions = [];
+        $spice = $productName ?? 'spices';
 
-        if ($intent === 'order_tracking') {
-            $actions[] = [
-                'action' => 'view_orders',
-                'label' => 'View My Orders',
-                'url' => route('account.orders'),
-            ];
-        }
-
-        if ($intent === 'cart_query') {
-            $actions[] = [
-                'action' => 'view_cart',
-                'label' => 'Go to Cart',
-                'url' => route('cart.index'),
-            ];
-        }
-
-        if ($products->isNotEmpty()) {
-            $actions[] = [
-                'action' => 'view_cart',
-                'label' => 'View Shopping Cart',
-                'url' => route('cart.index'),
-            ];
-        }
-
-        return $actions;
+        return match ($language) {
+            'gu' => match ($intent) {
+                'product_search', 'recommendation' => [
+                    "{$spice} નો ભાવ કેટલો છે?",
+                    'કાશ્મીરી મરચું અને હળદર ની સરખામણી કરો',
+                    'મારા ઓર્ડર નું સ્ટેટસ શું છે?',
+                ],
+                'price_query', 'stock_query' => [
+                    "{$spice} સ્ટોક માં છે?",
+                    "{$spice} કેવી રીતે વાપરવું?",
+                    'શ્રેષ્ઠ મસાલા કલેક્શન બતાવો',
+                ],
+                'order_tracking' => [
+                    'સૌથી લોકપ્રિય મસાલા બતાવો',
+                    'કાર્ટ ની વિગતો બતાવો',
+                ],
+                default => [
+                    'શ્રેષ્ઠ મસાલા કલેક્શન બતાવો',
+                    'કાશ્મીરી લાલ મરચું નો ભાવ કેટલો છે?',
+                    'મારો ઓર્ડર ટ્રેક કરો',
+                ],
+            },
+            'gujenglish' => match ($intent) {
+                'product_search', 'recommendation' => [
+                    "{$spice} no bhav ketlo che?",
+                    'Marchu ane halder compare karo',
+                    'Maru order status check karo',
+                ],
+                'price_query', 'stock_query' => [
+                    "{$spice} stock ma che?",
+                    "{$spice} kevi rite use karvu?",
+                    'Best spices recommend karo',
+                ],
+                'order_tracking' => [
+                    'Top spices collection dikhao',
+                    'Cart items check karo',
+                ],
+                default => [
+                    'Best whole spices recommend karo',
+                    'Kashmiri chilli no price su che?',
+                    'Maro order track karo',
+                ],
+            },
+            'hi' => match ($intent) {
+                'product_search', 'recommendation' => [
+                    "{$spice} का क्या भाव है?",
+                    'कश्मीरी मिर्च और हल्दी की तुलना करें',
+                    'मेरा ऑर्डर कहाँ है?',
+                ],
+                'price_query', 'stock_query' => [
+                    "क्या {$spice} स्टॉक में है?",
+                    "{$spice} का उपयोग कैसे करें?",
+                    'सबसे अच्छे मसाले सुझाएं',
+                ],
+                'order_tracking' => [
+                    'सबसे लोकप्रिय मसाले दिखाएं',
+                    'कार्ट का सामान देखें',
+                ],
+                default => [
+                    'सर्वश्रेष्ठ खड़े मसाले सुझाएं',
+                    'कश्मीरी लाल मिर्च का दाम क्या है?',
+                    'ऑर्डर ट्रैक करें',
+                ],
+            },
+            'hinglish' => match ($intent) {
+                'product_search', 'recommendation' => [
+                    "{$spice} ka price kitna hai?",
+                    'Mirch aur haldi compare karo',
+                    'Mera order track karo',
+                ],
+                'price_query', 'stock_query' => [
+                    "Kya {$spice} stock me hai?",
+                    "{$spice} kaise use karein?",
+                    'Best spices recommend karo',
+                ],
+                'order_tracking' => [
+                    'Top spices dikhayein',
+                    'Cart summary check karein',
+                ],
+                default => [
+                    'Best whole spices recommend karo',
+                    'Kashmiri chilli ka price kya hai?',
+                    'Mera order track karein',
+                ],
+            },
+            default => match ($intent) {
+                'product_search', 'recommendation' => [
+                    "What is the price of {$spice}?",
+                    'Compare Kashmiri Chilli and Turmeric',
+                    'Where is my order?',
+                ],
+                'price_query', 'stock_query' => [
+                    "Is {$spice} in stock?",
+                    "How to use {$spice}?",
+                    'Recommend best selling spices',
+                ],
+                'order_tracking' => [
+                    'Recommend signature blends',
+                    'View my shopping cart',
+                ],
+                default => [
+                    'Recommend best whole spices',
+                    'What is the price of Kashmiri Red Chilli?',
+                    'Track my order status',
+                ],
+            },
+        };
     }
 
     /**
      * Append message turn to session memory.
+     *
+     * @param  array<string, mixed>  $responsePayload
      */
     private function storeInSessionHistory(string $userMessage, array $responsePayload): void
     {
@@ -296,5 +737,77 @@ class CustomerAiAssistantService
         }
 
         session()->put('ai_chat_history', $history);
+    }
+
+    /**
+     * Synthesize natural reasoning using the active external LLM provider when available,
+     * strictly grounded in verified database products with zero hallucination.
+     * Falls back seamlessly to deterministic NLU text on any error, timeout, or missing key.
+     *
+     * @param  Collection<int, Product>  $products
+     */
+    private function synthesizeProviderResponse(
+        string $userMessage,
+        string $intent,
+        string $language,
+        Collection $products,
+        string $fallbackText,
+        bool $found
+    ): string {
+        // Strict deterministic guard: never query LLM for protected order tracking or if provider unavailable
+        if ($intent === 'order_tracking' || ! $this->provider->isAvailable() || $this->provider->getName() === 'null') {
+            return $fallbackText;
+        }
+
+        // Avoid making unexpected outbound network calls during automated test suites unless mocked
+        if (app()->environment('testing') && ! (config('ai.force_live_tests', false))) {
+            return $fallbackText;
+        }
+
+        try {
+            $verifiedCatalog = $products->map(function (Product $p): array {
+                return [
+                    'name' => $p->name,
+                    'price_inr' => (float) $p->price,
+                    'unit' => $p->unit,
+                    'category' => $p->categoryName(),
+                    'in_stock' => $p->quantity > 0,
+                    'stock_quantity' => $p->quantity,
+                    'usage' => $p->usage_instructions ?: $p->description,
+                ];
+            })->values()->all();
+
+            $systemPrompt = "You are the warm, knowledgeable shopping assistant for FlavourFlow, a premium Indian spices and pantry brand.
+CRITICAL GROUNDING RULES:
+1. Ground your response STRICTLY in the catalog items listed below. NEVER invent products, prices, discounts, or stock.
+2. Prices and quantities MUST match the verified catalog data.
+3. Respond in the requested language/dialect: '{$language}' (e.g. Gujarati script for 'gu', Latin GujEnglish for 'gujenglish', Hindi Devanagari for 'hi', Hinglish for 'hinglish', English for 'en').
+4. Keep your answer friendly, natural, and concise (2 to 3 sentences).
+5. If the user asked for something not in the store (found is false), politely explain that FlavourFlow doesn't carry it yet, and recommend the featured spices below instead.";
+
+            $promptPayload = [
+                'system' => $systemPrompt,
+                'user' => $userMessage,
+                'context' => [
+                    'intent' => $intent,
+                    'language' => $language,
+                    'found' => $found,
+                    'catalog_items' => $verifiedCatalog,
+                ],
+                'language' => $language,
+            ];
+
+            $result = $this->provider->generate($promptPayload);
+
+            if ($result['success'] && ! empty(trim((string) $result['content']))) {
+                return trim((string) $result['content']);
+            }
+
+            return $fallbackText;
+        } catch (Throwable $e) {
+            logger()->warning('External LLM Provider reasoning fallback triggered: '.$e->getMessage());
+
+            return $fallbackText;
+        }
     }
 }

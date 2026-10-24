@@ -3,6 +3,7 @@
 use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\Account\UserCouponController;
 use App\Http\Controllers\Account\UserProfileController;
+use App\Http\Controllers\Admin\AdminAiController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCouponController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminSessionController;
 use App\Http\Controllers\Admin\AdminSortOptionController;
+use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -203,6 +205,10 @@ Route::prefix('admin')
                 Route::post('/reset', [AdminSortOptionController::class, 'reset'])->name('reset');
                 Route::delete('/{sortOption}', [AdminSortOptionController::class, 'destroy'])->name('destroy');
             });
+
+            // AI Diagnostics & Health Check (Admin)
+            Route::get('/ai-status', [AdminAiController::class, 'index'])->name('ai.index');
+            Route::post('/ai-provider-test', [AdminAiController::class, 'testProvider'])->name('ai.providerTest');
 
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
         });
