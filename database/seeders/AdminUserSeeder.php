@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Services\AdminAccountService;
 use Illuminate\Database\Seeder;
 
 class AdminUserSeeder extends Seeder
@@ -12,13 +12,6 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::query()->updateOrCreate([
-            'email' => config('admin.email', env('ADMIN_EMAIL', 'admin@flavourflow.test')),
-        ], [
-            'name' => 'FlavourFlow Admin',
-            'username' => 'admin',
-            'password' => config('admin.password', env('ADMIN_PASSWORD', 'FlavourFlow@123')),
-            'is_admin' => true,
-        ]);
+        AdminAccountService::sync();
     }
 }
