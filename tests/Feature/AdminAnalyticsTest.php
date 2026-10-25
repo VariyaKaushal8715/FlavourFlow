@@ -199,11 +199,56 @@ test('administrator can view inventory control and stock alerts', function () {
 
 test('administrator can view categories overview and category detail analytics', function () {
     $admin = User::factory()->admin()->create();
+    $customer = User::factory()->create();
 
-    Product::factory()->create([
+    $product1 = Product::factory()->create([
         'name' => 'Panch Phoron Blend',
         'category' => 'Regional Specialty',
         'price' => 180.00,
+        'quantity' => 20,
+        'delivery_mode' => 'custom',
+        'deliverable_locations' => [['country' => 'India', 'state' => 'West Bengal', 'city' => 'Kolkata']],
+    ]);
+
+    $product2 = Product::factory()->create([
+        'name' => 'Bengali Five Spice Extra',
+        'category' => 'Regional Specialty',
+        'price' => 220.00,
+        'quantity' => 15,
+        'delivery_mode' => 'all',
+    ]);
+
+    $order = Order::create([
+        'user_id' => $customer->id,
+        'order_number' => 'ORD-CAT-1',
+        'total_amount' => 540.00,
+        'status' => 'completed',
+        'payment_status' => 'paid',
+    ]);
+
+    OrderItem::create([
+        'order_id' => $order->id,
+        'product_id' => $product1->id,
+        'quantity' => 3,
+        'unit_price' => 180.00,
+        'total_price' => 540.00,
+    ]);
+
+    // Pending order should not contribute to completed revenue
+    $pendingOrder = Order::create([
+        'user_id' => $customer->id,
+        'order_number' => 'ORD-CAT-2',
+        'total_amount' => 220.00,
+        'status' => 'pending',
+        'payment_status' => 'unpaid',
+    ]);
+
+    OrderItem::create([
+        'order_id' => $pendingOrder->id,
+        'product_id' => $product2->id,
+        'quantity' => 1,
+        'unit_price' => 220.00,
+        'total_price' => 220.00,
     ]);
 
     // Categories Index
@@ -211,14 +256,19 @@ test('administrator can view categories overview and category detail analytics',
         ->get(route('admin.categories.index'))
         ->assertSuccessful()
         ->assertSee('Categories Performance')
-        ->assertSee('Regional Specialty');
+        ->assertSee('Regional Specialty')
+        ->assertSee('540')
+        ->assertSee('35 units'); // 20 + 15 total stock without duplication
 
     // Category Show
     $this->actingAs($admin)
         ->get(route('admin.categories.show', ['category' => 'Regional Specialty']))
         ->assertSuccessful()
         ->assertSee('Regional Specialty')
-        ->assertSee('Panch Phoron Blend');
+        ->assertSee('Panch Phoron Blend')
+        ->assertSee('Bengali Five Spice Extra')
+        ->assertSee('540')
+        ->assertSee('2 Items', false);
 });
 
 test('non-admin user is forbidden from accessing analytics and management routes', function () {

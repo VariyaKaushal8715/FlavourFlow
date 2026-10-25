@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
@@ -14,20 +15,28 @@ class AdminCategoryController extends Controller
     {
         Gate::authorize('access-admin');
 
+        $salesSubquery = OrderItem::query()
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.status', '=', 'completed')
+            ->select('order_items.product_id')
+            ->selectRaw('COALESCE(SUM(order_items.quantity), 0) as units_sold')
+            ->selectRaw('COALESCE(SUM(order_items.total_price), 0) as total_revenue')
+            ->groupBy('order_items.product_id');
+
         $categories = Product::query()
             ->select(
                 'products.category',
-                DB::raw('COUNT(DISTINCT products.id) as total_products'),
+                DB::raw('COUNT(products.id) as total_products'),
                 DB::raw('SUM(CASE WHEN products.is_active = 1 THEN 1 ELSE 0 END) as active_products'),
                 DB::raw('SUM(products.quantity) as total_stock'),
-                DB::raw('COALESCE(SUM(order_items.quantity), 0) as units_sold'),
-                DB::raw('COALESCE(SUM(order_items.total_price), 0) as total_revenue')
+                DB::raw('COALESCE(SUM(sales.units_sold), 0) as units_sold'),
+                DB::raw('COALESCE(SUM(sales.total_revenue), 0) as total_revenue')
             )
-            ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
-            ->leftJoin('orders', function ($join): void {
-                $join->on('orders.id', '=', 'order_items.order_id')
-                    ->where('orders.status', '=', 'completed');
+            ->leftJoinSub($salesSubquery, 'sales', function ($join): void {
+                $join->on('products.id', '=', 'sales.product_id');
             })
+            ->whereNotNull('products.category')
+            ->where('products.category', '!=', '')
             ->groupBy('products.category')
             ->orderByDesc('total_revenue')
             ->get();
@@ -35,8 +44,8 @@ class AdminCategoryController extends Controller
         $stats = [
             'total_categories' => $categories->count(),
             'total_products' => Product::count(),
-            'total_revenue' => $categories->sum('total_revenue'),
-            'total_units_sold' => $categories->sum('units_sold'),
+            'total_revenue' => (float) $categories->sum('total_revenue'),
+            'total_units_sold' => (int) $categories->sum('units_sold'),
         ];
 
         return view('admin.categories.index', [
@@ -49,46 +58,27 @@ class AdminCategoryController extends Controller
     {
         Gate::authorize('access-admin');
 
+        $salesSubquery = OrderItem::query()
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.status', '=', 'completed')
+            ->select('order_items.product_id')
+            ->selectRaw('COALESCE(SUM(order_items.quantity), 0) as units_sold')
+            ->selectRaw('COALESCE(SUM(order_items.total_price), 0) as revenue_generated')
+            ->groupBy('order_items.product_id');
+
         $products = Product::query()
-            ->select(
-                'products.*',
-                DB::raw('COALESCE(SUM(order_items.quantity), 0) as units_sold'),
-                DB::raw('COALESCE(SUM(order_items.total_price), 0) as revenue_generated')
-            )
-            ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
-            ->leftJoin('orders', function ($join): void {
-                $join->on('orders.id', '=', 'order_items.order_id')
-                    ->where('orders.status', '=', 'completed');
+            ->select('products.*')
+            ->selectRaw('COALESCE(sales.units_sold, 0) as units_sold')
+            ->selectRaw('COALESCE(sales.revenue_generated, 0) as revenue_generated')
+            ->leftJoinSub($salesSubquery, 'sales', function ($join): void {
+                $join->on('products.id', '=', 'sales.product_id');
             })
             ->where('products.category', $category)
-            ->groupBy(
-                'products.id',
-                'products.name',
-                'products.slug',
-                'products.sku',
-                'products.category',
-                'products.unit',
-                'products.description',
-                'products.long_description',
-                'products.highlights',
-                'products.ingredients',
-                'products.usage_instructions',
-                'products.origin',
-                'products.badge',
-                'products.price',
-                'products.compare_at_price',
-                'products.quantity',
-                'products.low_stock_threshold',
-                'products.rating',
-                'products.priority',
-                'products.image_path',
-                'products.is_featured',
-                'products.is_active',
-                'products.created_at',
-                'products.updated_at'
-            )
             ->orderByDesc('revenue_generated')
-            ->paginate(15);
+            ->orderByDesc('units_sold')
+            ->orderBy('products.name')
+            ->paginate(15)
+            ->withQueryString();
 
         $stats = [
             'category_name' => $category,
