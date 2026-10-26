@@ -38,14 +38,15 @@ return [
     'razorpay' => [
         'key_id' => env('RAZORPAY_KEY_ID') ?: 'rzp_test_dummy_key_id',
         'key_secret' => env('RAZORPAY_KEY_SECRET') ?: 'rzp_test_dummy_key_secret',
+        'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET', ''),
         'mode' => env('RAZORPAY_MODE', 'test'),
     ],
 
     'cashfree' => [
-        'app_id' => env('CASHFREE_APP_ID'),
-        'secret_key' => env('CASHFREE_SECRET_KEY'),
+        'app_id' => env('CASHFREE_APP_ID', ''),
+        'secret_key' => env('CASHFREE_SECRET_KEY', ''),
         'api_version' => env('CASHFREE_API_VERSION', '2023-08-01'),
-        'env' => env('CASHFREE_ENV', 'PRODUCTION'),
+        'env' => env('CASHFREE_ENV', 'TEST'),
         'return_url' => env('CASHFREE_RETURN_URL'),
         'notify_url' => env('CASHFREE_NOTIFY_URL'),
     ],

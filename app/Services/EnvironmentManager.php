@@ -152,6 +152,22 @@ class EnvironmentManager
             config(['services.razorpay.mode' => $keyValues['RAZORPAY_MODE']]);
         }
 
+        if (isset($keyValues['RAZORPAY_WEBHOOK_SECRET'])) {
+            config(['services.razorpay.webhook_secret' => $keyValues['RAZORPAY_WEBHOOK_SECRET']]);
+        }
+
+        if (isset($keyValues['CASHFREE_APP_ID'])) {
+            config(['services.cashfree.app_id' => $keyValues['CASHFREE_APP_ID']]);
+        }
+
+        if (isset($keyValues['CASHFREE_SECRET_KEY'])) {
+            config(['services.cashfree.secret_key' => $keyValues['CASHFREE_SECRET_KEY']]);
+        }
+
+        if (isset($keyValues['CASHFREE_ENV'])) {
+            config(['services.cashfree.env' => $keyValues['CASHFREE_ENV']]);
+        }
+
         // Refresh configuration cache if cached or clear stale cache
         try {
             if (app()->configurationIsCached()) {

@@ -148,15 +148,87 @@
                         <p class="text-sm font-semibold uppercase tracking-[0.24em] text-brand-primary">Payment Options</p>
                         <h3 class="mt-1 text-xl font-semibold text-zinc-950">Select Payment Method</h3>
 
+                        @php
+                            $defaultSelectedMethod = old('payment_method');
+                            if (! $defaultSelectedMethod) {
+                                if (($activeGateway ?? 'demo') === 'razorpay' && ($isRazorpayConfigured ?? false)) {
+                                    $defaultSelectedMethod = 'razorpay';
+                                } elseif (($activeGateway ?? 'demo') === 'cashfree' && ($isCashfreeConfigured ?? false)) {
+                                    $defaultSelectedMethod = 'cashfree';
+                                } elseif (($activeGateway ?? 'demo') === 'demo') {
+                                    $defaultSelectedMethod = 'demo';
+                                } elseif ($isRazorpayConfigured ?? false) {
+                                    $defaultSelectedMethod = 'razorpay';
+                                } elseif ($isCashfreeConfigured ?? false) {
+                                    $defaultSelectedMethod = 'cashfree';
+                                } else {
+                                    $defaultSelectedMethod = 'demo';
+                                }
+                            }
+                        @endphp
+
                         <div class="mt-5 space-y-4">
+                            {{-- Option 1: Demo Payment (Zero Credential Demo Mode) --}}
+                            <label class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'demo' ? 'border-amber-400 bg-amber-50/50' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-amber-50/40">
+                                <input
+                                    type="radio"
+                                    name="payment_method"
+                                    value="demo"
+                                    class="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
+                                    @checked($defaultSelectedMethod === 'demo')
+                                    onclick="showPaymentUI('demo')"
+                                >
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="text-sm font-bold text-zinc-950">Demo Payment (Simulated Mode)</p>
+                                        <span class="rounded bg-amber-200 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-950 ring-1 ring-amber-400">DEMO — NO REAL PAYMENT</span>
+                                    </div>
+                                    <p class="mt-1 text-xs text-zinc-600">Completely credential-free evaluation. No banking credentials, API keys, OTPs, or merchant accounts needed.</p>
+                                </div>
+                            </label>
+
+                            <div id="demo-payment-ui" class="{{ $defaultSelectedMethod === 'demo' ? '' : 'hidden' }} rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50/70 p-5 space-y-4 transition">
+                                <div class="flex items-center justify-between border-b border-amber-200/80 pb-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-300 text-xs font-bold text-amber-950">⚡</span>
+                                        <span class="text-xs font-bold uppercase tracking-wider text-amber-950">Simulated Outcome</span>
+                                    </div>
+                                    <span class="rounded bg-amber-200 px-2 py-0.5 text-[10px] font-extrabold uppercase text-amber-950">DEMO — NO REAL PAYMENT</span>
+                                </div>
+                                <p class="text-xs text-zinc-600">
+                                    Select the simulated result to evaluate order fulfillment, inventory decrements, receipts, and coupon generation:
+                                </p>
+                                <div class="grid gap-3 sm:grid-cols-2">
+                                    <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-emerald-300 bg-white p-3 shadow-xs transition hover:bg-emerald-50/50">
+                                        <input type="radio" name="demo_outcome" value="success" checked class="h-4 w-4 text-emerald-600 focus:ring-emerald-500">
+                                        <div>
+                                            <p class="text-xs font-bold text-emerald-950">Simulate Success</p>
+                                            <p class="text-[11px] text-zinc-500">Instant order confirmation</p>
+                                        </div>
+                                    </label>
+                                    <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-rose-300 bg-white p-3 shadow-xs transition hover:bg-rose-50/50">
+                                        <input type="radio" name="demo_outcome" value="failure" class="h-4 w-4 text-rose-600 focus:ring-rose-500">
+                                        <div>
+                                            <p class="text-xs font-bold text-rose-950">Simulate Failure</p>
+                                            <p class="text-[11px] text-zinc-500">Decline & test cart retention</p>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="rounded-xl bg-amber-100/80 p-3 text-[11px] text-amber-950 flex items-start gap-2">
+                                    <svg class="h-4 w-4 text-amber-700 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span><strong>DEMO — NO REAL PAYMENT:</strong> Transactions are stored distinctly as simulated tests and will never charge real money.</span>
+                                </div>
+                            </div>
+
+                            {{-- Option 2: Cash on Delivery (COD) --}}
                             <label class="flex cursor-pointer items-start gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20">
                                 <input
                                     type="radio"
                                     name="payment_method"
                                     value="cod"
                                     class="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
-                                    checked
-                                    onclick="document.getElementById('online-payment-ui').classList.add('hidden')"
+                                    @checked($defaultSelectedMethod === 'cod')
+                                    onclick="showPaymentUI('cod')"
                                 >
                                 <div class="min-w-0">
                                     <p class="text-sm font-semibold text-zinc-950">Cash on Delivery (COD)</p>
@@ -164,26 +236,90 @@
                                 </div>
                             </label>
 
-                            <label class="flex cursor-pointer items-start gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20">
-                                <input
-                                    type="radio"
-                                    name="payment_method"
-                                    value="online"
-                                    class="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
-                                    onclick="document.getElementById('online-payment-ui').classList.remove('hidden')"
-                                >
-                                <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-zinc-950">Online Payment</p>
-                                    <p class="mt-1 text-xs text-zinc-500">Pay securely online using credit/debit card, UPI, or mobile wallets.</p>
+                            {{-- Option 3: Razorpay Payment Gateway --}}
+                            @if ($isRazorpayConfigured ?? false)
+                                <label class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'razorpay' ? 'border-red-400 bg-red-50/30' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-red-50/20">
+                                    <input
+                                        type="radio"
+                                        name="payment_method"
+                                        value="razorpay"
+                                        class="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
+                                        @checked($defaultSelectedMethod === 'razorpay')
+                                        onclick="showPaymentUI('razorpay')"
+                                    >
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-sm font-semibold text-zinc-950">Razorpay Gateway (Online Payment)</p>
+                                            <span class="rounded bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-900">RAZORPAY</span>
+                                            <span class="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-600">{{ strtoupper($gatewaySetting?->environment ?? 'TEST') }}</span>
+                                        </div>
+                                        <p class="mt-1 text-xs text-zinc-500">Pay securely online using UPI, QR Code, Credit/Debit Cards, or NetBanking.</p>
+                                    </div>
+                                </label>
+                            @else
+                                <div class="flex items-start gap-4 rounded-2xl border border-zinc-200 bg-zinc-50/60 p-4 opacity-75 cursor-not-allowed">
+                                    <input type="radio" disabled class="mt-1 h-4 w-4 text-zinc-400">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-sm font-semibold text-zinc-600">Razorpay Gateway (Online Payment)</p>
+                                            <span class="rounded bg-zinc-200 px-2 py-0.5 text-[10px] font-bold text-zinc-700">UNAVAILABLE</span>
+                                        </div>
+                                        <p class="mt-1 text-xs text-zinc-500">Gateway currently not configured by store administrator. Use Demo Mode or COD.</p>
+                                    </div>
                                 </div>
-                            </label>
+                            @endif
 
-                            <div id="online-payment-ui" class="hidden rounded-2xl border border-emerald-300/80 bg-emerald-50/40 p-5 space-y-3 transition">
+                            <div id="razorpay-payment-ui" class="{{ $defaultSelectedMethod === 'razorpay' ? '' : 'hidden' }} rounded-2xl border border-red-200 bg-red-50/40 p-4 space-y-2 transition">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">Razorpay Payment Gateway</span>
-                                    <span class="rounded bg-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-900">TEST MODE</span>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-red-900">Razorpay Standard Checkout</span>
+                                    <span class="rounded bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-900">{{ strtoupper($gatewaySetting?->environment ?? 'SANDBOX') }}</span>
                                 </div>
-                                <p class="text-xs text-zinc-600">Pay securely online using Credit/Debit Cards, UPI, Netbanking, or Wallets powered by Razorpay.</p>
+                                <p class="text-xs text-zinc-600">
+                                    You will be redirected to Razorpay's secure checkout window to complete your payment with UPI, cards, or bank transfer.
+                                </p>
+                            </div>
+
+                            {{-- Option 4: Cashfree Payments Gateway --}}
+                            @if ($isCashfreeConfigured ?? false)
+                                <label class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'cashfree' ? 'border-emerald-400 bg-emerald-50/30' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-emerald-50/20">
+                                    <input
+                                        type="radio"
+                                        name="payment_method"
+                                        value="cashfree"
+                                        class="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
+                                        @checked($defaultSelectedMethod === 'cashfree')
+                                        onclick="showPaymentUI('cashfree')"
+                                    >
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-sm font-semibold text-zinc-950">Cashfree Payments</p>
+                                            <span class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-900">CASHFREE</span>
+                                            <span class="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-600">{{ strtoupper($gatewaySetting?->environment ?? 'SANDBOX') }}</span>
+                                        </div>
+                                        <p class="mt-1 text-xs text-zinc-500">Pay securely online using Cards, UPI, Wallets, and NetBanking via Cashfree.</p>
+                                    </div>
+                                </label>
+                            @else
+                                <div class="flex items-start gap-4 rounded-2xl border border-zinc-200 bg-zinc-50/60 p-4 opacity-75 cursor-not-allowed">
+                                    <input type="radio" disabled class="mt-1 h-4 w-4 text-zinc-400">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-sm font-semibold text-zinc-600">Cashfree Payments</p>
+                                            <span class="rounded bg-zinc-200 px-2 py-0.5 text-[10px] font-bold text-zinc-700">UNAVAILABLE</span>
+                                        </div>
+                                        <p class="mt-1 text-xs text-zinc-500">Gateway currently not configured by store administrator. Use Demo Mode or COD.</p>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <div id="cashfree-payment-ui" class="{{ $defaultSelectedMethod === 'cashfree' ? '' : 'hidden' }} rounded-2xl border border-emerald-300/80 bg-emerald-50/40 p-4 space-y-2 transition">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">Cashfree Payments Checkout</span>
+                                    <span class="rounded bg-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-900">{{ strtoupper($gatewaySetting?->environment ?? 'SANDBOX') }}</span>
+                                </div>
+                                <p class="text-xs text-zinc-600">
+                                    Cashfree secure checkout modal will launch upon confirming. Verification occurs server-side after completion.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -263,6 +399,7 @@
                     </button>
                 </aside>
 
+                <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
                 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
                 <script>
                     document.addEventListener('DOMContentLoaded', () => {
@@ -292,14 +429,40 @@
                             feedback.classList.add('hidden');
                         };
 
+                        const updateSubmitBtnText = (method) => {
+                            if (method === 'demo') {
+                                submitBtn.textContent = 'Simulate Demo Payment (DEMO — NO REAL PAYMENT)';
+                            } else if (method === 'razorpay') {
+                                submitBtn.textContent = 'Confirm & Pay with Razorpay';
+                            } else if (method === 'cashfree') {
+                                submitBtn.textContent = 'Confirm & Pay with Cashfree';
+                            } else if (method === 'online') {
+                                submitBtn.textContent = 'Confirm & Pay with {{ ucfirst($activeGateway ?? "razorpay") }}';
+                            } else {
+                                submitBtn.textContent = 'Confirm and Place Order';
+                            }
+                        };
+
+                        window.showPaymentUI = function (method) {
+                            const demoUI = document.getElementById('demo-payment-ui');
+                            const razorpayUI = document.getElementById('razorpay-payment-ui');
+                            const cashfreeUI = document.getElementById('cashfree-payment-ui');
+                            const onlineUI = document.getElementById('online-payment-ui');
+                            if (demoUI) demoUI.classList.toggle('hidden', method !== 'demo');
+                            if (razorpayUI) razorpayUI.classList.toggle('hidden', method !== 'razorpay');
+                            if (cashfreeUI) cashfreeUI.classList.toggle('hidden', method !== 'cashfree');
+                            if (onlineUI) onlineUI.classList.toggle('hidden', method !== 'online');
+                            updateSubmitBtnText(method);
+                        };
+
+                        // Initialize button text and panels based on initial selection
+                        const initialMethod = form.querySelector('input[name="payment_method"]:checked')?.value || 'demo';
+                        window.showPaymentUI(initialMethod);
+
                         // Dynamic button text based on payment selection
                         document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
                             radio.addEventListener('change', (e) => {
-                                if (e.target.value === 'online') {
-                                    submitBtn.textContent = 'Confirm & Pay with Razorpay';
-                                } else {
-                                    submitBtn.textContent = 'Confirm and Place Order';
-                                }
+                                window.showPaymentUI(e.target.value);
                             });
                         });
 
@@ -307,10 +470,12 @@
                         form.addEventListener('submit', (e) => {
                             const paymentMethod = form.querySelector('input[name="payment_method"]:checked')?.value;
                             
-                            if (paymentMethod === 'online') {
+                            if (paymentMethod === 'demo' || paymentMethod === 'online' || paymentMethod === 'razorpay' || paymentMethod === 'cashfree') {
                                 e.preventDefault();
                                 submitBtn.disabled = true;
-                                submitBtn.textContent = 'Initializing Razorpay...';
+                                submitBtn.textContent = paymentMethod === 'demo' 
+                                    ? 'Simulating Payment (DEMO — NO REAL PAYMENT)...' 
+                                    : 'Initializing Secure Payment...';
 
                                 const formData = new FormData(form);
 
@@ -324,9 +489,22 @@
                                 })
                                 .then(res => res.json())
                                 .then(data => {
+                                    // Handle Demo Mode outcome (Zero-Credential Simulated Flow)
+                                    if (data.is_demo || data.gateway === 'demo') {
+                                        if (data.success) {
+                                            submitBtn.textContent = 'Demo Successful! Redirecting...';
+                                            window.location.href = data.redirect_url;
+                                        } else {
+                                            submitBtn.disabled = false;
+                                            updateSubmitBtnText(paymentMethod);
+                                            alert(data.message || 'Simulated payment was declined as requested. Cart and stock remain untouched.');
+                                        }
+                                        return;
+                                    }
+
                                     if (!data.success) {
                                         submitBtn.disabled = false;
-                                        submitBtn.textContent = 'Confirm & Pay with Razorpay';
+                                        updateSubmitBtnText(paymentMethod);
                                         if (data.errors) {
                                             const errorMsg = Object.values(data.errors).flat().join('\n');
                                             alert(errorMsg);
@@ -336,17 +514,35 @@
                                         return;
                                     }
 
-                                    // Open Razorpay Standard Checkout
-                                    const options = {
-                                        key: data.key_id,
-                                        amount: data.amount,
-                                        currency: data.currency || 'INR',
-                                        name: 'FlavourFlow Spices',
-                                        description: 'Order #' + data.order_number,
-                                        order_id: data.razorpay_order_id,
-                                        handler: function (response) {
+                                    // Handle Cashfree Gateway Flow
+                                    if (data.gateway === 'cashfree' || data.payment_session_id) {
+                                        if (!window.Cashfree) {
+                                            submitBtn.disabled = false;
+                                            updateSubmitBtnText(paymentMethod);
+                                            alert('Cashfree SDK is currently unavailable. Please refresh and try again.');
+                                            return;
+                                        }
+
+                                        const cashfree = window.Cashfree({
+                                            mode: data.environment || 'sandbox'
+                                        });
+
+                                        submitBtn.textContent = 'Awaiting Payment...';
+
+                                        cashfree.checkout({
+                                            paymentSessionId: data.payment_session_id,
+                                            redirectTarget: '_modal'
+                                        }).then((result) => {
+                                            if (result.error) {
+                                                submitBtn.disabled = false;
+                                                updateSubmitBtnText(paymentMethod);
+                                                alert(result.error.message || 'Payment window was closed or cancelled.');
+                                                return;
+                                            }
+
+                                            // Trigger server-side authoritative status verification
                                             submitBtn.textContent = 'Verifying Payment...';
-                                            fetch("{{ route('checkout.razorpay.verify') }}", {
+                                            fetch("{{ route('checkout.cashfree.verify') }}", {
                                                 method: 'POST',
                                                 headers: {
                                                     'Content-Type': 'application/json',
@@ -354,9 +550,7 @@
                                                     'Accept': 'application/json'
                                                 },
                                                 body: JSON.stringify({
-                                                    razorpay_order_id: response.razorpay_order_id,
-                                                    razorpay_payment_id: response.razorpay_payment_id,
-                                                    razorpay_signature: response.razorpay_signature
+                                                    order_id: data.order_id || data.order_number
                                                 })
                                             })
                                             .then(vRes => vRes.json())
@@ -365,43 +559,100 @@
                                                     window.location.href = vData.redirect_url;
                                                 } else {
                                                     submitBtn.disabled = false;
-                                                    submitBtn.textContent = 'Confirm & Pay with Razorpay';
-                                                    alert('Payment Verification Failed: ' + (vData.message || 'Payment invalid.'));
+                                                    updateSubmitBtnText(paymentMethod);
+                                                    alert('Payment Status: ' + (vData.message || 'Payment could not be verified.'));
                                                 }
                                             })
                                             .catch(err => {
                                                 submitBtn.disabled = false;
-                                                submitBtn.textContent = 'Confirm & Pay with Razorpay';
-                                                alert('Verification request error. Please check internet connection.');
+                                                updateSubmitBtnText(paymentMethod);
+                                                alert('Verification network error. If amount was debited, check your order history.');
                                             });
-                                        },
-                                        prefill: {
-                                            name: data.customer_name,
-                                            email: data.customer_email,
-                                            contact: data.customer_mobile
-                                        },
-                                        theme: {
-                                            color: '#b42318'
-                                        },
-                                        modal: {
-                                            ondismiss: function () {
-                                                submitBtn.disabled = false;
-                                                submitBtn.textContent = 'Confirm & Pay with Razorpay';
-                                            }
-                                        }
-                                    };
+                                        }).catch(err => {
+                                            submitBtn.disabled = false;
+                                            updateSubmitBtnText(paymentMethod);
+                                            console.error('Cashfree checkout modal error', err);
+                                        });
 
-                                    const rzp = new Razorpay(options);
-                                    rzp.on('payment.failed', function (response) {
-                                        submitBtn.disabled = false;
-                                        submitBtn.textContent = 'Confirm & Pay with Razorpay';
-                                        alert('Payment Failed: ' + (response.error?.description || 'Payment was declined or failed.'));
-                                    });
-                                    rzp.open();
+                                        return;
+                                    }
+
+                                    // Handle Razorpay Gateway Flow
+                                    if (data.gateway === 'razorpay' || data.razorpay_order_id) {
+                                        if (!window.Razorpay) {
+                                            submitBtn.disabled = false;
+                                            updateSubmitBtnText(paymentMethod);
+                                            alert('Razorpay Checkout SDK is currently unavailable. Please check your internet connection and refresh.');
+                                            return;
+                                        }
+
+                                        const options = {
+                                            key: data.key_id,
+                                            amount: data.amount,
+                                            currency: data.currency || 'INR',
+                                            name: 'FlavourFlow Spices',
+                                            description: 'Order #' + data.order_number,
+                                            order_id: data.razorpay_order_id,
+                                            handler: function (response) {
+                                                submitBtn.textContent = 'Verifying Payment...';
+                                                fetch("{{ route('checkout.razorpay.verify') }}", {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                                        'Accept': 'application/json'
+                                                    },
+                                                    body: JSON.stringify({
+                                                        razorpay_order_id: response.razorpay_order_id,
+                                                        razorpay_payment_id: response.razorpay_payment_id,
+                                                        razorpay_signature: response.razorpay_signature
+                                                    })
+                                                })
+                                                .then(vRes => vRes.json())
+                                                .then(vData => {
+                                                    if (vData.success) {
+                                                        window.location.href = vData.redirect_url;
+                                                    } else {
+                                                        submitBtn.disabled = false;
+                                                        updateSubmitBtnText(paymentMethod);
+                                                        alert('Payment Verification Failed: ' + (vData.message || 'Payment invalid.'));
+                                                    }
+                                                })
+                                                .catch(err => {
+                                                    submitBtn.disabled = false;
+                                                    updateSubmitBtnText(paymentMethod);
+                                                    alert('Verification request error. If amount was debited, check your order history.');
+                                                });
+                                            },
+                                            prefill: {
+                                                name: data.customer_name,
+                                                email: data.customer_email,
+                                                contact: data.customer_mobile
+                                            },
+                                            theme: {
+                                                color: '#b42318'
+                                            },
+                                            modal: {
+                                                ondismiss: function () {
+                                                    submitBtn.disabled = false;
+                                                    updateSubmitBtnText(paymentMethod);
+                                                }
+                                            }
+                                        };
+
+                                        const rzp = new Razorpay(options);
+                                        rzp.on('payment.failed', function (response) {
+                                            submitBtn.disabled = false;
+                                            updateSubmitBtnText(paymentMethod);
+                                            alert('Payment Failed: ' + (response.error?.description || 'Payment was declined or failed.'));
+                                        });
+                                        rzp.open();
+                                        return;
+                                    }
                                 })
                                 .catch(err => {
                                     submitBtn.disabled = false;
-                                    submitBtn.textContent = 'Confirm & Pay with Razorpay';
+                                    updateSubmitBtnText(paymentMethod);
                                     alert('Failed to initialize payment checkout. Please check form details.');
                                 });
                             }

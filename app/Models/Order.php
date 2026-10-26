@@ -25,6 +25,7 @@ class Order extends Model
         'pincode',
         'country',
         'payment_method',
+        'is_demo',
         'delivery_option',
         'delivery_days',
         'subtotal',
@@ -47,6 +48,7 @@ class Order extends Model
         'delivery_charge' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
+        'is_demo' => 'boolean',
         'confirmed_at' => 'datetime',
         'shipped_at' => 'datetime',
         'out_for_delivery_at' => 'datetime',
@@ -79,6 +81,11 @@ class Order extends Model
                 }
             }
         });
+    }
+
+    public function isDemo(): bool
+    {
+        return (bool) $this->is_demo || $this->payment_method === 'demo';
     }
 
     public function getRouteKeyName(): string

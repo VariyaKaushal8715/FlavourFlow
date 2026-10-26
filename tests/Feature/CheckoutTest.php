@@ -84,7 +84,7 @@ test('checkout renders online payment option', function () {
         ->assertSee('Select Payment Method')
         ->assertSee('Cash on Delivery (COD)')
         ->assertSee('Online Payment')
-        ->assertSee('Razorpay Payment Gateway');
+        ->assertSee('Cashfree Payments');
 });
 
 test('checkout validation rules are enforced', function () {

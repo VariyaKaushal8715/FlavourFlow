@@ -19,8 +19,8 @@ class CouponService
      */
     public function generateRewardCouponForOrder(Order $order): ?Coupon
     {
-        // Reward coupon only applies to confirmed online payment orders
-        if ($order->payment_method !== 'online') {
+        // Reward coupon applies to confirmed online or demo simulated payment orders
+        if (! in_array($order->payment_method, ['online', 'demo'], true)) {
             return null;
         }
 

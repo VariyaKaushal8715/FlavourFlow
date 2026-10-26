@@ -117,6 +117,10 @@ class Coupon extends Model
             return true;
         }
 
+        if ($paymentMethod === 'demo' && $this->payment_method_eligibility === 'online') {
+            return true;
+        }
+
         return $this->payment_method_eligibility === $paymentMethod;
     }
 

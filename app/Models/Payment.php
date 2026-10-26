@@ -26,10 +26,12 @@ class Payment extends Model
         'currency',
         'status',
         'payment_method',
+        'is_demo',
         'paid_at',
         'error_message',
         'failure_reason',
         'cashfree_refund_id',
+        'razorpay_refund_id',
         'refund_status',
         'refunded_amount',
         'response_data',
@@ -39,6 +41,7 @@ class Payment extends Model
     protected $casts = [
         'amount' => 'decimal:2',
         'refunded_amount' => 'decimal:2',
+        'is_demo' => 'boolean',
         'paid_at' => 'datetime',
         'response_data' => 'array',
         'payment_details' => 'array',
@@ -59,6 +62,11 @@ class Payment extends Model
         return in_array($this->status, ['successful', 'captured'], true);
     }
 
+    public function isDemo(): bool
+    {
+        return (bool) $this->is_demo || $this->provider === 'demo';
+    }
+
     public function methodDisplayName(): string
     {
         return match ($this->payment_method) {
@@ -67,6 +75,7 @@ class Payment extends Model
             'upi' => 'UPI Payment',
             'cod' => 'Cash on Delivery (COD)',
             'online' => 'Online Payment',
+            'demo' => 'Demo Payment (Simulated - No Real Payment)',
             default => strtoupper((string) $this->payment_method),
         };
     }

@@ -35,6 +35,7 @@ use App\Http\Controllers\OfferDetailsController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\PrivacyConsentController;
 use App\Http\Controllers\ProductDetailsController;
+use App\Http\Controllers\RazorpayWebhookController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Middleware\PreventAdminResponseCaching;
@@ -43,6 +44,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::get('/api/location/gujarat-autocomplete', [LocationController::class, 'autocomplete'])->name('api.location.autocomplete');
 Route::post('/api/webhooks/cashfree', [CashfreeWebhookController::class, 'handleWebhook'])->name('api.webhooks.cashfree');
+Route::post('/api/webhooks/razorpay', [RazorpayWebhookController::class, 'handleWebhook'])->name('api.webhooks.razorpay');
 Route::post('/contact-email', ContactEmailController::class)
     ->middleware(['web', 'throttle:10,1'])
     ->name('contact.email');
@@ -106,6 +108,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::match(['get', 'post'], '/checkout/cashfree/verify', [CheckoutController::class, 'verifyCashfreePayment'])->name('checkout.cashfree.verify');
     Route::post('/checkout/razorpay/verify', [CheckoutController::class, 'verifyRazorpayPayment'])->name('checkout.razorpay.verify');
     Route::post('/checkout/coupon/apply', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
@@ -150,7 +153,10 @@ Route::prefix('admin')
             Route::get('/payments', [AdminPaymentController::class, 'index'])->name('payments.index');
             Route::get('/payments/settings', [AdminPaymentSettingController::class, 'index'])->name('payments.settings');
             Route::put('/payments/settings', [AdminPaymentSettingController::class, 'update'])->name('payments.settings.update');
+            Route::put('/payments/settings/gateway', [AdminPaymentSettingController::class, 'updateGateway'])->name('payments.settings.gateway.update');
             Route::post('/payments/settings/test', [AdminPaymentSettingController::class, 'testConnection'])->name('payments.settings.test');
+            Route::put('/payments/settings/cashfree', [AdminPaymentSettingController::class, 'updateCashfree'])->name('payments.settings.cashfree.update');
+            Route::post('/payments/settings/cashfree/test', [AdminPaymentSettingController::class, 'testCashfreeConnection'])->name('payments.settings.cashfree.test');
 
             // Inventory
             Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');

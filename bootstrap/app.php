@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', SetLocale::class);
         $middleware->validateCsrfTokens(except: [
             'api/webhooks/cashfree',
+            'api/webhooks/razorpay',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

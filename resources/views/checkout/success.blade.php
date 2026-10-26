@@ -17,6 +17,18 @@
                 Thank you for shopping with us! Your order has been registered and is now being prepared for shipping.
             </p>
 
+            @if($order->isDemo())
+                <div class="mt-6 rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50/90 p-4 text-left shadow-sm">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="rounded bg-amber-300 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wider text-amber-950">DEMO — NO REAL PAYMENT</span>
+                        <span class="text-xs font-semibold text-amber-900">Simulated Order Confirmation</span>
+                    </div>
+                    <p class="mt-2 text-xs text-amber-950 leading-relaxed">
+                        This transaction was executed in credential-free Demo Mode. No funds were debited, no external payment gateway was contacted, and no real financial transaction took place.
+                    </p>
+                </div>
+            @endif
+
             <div class="mt-8 rounded-3xl border border-amber-200/70 bg-white/95 p-6 shadow-[0_24px_70px_rgba(120,53,15,0.06)] text-left sm:p-8">
                 <div class="flex items-center justify-between border-b border-zinc-100 pb-4">
                     <h2 class="text-lg font-semibold text-zinc-950">Order Summary</h2>
@@ -40,9 +52,16 @@
                     </div>
                     <div>
                         <p class="font-medium text-zinc-400">Payment Method</p>
-                        <p class="mt-1 font-semibold text-zinc-950">
-                            {{ $order->payment_method === 'cod' ? 'Cash on Delivery (COD)' : 'Online Payment' }}
-                        </p>
+                        <div class="mt-1 flex flex-wrap items-center gap-1.5 font-semibold text-zinc-950">
+                            @if ($order->isDemo())
+                                <span>Demo Payment</span>
+                                <span class="rounded bg-amber-200 px-2 py-0.5 text-[10px] font-extrabold uppercase text-amber-950">DEMO — NO REAL PAYMENT</span>
+                            @elseif ($order->payment_method === 'cod')
+                                <span>Cash on Delivery (COD)</span>
+                            @else
+                                <span>Online Payment ({{ ucfirst($order->payment?->gateway ?? 'Gateway') }})</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 

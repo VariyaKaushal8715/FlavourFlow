@@ -27,6 +27,7 @@ class UpdatePaymentSettingsRequest extends FormRequest
         $hasExistingSecret = $razorpayService->isConfigured() || (! empty($razorpayService->getKeySecret()) && $razorpayService->getKeySecret() !== 'rzp_test_dummy_key_secret');
 
         return [
+            'current_password' => ['required', 'string'],
             'key_id' => [
                 'required',
                 'string',
@@ -34,6 +35,12 @@ class UpdatePaymentSettingsRequest extends FormRequest
             ],
             'key_secret' => [
                 $hasExistingSecret ? 'nullable' : 'required',
+                'string',
+                'min:8',
+                'regex:/^\S+$/',
+            ],
+            'webhook_secret' => [
+                'nullable',
                 'string',
                 'min:8',
                 'regex:/^\S+$/',
@@ -49,11 +56,14 @@ class UpdatePaymentSettingsRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'current_password.required' => 'Please enter your current administrator password to confirm these changes.',
             'key_id.required' => 'The Razorpay Key ID is required.',
             'key_id.regex' => 'The Key ID must start with rzp_test_ or rzp_live_ followed by alphanumeric characters.',
             'key_secret.required' => 'The Razorpay Key Secret is required.',
             'key_secret.min' => 'The Razorpay Key Secret must be at least 8 characters long.',
             'key_secret.regex' => 'The Razorpay Key Secret cannot contain spaces.',
+            'webhook_secret.min' => 'The Razorpay Webhook Secret must be at least 8 characters long.',
+            'webhook_secret.regex' => 'The Razorpay Webhook Secret cannot contain spaces.',
         ];
     }
 
@@ -69,6 +79,13 @@ class UpdatePaymentSettingsRequest extends FormRequest
             $secret = trim((string) $this->input('key_secret'));
             $this->merge([
                 'key_secret' => $secret !== '' ? $secret : null,
+            ]);
+        }
+
+        if ($this->has('webhook_secret')) {
+            $webhookSecret = trim((string) $this->input('webhook_secret'));
+            $this->merge([
+                'webhook_secret' => $webhookSecret !== '' ? $webhookSecret : null,
             ]);
         }
     }

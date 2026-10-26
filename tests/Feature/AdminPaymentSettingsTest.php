@@ -61,6 +61,7 @@ test('admin can save valid test mode credentials and update .env safely', functi
     $response = $this->actingAs($admin)->put(route('admin.payments.settings.update'), [
         'key_id' => 'rzp_test_newValidKey123',
         'key_secret' => 'newSecretKey_456789',
+        'current_password' => 'password',
     ]);
 
     $response->assertRedirect(route('admin.payments.settings'));
@@ -98,6 +99,7 @@ test('fail-safe preserves previous credentials if new credentials fail validatio
     $response = $this->actingAs($admin)->put(route('admin.payments.settings.update'), [
         'key_id' => 'rzp_test_rejectedKey999',
         'key_secret' => 'rejectedSecret999',
+        'current_password' => 'password',
     ]);
 
     $response->assertSessionHasErrors(['key_id']);
@@ -130,6 +132,7 @@ test('admin can update key_id while leaving secret blank to keep existing secret
     $response = $this->actingAs($admin)->put(route('admin.payments.settings.update'), [
         'key_id' => 'rzp_test_rotatedKey333',
         'key_secret' => '', // Left empty to retain existing secret
+        'current_password' => 'password',
     ]);
 
     $response->assertRedirect(route('admin.payments.settings'));
@@ -149,6 +152,7 @@ test('obviously invalid Key ID format is rejected by validation', function () {
     $response = $this->actingAs($admin)->put(route('admin.payments.settings.update'), [
         'key_id' => 'invalid_prefix_123',
         'key_secret' => 'validSecret456',
+        'current_password' => 'password',
     ]);
 
     $response->assertSessionHasErrors(['key_id']);
@@ -184,4 +188,45 @@ test('existing razorpay service createOrder and verifySignature work with update
 
     expect($service->verifySignature($orderId, $paymentId, $signature))->toBeTrue()
         ->and($service->verifySignature($orderId, $paymentId, 'invalid-signature'))->toBeFalse();
+});
+
+test('admin cannot update payment settings with incorrect current password', function () {
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)->put(route('admin.payments.settings.update'), [
+        'key_id' => 'rzp_test_newValidKey123',
+        'key_secret' => 'newSecretKey_456789',
+        'current_password' => 'wrong-password-attempt',
+    ]);
+
+    $response->assertSessionHasErrors(['current_password']);
+});
+
+test('admin can update razorpay webhook secret and it is masked in view', function () {
+    $admin = User::factory()->admin()->create();
+
+    Http::fake([
+        'https://api.razorpay.com/v1/orders*' => Http::response(['entity' => 'collection', 'count' => 0], 200),
+    ]);
+
+    $response = $this->actingAs($admin)->put(route('admin.payments.settings.update'), [
+        'key_id' => 'rzp_test_newValidKey123',
+        'key_secret' => 'newSecretKey_456789',
+        'webhook_secret' => 'whsec_mySecretWebhook789',
+        'current_password' => 'password',
+    ]);
+
+    $response->assertRedirect(route('admin.payments.settings'));
+
+    // Config and .env must be updated
+    expect(config('services.razorpay.webhook_secret'))->toBe('whsec_mySecretWebhook789');
+
+    $envContent = File::get($this->envPath);
+    expect($envContent)->toContain('RAZORPAY_WEBHOOK_SECRET=whsec_mySecretWebhook789');
+
+    // Viewing settings must show masked secret, NEVER plain secret
+    $viewResponse = $this->actingAs($admin)->get(route('admin.payments.settings'));
+    $viewResponse->assertSuccessful();
+    $viewResponse->assertDontSee('whsec_mySecretWebhook789');
+    $viewResponse->assertSee('••••••••••••••••');
 });

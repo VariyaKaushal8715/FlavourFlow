@@ -8,8 +8,26 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\CouponService;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
+    Config::set('services.cashfree.app_id', 'test_cf_app_coupon_test');
+    Config::set('services.cashfree.secret_key', 'test_cf_secret_coupon_test');
+    Config::set('services.cashfree.env', 'TEST');
+    Config::set('services.cashfree.api_version', '2023-08-01');
+
+    Http::fake([
+        'https://sandbox.cashfree.com/pg/orders' => Http::response([
+            'cf_order_id' => 'cf_order_test_coupon',
+            'order_id' => 'ORD-COUPON-TEST',
+            'order_amount' => 1200.00,
+            'order_currency' => 'INR',
+            'payment_session_id' => 'session_test_coupon',
+            'order_status' => 'ACTIVE',
+        ], 200),
+    ]);
+
     // Set up default reward rules
     CouponRewardRule::create([
         'name' => '10% Online Reward (₹1,000+)',

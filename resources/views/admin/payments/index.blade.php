@@ -14,10 +14,10 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <div class="flex items-center gap-3">
-                    <h1 class="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">Razorpay Test Payments</h1>
-                    <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 border border-amber-300">RAZORPAY TEST</span>
+                    <h1 class="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">Payment Transactions</h1>
+                    <span class="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-800 border border-zinc-300">GATEWAY & DEMO</span>
                 </div>
-                <p class="mt-1 text-sm text-zinc-500">Track online payment transactions, Razorpay Order & Payment IDs, verification status, and failure logs.</p>
+                <p class="mt-1 text-sm text-zinc-500">Track online payment transactions, simulated demo orders, verification status, and failure logs.</p>
             </div>
             <div class="flex items-center gap-2">
                 <a href="{{ route('admin.payments.settings') }}" class="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-red-700">
@@ -36,7 +36,7 @@
                     id="search"
                     name="search"
                     value="{{ $filters['search'] ?? '' }}"
-                    placeholder="Search by Cashfree Order/Payment ID, Order #, or Customer..."
+                    placeholder="Search by Order ID, Transaction ID, or Customer..."
                     class="w-full rounded-lg border border-zinc-300 px-3.5 py-2 text-sm focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                 >
             </div>
@@ -71,7 +71,7 @@
                             <th class="px-6 py-4">Customer</th>
                             <th class="px-6 py-4">Amount</th>
                             <th class="px-6 py-4">Gateway / Method</th>
-                            <th class="px-6 py-4">Cashfree / Gateway ID</th>
+                            <th class="px-6 py-4">Transaction / Gateway ID</th>
                             <th class="px-6 py-4">Payment Status</th>
                             <th class="px-6 py-4">Refund Status</th>
                             <th class="px-6 py-4">Date / Time</th>
@@ -97,14 +97,25 @@
                                     ₹{{ number_format($payment->amount, 2) }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
-                                        {{ $payment->cashfree_order_id ? 'Cashfree' : ($payment->razorpay_order_id ? 'Razorpay' : strtoupper($payment->payment_method)) }}
-                                    </span>
+                                    @if($payment->is_demo)
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-extrabold text-amber-950 ring-1 ring-amber-400">
+                                            DEMO — NO REAL PAYMENT
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
+                                            {{ $payment->cashfree_order_id ? 'Cashfree' : ($payment->razorpay_order_id ? 'Razorpay' : strtoupper($payment->payment_method)) }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 font-mono text-xs text-zinc-600">
                                     <div class="space-y-0.5">
-                                        <p><span class="font-bold text-zinc-400">Ord:</span> {{ $payment->cashfree_order_id ?? $payment->razorpay_order_id ?? 'N/A' }}</p>
-                                        <p><span class="font-bold text-zinc-400">Pay:</span> {{ $payment->cashfree_payment_id ?? $payment->razorpay_payment_id ?? 'Pending' }}</p>
+                                        @if($payment->is_demo)
+                                            <p><span class="font-bold text-amber-800">Txn:</span> {{ $payment->transaction_id ?? 'DEMO_SIMULATED' }}</p>
+                                            <p class="text-[10px] text-zinc-400">Isolated Demo State</p>
+                                        @else
+                                            <p><span class="font-bold text-zinc-400">Ord:</span> {{ $payment->cashfree_order_id ?? $payment->razorpay_order_id ?? 'N/A' }}</p>
+                                            <p><span class="font-bold text-zinc-400">Pay:</span> {{ $payment->cashfree_payment_id ?? $payment->razorpay_payment_id ?? 'Pending' }}</p>
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
