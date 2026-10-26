@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\AI\Services\CustomerPersonalizationService;
 use App\Models\PrivacyConsent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,8 +33,10 @@ class PrivacyConsentController extends Controller
 
     private function saveConsent(Request $request, string $status): void
     {
+        $userId = (int) $request->user()->getKey();
+
         PrivacyConsent::query()->updateOrCreate(
-            ['user_id' => $request->user()->getKey()],
+            ['user_id' => $userId],
             [
                 'consent_status' => $status,
                 'activity_tracking' => $status === PrivacyConsent::STATUS_ALLOWED,
@@ -41,5 +44,9 @@ class PrivacyConsentController extends Controller
                 'consented_at' => now(),
             ],
         );
+
+        if ($status === PrivacyConsent::STATUS_DECLINED) {
+            app(CustomerPersonalizationService::class)->forgetProfile($userId);
+        }
     }
 }

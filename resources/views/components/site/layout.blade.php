@@ -51,7 +51,7 @@
             {{ $slot }}
         </main>
 
-        <x-site.chatbot :site="$site" />
+        <x-site.ai-assistant />
 
         @if ($showFooter)
             <x-site.footer :site="$site" />

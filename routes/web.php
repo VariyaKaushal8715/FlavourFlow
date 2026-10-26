@@ -3,6 +3,7 @@
 use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\Account\UserCouponController;
 use App\Http\Controllers\Account\UserProfileController;
+use App\Http\Controllers\Admin\AdminAiController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCouponController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminSessionController;
 use App\Http\Controllers\Admin\AdminSortOptionController;
+use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -52,6 +54,13 @@ Route::post('/contact-email', ContactEmailController::class)
 Route::post('/api/chatbot', [ChatbotController::class, 'message'])
     ->middleware(['web', 'throttle:20,1'])
     ->name('api.chatbot');
+
+Route::prefix('ai')->name('ai.')->middleware(['web', 'throttle:30,1'])->group(function () {
+    Route::post('/chat', [AiAssistantController::class, 'chat'])->name('chat');
+    Route::get('/chat/history', [AiAssistantController::class, 'history'])->name('chat.history');
+    Route::delete('/chat/clear', [AiAssistantController::class, 'clear'])->name('chat.clear');
+    Route::get('/recommendations', [AiAssistantController::class, 'recommendations'])->name('recommendations');
+});
 Route::middleware(['guest', PreventAdminResponseCaching::class])->group(function () {
     Route::get('/login', [UserSessionController::class, 'create'])->name('login');
     Route::post('/login', [UserSessionController::class, 'store'])
@@ -209,6 +218,13 @@ Route::prefix('admin')
                 Route::post('/reset', [AdminSortOptionController::class, 'reset'])->name('reset');
                 Route::delete('/{sortOption}', [AdminSortOptionController::class, 'destroy'])->name('destroy');
             });
+
+            // AI Diagnostics & Health Check (Admin)
+            Route::get('/ai-status', [AdminAiController::class, 'index'])->name('ai.index');
+            Route::get('/ai', [AdminAiController::class, 'index'])->name('ai.dashboard');
+            Route::post('/ai-provider-test', [AdminAiController::class, 'testProvider'])
+                ->middleware('throttle:10,1')
+                ->name('ai.providerTest');
 
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
         });

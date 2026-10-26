@@ -1,0 +1,112 @@
+<?php
+
+namespace App\AI\Adapters;
+
+use App\AI\Contracts\AiAdapterInterface;
+use App\AI\Contracts\AiAnalyzerInterface;
+use App\AI\Contracts\AiContextBuilderInterface;
+use App\AI\Contracts\AiLanguageUnderstandingInterface;
+use App\AI\Contracts\AiRecommendationEngineInterface;
+use App\AI\Contracts\AiRequestInterface;
+use App\AI\Contracts\AiResponseInterface;
+use App\AI\Core\AiDecisionResult;
+use App\AI\Core\AiParsedIntent;
+use App\AI\Core\AiRecommendationResult;
+use App\AI\Core\AiResponse;
+
+class FlavourFlowAdapter implements AiAdapterInterface
+{
+    public function getName(): string
+    {
+        return 'flavourflow';
+    }
+
+    public function mapRequest(AiRequestInterface $request): array
+    {
+        return [
+            'domain' => 'FlavourFlow Spices & Pantry',
+            'action' => $request->getAction(),
+            'payload' => $request->getPayload(),
+            'context' => array_merge([
+                'app_name' => config('app.name', 'FlavourFlow'),
+                'locale' => app()->getLocale(),
+            ], $request->getContext()),
+        ];
+    }
+
+    public function mapResponse(array $rawResponse): AiResponseInterface
+    {
+        $success = ($rawResponse['status'] ?? '') === 'processed';
+
+        return new AiResponse(
+            success: $success,
+            data: $rawResponse,
+            message: $success ? 'FlavourFlow AI Core executed successfully.' : 'FlavourFlow AI Core execution failed.'
+        );
+    }
+
+    public function isConnected(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Build domain context for a user or session.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildDomainContext(?int $userId = null, ?string $sessionId = null): array
+    {
+        /** @var AiContextBuilderInterface $builder */
+        $builder = app(AiContextBuilderInterface::class);
+
+        return $builder->buildContext($userId, $sessionId);
+    }
+
+    /**
+     * Analyze user context to produce domain insights.
+     *
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    public function analyzeDomainContext(array $context): array
+    {
+        /** @var AiAnalyzerInterface $analyzer */
+        $analyzer = app(AiAnalyzerInterface::class);
+
+        return $analyzer->analyze($context);
+    }
+
+    /**
+     * Get customer recommendations.
+     */
+    public function getRecommendations(?int $userId = null, ?string $sessionId = null, string $type = 'personalized', int $limit = 6): AiRecommendationResult
+    {
+        /** @var AiRecommendationEngineInterface $engine */
+        $engine = app(AiRecommendationEngineInterface::class);
+
+        return $engine->getCustomerRecommendations($userId, $sessionId, $type, $limit);
+    }
+
+    /**
+     * Get admin decision signals.
+     */
+    public function getDecisionSignals(int $days = 30): AiDecisionResult
+    {
+        /** @var AiRecommendationEngineInterface $engine */
+        $engine = app(AiRecommendationEngineInterface::class);
+
+        return $engine->getAdminDecisionSignals($days);
+    }
+
+    /**
+     * Understand multilingual user query.
+     */
+    public function understandQuery(string $query, array $context = []): AiParsedIntent
+    {
+        /** @var AiLanguageUnderstandingInterface $nlu */
+        $nlu = app(AiLanguageUnderstandingInterface::class);
+
+        return $nlu->understand($query, $context);
+    }
+}

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\AI\Contracts\AiRecommendationEngineInterface;
 use App\Models\Offer;
 use App\Models\Product;
 use App\Models\ProductSortOption;
@@ -17,7 +18,7 @@ class HomeController extends Controller
 {
     public function __construct(private ProductHighlightBuilder $productHighlightBuilder) {}
 
-    public function __invoke(Request $request, WishlistState $wishlist): View
+    public function __invoke(Request $request, WishlistState $wishlist, AiRecommendationEngineInterface $recEngine): View
     {
         $site = config('personal_site');
 
@@ -83,9 +84,42 @@ class HomeController extends Controller
         $lowestPrice = max(0, (float) floor($minDbPrice / 10) * 10);
         $highestPrice = max($lowestPrice + 100, (float) ceil($maxDbPrice / 10) * 10);
 
+        // Compute personalized recommendations for consented authenticated customers
+        $user = $request->user();
+        $personalizedProducts = [];
+        $recommendationReason = null;
+        if ($user && $user->allowsActivityTracking()) {
+            $recResult = $recEngine->getCustomerRecommendations(
+                userId: $user->id,
+                sessionId: $request->hasSession() ? $request->session()->getId() : null,
+                type: 'personalized',
+                limit: 4
+            );
+
+            $recProductIds = array_column($recResult->products, 'product_id');
+            if (! empty($recProductIds)) {
+                $personalizedCollection = Product::query()
+                    ->active()
+                    ->inStock()
+                    ->whereIn('id', $recProductIds)
+                    ->get();
+
+                $idPositions = array_flip($recProductIds);
+                $personalizedProducts = $personalizedCollection
+                    ->sortBy(fn ($p) => $idPositions[(string) $p->id] ?? 999)
+                    ->map->toHighlightData()
+                    ->values()
+                    ->all();
+
+                $recommendationReason = $recResult->reason;
+            }
+        }
+
         return view('welcome', [
             'site' => $site,
             'products' => $products,
+            'personalizedProducts' => $personalizedProducts,
+            'recommendationReason' => $recommendationReason,
             'offers' => $offers,
             'wishlistProductIds' => $wishlist->productIds(),
             'sort' => $sort,

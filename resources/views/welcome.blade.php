@@ -1,6 +1,20 @@
 <x-site.layout :site="$site">
     <x-site.hero :brand="$site['brand']" :navigation="$site['navigation']" :hero="$site['hero']" :wishlist-product-ids="$wishlistProductIds" />
     <x-site.offers :offers="$offers" />
+
+    {{-- Consented Customer AI Personalized Recommendations --}}
+    @if (! empty($personalizedProducts))
+        <x-site.products
+            :products="$personalizedProducts"
+            section-id="recommended-for-you"
+            eyebrow="Personalized Selection"
+            title="Recommended For You"
+            :description="$recommendationReason ?: 'Spices tailored from your recent views, cart, and shopping preferences.'"
+            tone="offer"
+            :wishlist-product-ids="$wishlistProductIds"
+        />
+    @endif
+
     <x-site.products :products="$products" :wishlist-product-ids="$wishlistProductIds" :sort="$sort" :sort-options="$sortOptions" :min-price="$minPrice" :max-price="$maxPrice" :lowest-price="$lowestPrice" :highest-price="$highestPrice" />
     <x-site.company :company="$site['company']" />
 

@@ -812,7 +812,8 @@ const initializeSiteNav = () => {
         toggle.setAttribute('aria-expanded', 'false');
     };
 
-    toggle.addEventListener('click', () => {
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
         const isHidden = panel.classList.contains('hidden');
 
         if (isHidden) {
@@ -823,12 +824,27 @@ const initializeSiteNav = () => {
         }
     });
 
-    panel.querySelectorAll('a, button').forEach((element) => {
+    panel.querySelectorAll('a, button[type="submit"]').forEach((element) => {
         element.addEventListener('click', () => {
             if (window.innerWidth < 768) {
                 closePanel();
             }
         });
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !panel.classList.contains('hidden')) {
+            closePanel();
+            toggle.focus();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth < 768 && !panel.classList.contains('hidden')) {
+            if (!panel.contains(e.target) && !toggle.contains(e.target)) {
+                closePanel();
+            }
+        }
     });
 
     window.addEventListener('resize', () => {
