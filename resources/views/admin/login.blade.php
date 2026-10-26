@@ -16,6 +16,13 @@
                     <p class="mt-3 text-sm leading-7 text-zinc-600">Sign in with an administrator account to add products and control the homepage spotlight.</p>
                 </div>
 
+                @if ($currentlyLoggedInAsNonAdmin ?? false)
+                    <div class="mt-6 rounded-2xl border border-amber-300/80 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+                        <p class="font-semibold">Currently signed in as customer: <span class="font-bold underline">{{ auth()->user()?->email }}</span></p>
+                        <p class="mt-1 text-xs text-amber-800">To access the Admin Panel, sign in below with your administrator account.</p>
+                    </div>
+                @endif
+
                 <form class="mt-8 space-y-5" method="POST" action="{{ route('admin.login') }}">
                     @csrf
 

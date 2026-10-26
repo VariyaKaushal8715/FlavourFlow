@@ -22,15 +22,26 @@ class RegisterController extends Controller
 
     public function store(RegisterRequest $request): RedirectResponse
     {
+        $adminEmail = config('admin.email', env('ADMIN_EMAIL'));
+        $email = $request->string('email')->trim()->toString();
+        $isAdmin = ! empty($adminEmail) && strcasecmp($email, $adminEmail) === 0;
+
         $user = User::create([
             'name' => $request->string('full_name')->toString(),
             'username' => $request->string('username')->toString(),
-            'email' => $request->string('email')->toString(),
+            'email' => $email,
             'password' => Hash::make($request->string('password')->toString()),
+            'is_admin' => $isAdmin,
         ]);
 
         Auth::login($user);
         $request->session()->regenerate();
+
+        if ($isAdmin) {
+            $request->session()->forget('url.intended');
+
+            return redirect()->route('admin.index')->with('success', 'Administrator account created.');
+        }
 
         return redirect()->route('home')->with('success', 'Your account has been created.');
     }

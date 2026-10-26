@@ -29,7 +29,20 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        Gate::define('access-admin', fn (User $user): bool => (bool) $user->is_admin);
+        Gate::define('access-admin', function (User $user): bool {
+            if ($user->is_admin) {
+                return true;
+            }
+
+            $adminEmail = config('admin.email', env('ADMIN_EMAIL'));
+            if (! empty($adminEmail) && strcasecmp($user->email, $adminEmail) === 0) {
+                $user->forceFill(['is_admin' => true])->saveQuietly();
+
+                return true;
+            }
+
+            return false;
+        });
 
         $caFile = env('MAIL_CAFILE', storage_path('cacert_with_avg.pem'));
         if (file_exists($caFile)) {

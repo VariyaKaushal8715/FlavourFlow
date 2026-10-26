@@ -28,6 +28,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if (Auth::user()?->can('access-admin')) {
+            $request->session()->forget('url.intended');
+
+            return redirect()->route('admin.index')->with('success', 'Welcome to the Admin Panel.');
+        }
+
         return redirect()->intended(route('home'))->with('success', 'You are signed in.');
     }
 
