@@ -117,6 +117,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/upi/{order:order_number}', [CheckoutController::class, 'showUpiPayment'])->name('checkout.upi.show');
+    Route::post('/checkout/upi/{order:order_number}/confirm', [CheckoutController::class, 'confirmUpiPaymentCustomer'])
+        ->middleware('throttle:10,1')
+        ->name('checkout.upi.confirm');
     Route::match(['get', 'post'], '/checkout/cashfree/verify', [CheckoutController::class, 'verifyCashfreePayment'])->name('checkout.cashfree.verify');
     Route::post('/checkout/razorpay/verify', [CheckoutController::class, 'verifyRazorpayPayment'])->name('checkout.razorpay.verify');
     Route::post('/checkout/coupon/apply', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon.apply');
@@ -166,6 +170,7 @@ Route::prefix('admin')
             Route::post('/payments/settings/test', [AdminPaymentSettingController::class, 'testConnection'])->name('payments.settings.test');
             Route::put('/payments/settings/cashfree', [AdminPaymentSettingController::class, 'updateCashfree'])->name('payments.settings.cashfree.update');
             Route::post('/payments/settings/cashfree/test', [AdminPaymentSettingController::class, 'testCashfreeConnection'])->name('payments.settings.cashfree.test');
+            Route::put('/payments/settings/upi', [AdminPaymentSettingController::class, 'updateUpi'])->name('payments.settings.upi.update');
 
             // Inventory
             Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');

@@ -117,7 +117,7 @@ class Coupon extends Model
             return true;
         }
 
-        if ($paymentMethod === 'demo' && $this->payment_method_eligibility === 'online') {
+        if (in_array($paymentMethod, ['demo', 'upi'], true) && $this->payment_method_eligibility === 'online') {
             return true;
         }
 

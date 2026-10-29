@@ -41,6 +41,12 @@ class Order extends Model
         'earned_coupon_id',
         'cancelled_at',
         'cancellation_reason',
+        'order_confirmation_otp',
+        'otp_expires_at',
+        'otp_sent_at',
+        'otp_verified_at',
+        'payment_verified_at',
+        'payment_status',
     ];
 
     protected $casts = [
@@ -54,6 +60,10 @@ class Order extends Model
         'out_for_delivery_at' => 'datetime',
         'delivered_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'otp_expires_at' => 'datetime',
+        'otp_sent_at' => 'datetime',
+        'otp_verified_at' => 'datetime',
+        'payment_verified_at' => 'datetime',
     ];
 
     protected static function booted(): void

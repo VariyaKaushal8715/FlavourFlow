@@ -544,7 +544,167 @@
             </form>
         </div>
 
-        {{-- SECTION 4: Security Audit Log --}}
+        {{-- SECTION 4: UPI QR Code Settings --}}
+        <div class="mb-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8" x-data="{ submittingUpi: false }">
+            <div class="border-b border-zinc-100 pb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-lg font-bold text-zinc-950">UPI QR Code Settings (Manual Confirmation)</h2>
+                        <span class="rounded bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold text-indigo-900">QR GENERATION ONLY</span>
+                    </div>
+                    <p class="mt-1 text-xs text-zinc-500">
+                        Configure your Merchant UPI ID (VPA) and payee business details to generate scannable UPI QR codes at checkout. Zero gateway credentials or bank logins required.
+                    </p>
+                </div>
+                <div>
+                    @if ($isUpiConfigured)
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>
+                            {{ $isUpiEnabled ? 'ACTIVE & CONFIGURED' : 'CONFIGURED (DISABLED)' }}
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                            NOT CONFIGURED
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('admin.payments.settings.upi.update') }}" class="mt-6 space-y-5" @submit="submittingUpi = true">
+                @csrf
+                @method('PUT')
+
+                <div class="grid gap-6 md:grid-cols-2">
+                    {{-- Merchant UPI ID (VPA) --}}
+                    <div>
+                        <label for="upi_id" class="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                            Merchant UPI ID (VPA) <span class="text-red-500">*</span>
+                        </label>
+                        <p class="mt-0.5 text-[11px] text-zinc-500">Standard Virtual Payment Address (e.g. <code>store@okhdfcbank</code>, <code>merchant@upi</code>, <code>9876543210@paytm</code>).</p>
+                        <div class="relative mt-2">
+                            <input
+                                type="text"
+                                id="upi_id"
+                                name="upi_id"
+                                value="{{ old('upi_id', $upiId) }}"
+                                placeholder="e.g. flavourflow@okhdfcbank"
+                                required
+                                autocomplete="off"
+                                spellcheck="false"
+                                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 font-mono text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10"
+                            >
+                        </div>
+                        @error('upi_id')
+                            <p class="mt-1.5 text-xs text-red-600 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Payee / Business Name --}}
+                    <div>
+                        <label for="upi_name" class="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                            Payee / Business Name <span class="text-red-500">*</span>
+                        </label>
+                        <p class="mt-0.5 text-[11px] text-zinc-500">Name shown to customers in their UPI app when scanning the QR code.</p>
+                        <div class="relative mt-2">
+                            <input
+                                type="text"
+                                id="upi_name"
+                                name="upi_name"
+                                value="{{ old('upi_name', $upiName) }}"
+                                placeholder="e.g. FlavourFlow Spices"
+                                required
+                                autocomplete="off"
+                                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10"
+                            >
+                        </div>
+                        @error('upi_name')
+                            <p class="mt-1.5 text-xs text-red-600 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                {{-- Transaction Note & Enable Toggle --}}
+                <div class="grid gap-6 md:grid-cols-2">
+                    <div>
+                        <label for="upi_note" class="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                            Default Transaction Note / Prefix
+                        </label>
+                        <p class="mt-0.5 text-[11px] text-zinc-500">Optional note prefix attached to the UPI payment URI (Order reference is appended automatically).</p>
+                        <div class="relative mt-2">
+                            <input
+                                type="text"
+                                id="upi_note"
+                                name="upi_note"
+                                value="{{ old('upi_note', $upiNote) }}"
+                                placeholder="e.g. FlavourFlow Order"
+                                autocomplete="off"
+                                class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10"
+                            >
+                        </div>
+                        @error('upi_note')
+                            <p class="mt-1.5 text-xs text-red-600 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex flex-col justify-end">
+                        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 transition hover:bg-zinc-50">
+                            <input
+                                type="checkbox"
+                                name="upi_enabled"
+                                value="1"
+                                class="mt-1 h-4 w-4 rounded text-brand-primary focus:ring-brand-primary"
+                                @checked(old('upi_enabled', $isUpiEnabled))
+                            >
+                            <div>
+                                <span class="text-xs font-bold text-zinc-900">Enable UPI QR Payment Option at Checkout</span>
+                                <p class="text-[11px] text-zinc-500">When enabled, customers can select "UPI QR Code" as their payment method on the checkout page.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                {{-- Informational Policy Box --}}
+                <div class="rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-xs text-amber-950 flex items-start gap-3">
+                    <svg class="h-5 w-5 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div class="space-y-1">
+                        <p class="font-bold">Manual Confirmation Requirement:</p>
+                        <p>Orders placed via UPI QR Code are registered in <strong>Pending</strong> status. FlavourFlow does not perform automated bank scraping or simulated verification for UPI. Once you verify payment receipt in your bank or UPI app, mark the order <strong>Confirmed</strong> in the Orders panel.</p>
+                    </div>
+                </div>
+
+                {{-- Admin Password Confirmation --}}
+                <div class="border-t border-zinc-100 pt-4">
+                    <label for="current_password_upi" class="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                        Admin Current Password <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="password"
+                        id="current_password_upi"
+                        name="current_password"
+                        required
+                        autocomplete="current-password"
+                        placeholder="Re-enter your password to save UPI settings"
+                        class="mt-1.5 max-w-md w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10"
+                    >
+                    @error('current_password')
+                        <p class="mt-1.5 text-xs text-red-600 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="flex items-center justify-end border-t border-zinc-100 pt-4">
+                    <button
+                        type="submit"
+                        :disabled="submittingUpi"
+                        class="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-6 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-primary disabled:opacity-50"
+                    >
+                        <span x-show="!submittingUpi">Save UPI QR Settings</span>
+                        <span x-show="submittingUpi" x-cloak>Saving...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {{-- SECTION 5: Security Audit Log --}}
         <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-100 pb-5">
                 <div>

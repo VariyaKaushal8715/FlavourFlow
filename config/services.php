@@ -51,6 +51,12 @@ return [
         'notify_url' => env('CASHFREE_NOTIFY_URL'),
     ],
 
+    'upi' => [
+        'id' => env('MERCHANT_UPI_ID', ''),
+        'name' => env('MERCHANT_UPI_NAME', 'FlavourFlow Spices'),
+        'note' => env('MERCHANT_UPI_NOTE', 'FlavourFlow Order Payment'),
+    ],
+
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
         'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),

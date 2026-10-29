@@ -321,6 +321,46 @@
                                     Cashfree secure checkout modal will launch upon confirming. Verification occurs server-side after completion.
                                 </p>
                             </div>
+
+                            {{-- Option 5: UPI QR Code Payment (Manual Confirmation Required) --}}
+                            @if (($isUpiConfigured ?? false) && ($isUpiEnabled ?? true))
+                                <label class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'upi' ? 'border-indigo-400 bg-indigo-50/30' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-indigo-50/20">
+                                    <input
+                                        type="radio"
+                                        name="payment_method"
+                                        value="upi"
+                                        class="mt-1 h-4 w-4 text-brand-primary focus:ring-brand-primary"
+                                        @checked($defaultSelectedMethod === 'upi')
+                                        onclick="showPaymentUI('upi')"
+                                    >
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <p class="text-sm font-semibold text-zinc-950">UPI QR Code Payment</p>
+                                            <span class="rounded bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-900 uppercase">UPI APPS &amp; QR</span>
+                                            <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900 uppercase">MANUAL CONFIRMATION</span>
+                                        </div>
+                                        <p class="mt-1 text-xs text-zinc-500">Scan dynamic UPI QR using GPay, PhonePe, Paytm, or BHIM. Order status remains Pending until verified by store admin.</p>
+                                    </div>
+                                </label>
+
+                                <div id="upi-payment-ui" class="{{ $defaultSelectedMethod === 'upi' ? '' : 'hidden' }} rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 space-y-3 transition">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-900">UPI Instant QR Generation</span>
+                                        <span class="rounded bg-amber-200 px-2 py-0.5 text-[10px] font-extrabold uppercase text-amber-950">MANUAL CONFIRMATION REQUIRED</span>
+                                    </div>
+                                    <p class="text-xs text-zinc-600">
+                                        Submitting your order generates a dedicated, scannable QR code matching your exact cart total. You can scan it with any UPI app or click to open your UPI app on mobile.
+                                    </p>
+                                    <div class="rounded-xl bg-white/80 p-3 text-xs text-zinc-700 border border-indigo-100 flex items-center justify-between">
+                                        <div>
+                                            <span class="font-bold text-zinc-900">Payee:</span> {{ $upiName ?? 'FlavourFlow Spices' }}
+                                        </div>
+                                        <div class="font-mono text-[11px] text-zinc-600">
+                                            {{ $upiId ?? '' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -432,6 +472,8 @@
                         const updateSubmitBtnText = (method) => {
                             if (method === 'demo') {
                                 submitBtn.textContent = 'Simulate Demo Payment (DEMO — NO REAL PAYMENT)';
+                            } else if (method === 'upi') {
+                                submitBtn.textContent = 'Proceed to UPI QR Code Payment';
                             } else if (method === 'razorpay') {
                                 submitBtn.textContent = 'Confirm & Pay with Razorpay';
                             } else if (method === 'cashfree') {
@@ -445,10 +487,12 @@
 
                         window.showPaymentUI = function (method) {
                             const demoUI = document.getElementById('demo-payment-ui');
+                            const upiUI = document.getElementById('upi-payment-ui');
                             const razorpayUI = document.getElementById('razorpay-payment-ui');
                             const cashfreeUI = document.getElementById('cashfree-payment-ui');
                             const onlineUI = document.getElementById('online-payment-ui');
                             if (demoUI) demoUI.classList.toggle('hidden', method !== 'demo');
+                            if (upiUI) upiUI.classList.toggle('hidden', method !== 'upi');
                             if (razorpayUI) razorpayUI.classList.toggle('hidden', method !== 'razorpay');
                             if (cashfreeUI) cashfreeUI.classList.toggle('hidden', method !== 'cashfree');
                             if (onlineUI) onlineUI.classList.toggle('hidden', method !== 'online');
@@ -470,12 +514,16 @@
                         form.addEventListener('submit', (e) => {
                             const paymentMethod = form.querySelector('input[name="payment_method"]:checked')?.value;
                             
-                            if (paymentMethod === 'demo' || paymentMethod === 'online' || paymentMethod === 'razorpay' || paymentMethod === 'cashfree') {
+                            if (paymentMethod === 'demo' || paymentMethod === 'online' || paymentMethod === 'razorpay' || paymentMethod === 'cashfree' || paymentMethod === 'upi') {
                                 e.preventDefault();
                                 submitBtn.disabled = true;
-                                submitBtn.textContent = paymentMethod === 'demo' 
-                                    ? 'Simulating Payment (DEMO — NO REAL PAYMENT)...' 
-                                    : 'Initializing Secure Payment...';
+                                if (paymentMethod === 'demo') {
+                                    submitBtn.textContent = 'Simulating Payment (DEMO — NO REAL PAYMENT)...';
+                                } else if (paymentMethod === 'upi') {
+                                    submitBtn.textContent = 'Generating UPI QR Code...';
+                                } else {
+                                    submitBtn.textContent = 'Initializing Secure Payment...';
+                                }
 
                                 const formData = new FormData(form);
 
@@ -499,6 +547,13 @@
                                             updateSubmitBtnText(paymentMethod);
                                             alert(data.message || 'Simulated payment was declined as requested. Cart and stock remain untouched.');
                                         }
+                                        return;
+                                    }
+
+                                    // Handle UPI QR Code Flow
+                                    if (data.payment_method === 'upi' && data.redirect_url) {
+                                        submitBtn.textContent = 'Order Created! Loading QR Code...';
+                                        window.location.href = data.redirect_url;
                                         return;
                                     }
 
@@ -653,7 +708,8 @@
                                 .catch(err => {
                                     submitBtn.disabled = false;
                                     updateSubmitBtnText(paymentMethod);
-                                    alert('Failed to initialize payment checkout. Please check form details.');
+                                    console.error('Checkout error:', err);
+                                    alert(err?.message ? err.message : 'Failed to initialize payment checkout. Please check form details.');
                                 });
                             }
                         });

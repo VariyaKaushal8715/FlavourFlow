@@ -186,8 +186,29 @@
 
                         <div class="flex items-center justify-between">
                             <dt class="text-zinc-500">Payment Method</dt>
-                            <dd class="font-semibold text-zinc-900">{{ strtoupper($order->payment_method ?? 'COD') }}</dd>
+                            <dd class="font-semibold text-zinc-900">
+                                @if($order->payment_method === 'upi')
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <span>UPI QR Code</span>
+                                        <span class="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-900">MANUAL CONFIRMATION</span>
+                                    </span>
+                                @else
+                                    {{ strtoupper($order->payment_method ?? 'COD') }}
+                                @endif
+                            </dd>
                         </div>
+
+                        @if($order->payment_method === 'upi')
+                            @php
+                                $upiPayment = $order->payments()->where('provider', 'upi')->latest()->first();
+                            @endphp
+                            @if($upiPayment && (!empty($upiPayment->payment_details['customer_transaction_ref']) || !empty($upiPayment->transaction_id)))
+                                <div class="flex items-center justify-between border-t border-zinc-100 pt-3">
+                                    <dt class="text-zinc-500">Customer UTR / Ref</dt>
+                                    <dd class="font-mono font-bold text-zinc-900">{{ $upiPayment->payment_details['customer_transaction_ref'] ?? $upiPayment->transaction_id }}</dd>
+                                </div>
+                            @endif
+                        @endif
                     </dl>
                 </div>
 

@@ -19,8 +19,19 @@ class ReviewController extends Controller
     {
         $user = $request->user();
 
-        // Find the first order that has at least one unreviewed product
+        // Find the first order that has at least one unreviewed product.
+        // Orders awaiting UPI payment/confirmation must not prompt for review before payment is completed.
         $orders = $user->orders()
+            ->where(function ($query) {
+                $query->where('payment_method', '!=', 'upi')
+                    ->orWhere(function ($upiQuery) {
+                        $upiQuery->where('payment_method', 'upi')
+                            ->whereNotIn('status', ['Pending', 'pending', 'Cancelled', 'cancelled'])
+                            ->whereDoesntHave('payments', function ($pq) {
+                                $pq->where('provider', 'upi')->where('status', 'pending');
+                            });
+                    });
+            })
             ->with('items.product')
             ->get();
 

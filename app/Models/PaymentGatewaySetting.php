@@ -18,6 +18,10 @@ class PaymentGatewaySetting extends Model
         'cashfree_app_id',
         'cashfree_secret_key',
         'cashfree_api_version',
+        'upi_enabled',
+        'upi_id',
+        'upi_name',
+        'upi_note',
     ];
 
     /**
@@ -29,6 +33,7 @@ class PaymentGatewaySetting extends Model
             'razorpay_key_secret' => 'encrypted',
             'razorpay_webhook_secret' => 'encrypted',
             'cashfree_secret_key' => 'encrypted',
+            'upi_enabled' => 'boolean',
         ];
     }
 
@@ -215,5 +220,57 @@ class PaymentGatewaySetting extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Determine whether the UPI QR code payment method is enabled.
+     */
+    public function isUpiEnabled(): bool
+    {
+        return $this->upi_enabled ?? true;
+    }
+
+    /**
+     * Determine whether UPI is configured with a valid merchant UPI ID.
+     */
+    public function isUpiConfigured(): bool
+    {
+        return ! empty($this->getEffectiveUpiId());
+    }
+
+    /**
+     * Get effective Merchant UPI ID (database setting with configuration fallback).
+     */
+    public function getEffectiveUpiId(): string
+    {
+        if (! empty($this->upi_id)) {
+            return trim((string) $this->upi_id);
+        }
+
+        return trim((string) config('services.upi.id', env('MERCHANT_UPI_ID', '')));
+    }
+
+    /**
+     * Get effective Payee / Business Name (database setting with fallback).
+     */
+    public function getEffectiveUpiName(): string
+    {
+        if (! empty($this->upi_name)) {
+            return trim((string) $this->upi_name);
+        }
+
+        return trim((string) config('services.upi.name', env('MERCHANT_UPI_NAME', config('app.name', 'FlavourFlow Spices'))));
+    }
+
+    /**
+     * Get effective default Transaction Note (database setting with fallback).
+     */
+    public function getEffectiveUpiNote(): string
+    {
+        if (! empty($this->upi_note)) {
+            return trim((string) $this->upi_note);
+        }
+
+        return trim((string) config('services.upi.note', env('MERCHANT_UPI_NOTE', 'FlavourFlow Order Payment')));
     }
 }

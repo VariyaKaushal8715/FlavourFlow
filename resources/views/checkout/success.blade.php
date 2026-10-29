@@ -27,6 +27,33 @@
                         This transaction was executed in credential-free Demo Mode. No funds were debited, no external payment gateway was contacted, and no real financial transaction took place.
                     </p>
                 </div>
+            @elseif($order->payment_method === 'upi')
+                <div class="mt-6 rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50/90 p-4 text-left shadow-sm">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="rounded bg-amber-300 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wider text-amber-950">UPI PAYMENT — MANUAL CONFIRMATION REQUIRED</span>
+                        <span class="text-xs font-semibold text-amber-900">Status: Pending Verification</span>
+                    </div>
+                    <p class="mt-2 text-xs text-amber-950 leading-relaxed">
+                        Your UPI order has been registered. Your order status remains <strong>Pending</strong> while our store administration manually verifies receipt of payment in our merchant account.
+                    </p>
+                    <div class="mt-3">
+                        <a href="{{ route('checkout.upi.show', $order->order_number) }}" class="inline-flex items-center gap-1 text-xs font-bold text-amber-950 hover:text-brand-primary underline">
+                            View UPI QR Code &amp; Payment Details &rarr;
+                        </a>
+                    </div>
+                </div>
+            @endif
+
+            @if ($order->order_confirmation_otp)
+                <div class="mt-8 rounded-3xl border-2 border-emerald-300 bg-emerald-50/80 p-6 text-center shadow-xs">
+                    <p class="text-xs font-bold uppercase tracking-wider text-emerald-900">Your Order Confirmation &amp; Delivery OTP</p>
+                    <p class="mt-2 text-3xl sm:text-4xl font-black tracking-widest text-emerald-950 font-mono">
+                        {{ $order->order_confirmation_otp }}
+                    </p>
+                    <p class="mt-1 text-xs text-emerald-800">
+                        This confirmation code has been verified and emailed to <strong>{{ $order->email }}</strong>.
+                    </p>
+                </div>
             @endif
 
             <div class="mt-8 rounded-3xl border border-amber-200/70 bg-white/95 p-6 shadow-[0_24px_70px_rgba(120,53,15,0.06)] text-left sm:p-8">
@@ -53,7 +80,17 @@
                     <div>
                         <p class="font-medium text-zinc-400">Payment Method</p>
                         <div class="mt-1 flex flex-wrap items-center gap-1.5 font-semibold text-zinc-950">
-                            @if ($order->isDemo())
+                            @if ($order->payment_method === 'upi')
+                                <span>UPI Payment</span>
+                                @if ($order->isDemo())
+                                    <span class="rounded bg-amber-200 px-2 py-0.5 text-[10px] font-extrabold uppercase text-amber-950">DEMO — NO REAL PAYMENT</span>
+                                @endif
+                                @if($order->payment_status === 'paid' || $order->status === 'Confirmed')
+                                    <span class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold uppercase text-emerald-900 ring-1 ring-emerald-300">PAID &amp; VERIFIED</span>
+                                @else
+                                    <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold uppercase text-amber-900 ring-1 ring-amber-300">MANUAL CONFIRMATION REQUIRED</span>
+                                @endif
+                            @elseif ($order->isDemo())
                                 <span>Demo Payment</span>
                                 <span class="rounded bg-amber-200 px-2 py-0.5 text-[10px] font-extrabold uppercase text-amber-950">DEMO — NO REAL PAYMENT</span>
                             @elseif ($order->payment_method === 'cod')

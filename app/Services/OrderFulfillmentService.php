@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\Mail;
 class OrderFulfillmentService
 {
     public function __construct(
-        protected CouponService $couponService
+        protected CouponService $couponService,
+        protected OrderOtpService $otpService
     ) {}
 
     /**
@@ -65,6 +66,8 @@ class OrderFulfillmentService
             // Confirm order
             $lockedOrder->update([
                 'status' => 'Confirmed',
+                'payment_status' => 'paid',
+                'payment_verified_at' => now(),
                 'confirmed_at' => now(),
             ]);
 
@@ -90,6 +93,9 @@ class OrderFulfillmentService
                 Mail::to($lockedOrder->email)->send(new OrderPlaced($lockedOrder));
                 Mail::to($lockedOrder->email)->send(new PaymentSuccessful($lockedOrder));
                 Mail::to($adminEmail)->send(new AdminNewOrderNotification($lockedOrder));
+
+                // Dispatch order confirmation OTP (Strictly gated after verified payment)
+                $this->otpService->generateAndSendOrderOtp($lockedOrder);
             } catch (\Throwable $e) {
                 Log::error('Failed to dispatch order fulfillment emails: '.$e->getMessage(), [
                     'order_id' => $lockedOrder->id,

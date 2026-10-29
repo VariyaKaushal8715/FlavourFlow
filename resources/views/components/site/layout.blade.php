@@ -58,6 +58,7 @@
         @endif
 
         @auth
+            @if (!request()->routeIs('checkout.*') && !request()->is('checkout*'))
             <style>
                 /* Lock navigation when review is pending */
                 .review-pending-active a:not([data-star]),
@@ -99,6 +100,7 @@
                     </form>
                 </div>
             </div>
+            @endif
 
             @if (! auth()->user()->privacyConsent()->exists())
                 <div class="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-zinc-950/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="privacy-consent-title" aria-describedby="privacy-consent-description">
@@ -130,6 +132,7 @@
                 </div>
             @endif
 
+            @if (!request()->routeIs('checkout.*') && !request()->is('checkout*'))
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
                     const modal = document.getElementById('mandatory-review-modal');
@@ -396,6 +399,7 @@
                     checkPendingReview();
                 });
             </script>
+            @endif
         @endauth
     </body>
 </html>

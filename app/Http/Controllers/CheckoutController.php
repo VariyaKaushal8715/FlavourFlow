@@ -17,6 +17,8 @@ use App\Services\CouponService;
 use App\Services\DemoPaymentService;
 use App\Services\OrderFulfillmentService;
 use App\Services\RazorpayService;
+use App\Services\UpiPaymentVerificationService;
+use App\Services\UpiService;
 use App\Support\CartState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -25,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -66,6 +69,10 @@ class CheckoutController extends Controller
             'isCashfreeConfigured' => app(CashfreeService::class)->isConfigured(),
             'isRazorpayConfigured' => app(RazorpayService::class)->isConfigured(),
             'razorpayKeyId' => app(RazorpayService::class)->getKeyId(),
+            'isUpiConfigured' => $gatewaySetting->isUpiConfigured(),
+            'isUpiEnabled' => $gatewaySetting->isUpiEnabled(),
+            'upiId' => $gatewaySetting->getEffectiveUpiId(),
+            'upiName' => $gatewaySetting->getEffectiveUpiName(),
         ]);
     }
 
@@ -85,7 +92,7 @@ class CheckoutController extends Controller
                 'state' => ['required', 'string', 'max:100'],
                 'pincode' => ['required', 'string', 'regex:/^[0-9]{5,6}$/'],
                 'country' => ['required', 'string', 'max:100'],
-                'payment_method' => ['required', 'string', 'in:cod,online,demo,razorpay,cashfree'],
+                'payment_method' => ['required', 'string', 'in:cod,online,demo,razorpay,cashfree,upi'],
                 'demo_outcome' => ['nullable', 'string', 'in:success,failure'],
                 'delivery_option' => ['nullable', 'string', 'in:standard,express'],
                 'coupon_code' => ['nullable', 'string', 'max:50'],
@@ -463,6 +470,125 @@ class CheckoutController extends Controller
                 ]);
             }
 
+            // UPI QR CODE PAYMENT FLOW (Manual Confirmation Required)
+            if ($validated['payment_method'] === 'upi') {
+                if (! $gatewaySetting->isUpiConfigured() || ! $gatewaySetting->isUpiEnabled()) {
+                    throw ValidationException::withMessages([
+                        'payment' => 'UPI QR code payment is currently unavailable. Please select another payment method.',
+                    ]);
+                }
+
+                $order = DB::transaction(function () use ($validated, $cart, $request) {
+                    $orderNumber = 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
+                    $subtotal = $cart->subtotal();
+                    $deliveryCharge = $subtotal >= 500 ? 0.0 : 50.0;
+
+                    $couponCode = $validated['coupon_code'] ?? null;
+                    $discountAmount = 0.00;
+                    $couponModel = null;
+
+                    if ($couponCode) {
+                        $couponResult = $this->couponService->validateCoupon($couponCode, $request->user(), $subtotal, 'upi');
+
+                        if (! $couponResult['valid']) {
+                            throw ValidationException::withMessages([
+                                'coupon_code' => $couponResult['error'] ?: 'The coupon code is invalid or expired.',
+                            ]);
+                        }
+
+                        $discountAmount = $couponResult['discount'];
+                        $couponModel = $couponResult['coupon'];
+                    }
+
+                    // Authoritative server-calculated order total. Never trusts browser.
+                    $totalAmount = max(0.00, $subtotal - $discountAmount + $deliveryCharge);
+
+                    $order = Order::create([
+                        'order_number' => $orderNumber,
+                        'user_id' => $request->user()->id,
+                        'status' => 'Pending',
+                        'name' => $validated['name'],
+                        'mobile' => $validated['mobile'],
+                        'email' => $validated['email'],
+                        'address' => $validated['address'],
+                        'city' => $validated['city'],
+                        'state' => $validated['state'],
+                        'pincode' => $validated['pincode'],
+                        'country' => $validated['country'],
+                        'payment_method' => 'upi',
+                        'is_demo' => false,
+                        'coupon_code' => $couponCode,
+                        'coupon_id' => null,
+                        'discount_amount' => $discountAmount,
+                        'earned_coupon_id' => null,
+                        'subtotal' => $subtotal,
+                        'delivery_charge' => $deliveryCharge,
+                        'total_amount' => $totalAmount,
+                    ]);
+
+                    if ($couponModel) {
+                        $this->couponService->recordUsage($couponModel, $request->user(), $order, $discountAmount);
+                    }
+
+                    foreach ($cart->items() as $item) {
+                        $product = Product::lockForUpdate()->findOrFail($item['product']->id);
+
+                        if ($product->quantity < $item['quantity']) {
+                            throw ValidationException::withMessages([
+                                'cart' => "The product '{$product->name}' only has {$product->quantity} units left in stock.",
+                            ]);
+                        }
+
+                        OrderItem::create([
+                            'order_id' => $order->id,
+                            'product_id' => $product->id,
+                            'product_name' => $product->name,
+                            'product_slug' => $product->slug,
+                            'sku' => $product->sku,
+                            'unit' => $item['unit'],
+                            'quantity' => $item['quantity'],
+                            'unit_price' => $item['unit_price'],
+                            'total_price' => $item['line_total'],
+                        ]);
+                    }
+
+                    Payment::create([
+                        'order_id' => $order->id,
+                        'user_id' => $request->user()->id,
+                        'provider' => 'upi',
+                        'is_demo' => false,
+                        'transaction_id' => 'UPI-'.$order->order_number.'-'.strtoupper(Str::random(6)),
+                        'gateway_order_id' => $order->order_number,
+                        'amount' => $order->total_amount,
+                        'currency' => 'INR',
+                        'status' => 'pending',
+                        'payment_method' => 'upi',
+                        'payment_details' => [
+                            'merchant_upi_id' => PaymentGatewaySetting::current()->getEffectiveUpiId(),
+                            'payee_name' => PaymentGatewaySetting::current()->getEffectiveUpiName(),
+                        ],
+                    ]);
+
+                    $cart->clear();
+
+                    return $order;
+                });
+
+                session()->put('placed_order_id', $order->id);
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'payment_method' => 'upi',
+                        'redirect_url' => route('checkout.upi.show', $order->order_number),
+                        'order_number' => $order->order_number,
+                        'amount' => $order->total_amount,
+                    ]);
+                }
+
+                return redirect()->route('checkout.upi.show', $order->order_number);
+            }
+
             // COD Payment Flow
             $order = DB::transaction(function () use ($validated, $cart, $request) {
                 $orderNumber = 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
@@ -571,7 +697,7 @@ class CheckoutController extends Controller
         }
     }
 
-    public function success(): View|RedirectResponse
+    public function success(Request $request): View|RedirectResponse
     {
         $orderId = session('placed_order_id');
 
@@ -580,6 +706,13 @@ class CheckoutController extends Controller
         }
 
         $order = Order::with(['items', 'earnedCoupon'])->findOrFail($orderId);
+
+        // Security check: ensure current user owns this order
+        $user = $request->user();
+        if ($user && $order->user_id && $order->user_id !== $user->id && ! $user->is_admin) {
+            session()->forget('placed_order_id');
+            abort(403, 'Unauthorized access to this order receipt.');
+        }
 
         return view('checkout.success', [
             'site' => config('personal_site'),
@@ -935,7 +1068,7 @@ class CheckoutController extends Controller
         $validated = $request->validate([
             'coupon_code' => ['required', 'string', 'max:50'],
             'delivery_option' => ['nullable', 'string', 'in:standard,express'],
-            'payment_method' => ['nullable', 'string', 'in:cod,online,demo'],
+            'payment_method' => ['nullable', 'string', 'in:cod,online,demo,upi'],
         ]);
 
         $subtotal = $cart->subtotal();
@@ -973,5 +1106,149 @@ class CheckoutController extends Controller
             'deliveryCharge' => $deliveryCharge,
             'total' => $total,
         ]);
+    }
+
+    /**
+     * Display the scannable UPI QR code payment page with exact amount and merchant details.
+     */
+    public function showUpiPayment(Request $request, Order $order, UpiService $upiService): View|RedirectResponse
+    {
+        $user = $request->user();
+
+        // Authorization check: User must own the order or be an authorized administrator
+        if (! $user || ($order->user_id !== $user->id && ! $user->is_admin)) {
+            abort(403, 'Unauthorized access to this order payment.');
+        }
+
+        // Validate payment method
+        if ($order->payment_method !== 'upi') {
+            return redirect()->route('account.orders.show', $order->order_number)
+                ->with('warning', 'This order is not configured for UPI payment.');
+        }
+
+        // If order is already paid, redirect to tracking
+        if ($order->status === 'Confirmed' || $order->payment_status === 'paid') {
+            return redirect()->route('account.orders.show', $order->order_number)
+                ->with('status', 'This order has already been paid and confirmed.');
+        }
+
+        // If order is cancelled or refunded
+        if (in_array(strtolower($order->status), ['cancelled', 'refunded'], true)) {
+            return redirect()->route('account.orders.show', $order->order_number)
+                ->with('error', 'This order is cancelled and cannot accept payment.');
+        }
+
+        // Dynamically compute the payment parameters and scannable QR code
+        $paymentDetails = $upiService->getPaymentDetailsForOrder($order);
+
+        return view('checkout.upi', [
+            'site' => config('personal_site'),
+            'order' => $order,
+            'paymentDetails' => $paymentDetails,
+        ]);
+    }
+
+    /**
+     * Handle customer payment verification submission ("I Have Paid").
+     *
+     * STRICT VERIFICATION GATEWAY:
+     * - Requires mandatory transaction reference / UTR.
+     * - Initiates real server-side payment verification.
+     * - Order is confirmed and confirmation OTP is sent ONLY upon genuine verified success.
+     * - When automated API is unavailable, safely records details for manual review without fake confirmation or OTP dispatch.
+     */
+    public function confirmUpiPaymentCustomer(
+        Request $request,
+        Order $order,
+        UpiPaymentVerificationService $verificationService
+    ): RedirectResponse|JsonResponse {
+        $user = $request->user();
+
+        if (! $user || ($order->user_id !== $user->id && ! $user->is_admin)) {
+            abort(403, 'Unauthorized access to this order.');
+        }
+
+        if ($order->payment_method !== 'upi') {
+            abort(400, 'Invalid payment method for this order.');
+        }
+
+        if (in_array(strtolower($order->status), ['cancelled', 'refunded'], true)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'status' => UpiPaymentVerificationService::STATUS_VERIFICATION_FAILED,
+                    'message' => 'This order is cancelled or refunded and cannot accept payment verification.',
+                ], 422);
+            }
+
+            return redirect()->back()->withErrors([
+                'transaction_ref' => 'This order is cancelled or refunded and cannot accept payment verification.',
+            ]);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'transaction_ref' => ['required', 'string', 'min:6', 'max:100', 'regex:/^[a-zA-Z0-9_\-]+$/'],
+        ], [
+            'transaction_ref.required' => 'Payment reference / 12-digit UPI UTR is mandatory before proceeding.',
+            'transaction_ref.min' => 'Transaction reference must be at least 6 characters.',
+            'transaction_ref.regex' => 'Transaction reference may only contain alphanumeric characters, hyphens, and underscores.',
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $validator->errors()->first(),
+                    'errors' => $validator->errors()->toArray(),
+                ], 422);
+            }
+
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        $validated = $validator->validated();
+
+        $payment = Payment::where('order_id', $order->id)->latest()->first();
+        if (! $payment) {
+            abort(404, 'Payment record not found for this order.');
+        }
+
+        $result = $verificationService->verifyPayment($order, $payment, $validated['transaction_ref']);
+
+        // Set session so success page can display summary if permitted
+        session()->put('placed_order_id', $order->id);
+
+        if ($request->expectsJson()) {
+            $isAcceptable = in_array($result['status'], [
+                UpiPaymentVerificationService::STATUS_VERIFIED_SUCCESS,
+                UpiPaymentVerificationService::STATUS_VERIFICATION_UNAVAILABLE,
+            ], true);
+
+            return response()->json([
+                'success' => $result['verified'],
+                'status' => $result['status'],
+                'message' => $result['message'],
+                'redirect_url' => $isAcceptable ? route('checkout.success') : null,
+            ], $isAcceptable ? 200 : 422);
+        }
+
+        if ($result['status'] === UpiPaymentVerificationService::STATUS_VERIFIED_SUCCESS) {
+            return redirect()->route('checkout.success')->with(
+                'status',
+                'Payment verified! Your order #'.$order->order_number.' has been confirmed and your confirmation OTP code has been sent to your email.'
+            );
+        }
+
+        if ($result['status'] === UpiPaymentVerificationService::STATUS_VERIFICATION_UNAVAILABLE) {
+            return redirect()->route('checkout.success')->with(
+                'status',
+                'Your payment reference (UTR: '.$validated['transaction_ref'].') has been submitted. Automated verification is unavailable for this VPA. Your order remains Pending until manual store verification.'
+            );
+        }
+
+        if ($result['status'] === UpiPaymentVerificationService::STATUS_PENDING_VERIFICATION) {
+            return redirect()->back()->with('warning', $result['message']);
+        }
+
+        return redirect()->back()->withErrors(['transaction_ref' => $result['message']]);
     }
 }

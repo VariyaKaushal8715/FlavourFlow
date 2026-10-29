@@ -9,6 +9,7 @@ use App\Models\PaymentGatewaySetting;
 use App\Services\CashfreeService;
 use App\Services\EnvironmentManager;
 use App\Services\RazorpayService;
+use App\Services\UpiService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,6 +71,13 @@ class AdminPaymentSettingController extends Controller
             'isCfConfigured' => $isCfConfigured,
             'cfMode' => $cfMode,
             'cashfreeWebhookUrl' => url('/api/webhooks/cashfree'),
+
+            // UPI QR Code Settings
+            'upiId' => $setting->getEffectiveUpiId(),
+            'upiName' => $setting->getEffectiveUpiName(),
+            'upiNote' => $setting->getEffectiveUpiNote(),
+            'isUpiEnabled' => $setting->isUpiEnabled(),
+            'isUpiConfigured' => $setting->isUpiConfigured(),
 
             // Audit Logs
             'auditLogs' => $auditLogs,
@@ -417,5 +425,77 @@ class AdminPaymentSettingController extends Controller
         return back()->withErrors([
             'connection' => 'Cashfree API Connection Test Failed: '.$validation['message'],
         ]);
+    }
+
+    /**
+     * Update merchant UPI QR Code configuration (VPA, Payee Name, Note, Enabled status).
+     */
+    public function updateUpi(Request $request, UpiService $upiService): RedirectResponse
+    {
+        Gate::authorize('access-admin');
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'upi_id' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($upiService) {
+                    if (! $upiService->isValidUpiId($value)) {
+                        $fail('The merchant UPI ID format is invalid. It must follow standard VPA format such as merchant@okhdfcbank or store@upi.');
+                    }
+                },
+            ],
+            'upi_name' => ['required', 'string', 'max:100'],
+            'upi_note' => ['nullable', 'string', 'max:100'],
+            'upi_enabled' => ['nullable', 'boolean'],
+        ], [
+            'current_password.required' => 'Please confirm your administrator password to update UPI settings.',
+            'upi_id.required' => 'Merchant UPI ID is required.',
+            'upi_name.required' => 'Payee / Business name is required.',
+        ]);
+
+        // Security Check 1: Rate Limiter on Administrator Password Verification
+        $throttleKey = 'admin-payment-auth:'.$request->user()->id;
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return back()
+                ->withInput($request->except('current_password'))
+                ->withErrors(['current_password' => "Too many attempts. Please try again in {$seconds} seconds."]);
+        }
+
+        // Security Check 2: Verify current administrator password
+        if (! Hash::check($validated['current_password'], $request->user()->password)) {
+            RateLimiter::hit($throttleKey, 60);
+
+            PaymentAuditLog::logAction('failed_password_attempt', $request->user(), 'upi', null, [
+                'target' => 'update_upi_settings',
+            ]);
+
+            return back()
+                ->withInput($request->except('current_password'))
+                ->withErrors(['current_password' => 'The provided administrator password does not match your account.']);
+        }
+
+        RateLimiter::clear($throttleKey);
+
+        $setting = PaymentGatewaySetting::current();
+        $setting->update([
+            'upi_id' => trim($validated['upi_id']),
+            'upi_name' => trim($validated['upi_name']),
+            'upi_note' => isset($validated['upi_note']) ? trim($validated['upi_note']) : null,
+            'upi_enabled' => $request->boolean('upi_enabled', true),
+        ]);
+
+        PaymentAuditLog::logAction('upi_settings_updated', $request->user(), 'upi', $setting->environment, [
+            'upi_id' => $validated['upi_id'],
+            'upi_name' => $validated['upi_name'],
+            'upi_enabled' => $request->boolean('upi_enabled', true),
+        ]);
+
+        return redirect()
+            ->route('admin.payments.settings')
+            ->with('status', 'UPI QR Code settings updated successfully. Merchant UPI ID set to '.$validated['upi_id'].'.');
     }
 }

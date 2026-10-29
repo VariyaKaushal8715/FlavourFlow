@@ -189,9 +189,22 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-zinc-500">Payment:</span>
-                                <span class="font-semibold text-zinc-950">{{ $order->payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment' }}</span>
+                                <span class="font-semibold text-zinc-950">
+                                    @if($order->payment_method === 'upi')
+                                        UPI Payment (Manual)
+                                    @elseif($order->payment_method === 'cod')
+                                        Cash on Delivery
+                                    @else
+                                        Online Payment
+                                    @endif
+                                </span>
                             </div>
                         </div>
+                        @if($order->payment_method === 'upi' && $order->status === 'Pending')
+                            <a href="{{ route('checkout.upi.show', $order->order_number) }}" class="mt-4 block w-full rounded-2xl bg-amber-500/15 border border-amber-300 py-2.5 text-center text-xs font-bold text-amber-950 transition hover:bg-amber-500/25">
+                                View UPI QR Code &rarr;
+                            </a>
+                        @endif
                         <a href="{{ route('account.orders.track', $order->order_number) }}" class="mt-5 block w-full rounded-2xl bg-zinc-950 py-3 text-center text-xs font-semibold text-white transition hover:bg-brand-primary">
                             Track Order Progress
                         </a>
