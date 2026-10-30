@@ -21,6 +21,9 @@
                     <h1 class="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
                         {{ $order->order_number }}
                     </h1>
+                    @if($order->invoice_number)
+                        <span class="inline-flex items-center rounded-md bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700 ring-1 ring-inset ring-purple-600/20 font-mono">Invoice: {{ $order->invoice_number }}</span>
+                    @endif
                     @if($order->status === 'completed')
                         <span class="inline-flex items-center rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Completed</span>
                     @elseif($order->status === 'processing')

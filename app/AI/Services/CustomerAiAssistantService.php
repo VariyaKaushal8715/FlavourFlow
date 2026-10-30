@@ -84,6 +84,79 @@ class CustomerAiAssistantService
                     'label' => 'Browse Catalog',
                     'url' => route('home'),
                 ];
+            } elseif ($intent === 'payment_methods') {
+                $responseText = $this->nlu->formatResponse('payment_methods', $language);
+                $actions[] = [
+                    'action' => 'view_cart',
+                    'label' => 'Go to Cart & Checkout',
+                    'url' => route('cart.index'),
+                ];
+                $actions[] = [
+                    'action' => 'browse_catalog',
+                    'label' => 'Explore Spices',
+                    'url' => route('home'),
+                ];
+            } elseif ($intent === 'refund_returns') {
+                $responseText = $this->nlu->formatResponse('refund_returns', $language);
+                $actions[] = [
+                    'action' => 'contact_support',
+                    'label' => 'Contact Support',
+                    'url' => url('/#contact'),
+                ];
+                $actions[] = [
+                    'action' => 'view_orders',
+                    'label' => 'My Orders',
+                    'url' => route('account.orders'),
+                ];
+            } elseif ($intent === 'order_help') {
+                $responseText = $this->nlu->formatResponse('order_help', $language);
+                $actions[] = [
+                    'action' => 'view_orders',
+                    'label' => 'View Orders & Invoices',
+                    'url' => route('account.orders'),
+                ];
+                $actions[] = [
+                    'action' => 'browse_catalog',
+                    'label' => 'Browse Spices',
+                    'url' => route('home'),
+                ];
+            } elseif ($intent === 'shipping_delivery') {
+                $responseText = $this->nlu->formatResponse('shipping_delivery', $language);
+                $actions[] = [
+                    'action' => 'view_orders',
+                    'label' => 'Track Your Delivery',
+                    'url' => route('account.orders'),
+                ];
+                $actions[] = [
+                    'action' => 'browse_catalog',
+                    'label' => 'Explore Spices',
+                    'url' => route('home'),
+                ];
+            } elseif ($intent === 'store_contact') {
+                $responseText = $this->nlu->formatResponse('store_contact', $language);
+                $actions[] = [
+                    'action' => 'contact_support',
+                    'label' => 'Open Contact Page',
+                    'url' => url('/#contact'),
+                ];
+            } elseif ($intent === 'cooking_recipe') {
+                $responseText = $this->nlu->formatResponse('cooking_recipe', $language);
+                $matchedProduct = $this->findSingleProduct($entities);
+                if ($matchedProduct !== null) {
+                    $products = collect([$matchedProduct]);
+                    $actions[] = [
+                        'action' => 'view_product',
+                        'label' => "View {$matchedProduct->name}",
+                        'url' => route('products.show', ['product' => $matchedProduct->slug]),
+                    ];
+                } else {
+                    $products = Product::query()->active()->inStock()->orderByDesc('priority')->take(2)->get();
+                }
+                $actions[] = [
+                    'action' => 'browse_catalog',
+                    'label' => 'Browse All Spices',
+                    'url' => route('home'),
+                ];
             } elseif ($intent === 'order_tracking') {
                 [$responseText, $actions] = $this->handleOrderTracking($effectiveUserId, $language, $message);
             } elseif ($intent === 'product_comparison') {
@@ -97,6 +170,42 @@ class CustomerAiAssistantService
                     'label' => 'Go to Shopping Cart',
                     'url' => route('cart.index'),
                 ];
+            } elseif ($intent === 'promotions_discounts') {
+                $responseText = $this->nlu->formatResponse('promotions_discounts', $language);
+                $actions[] = [
+                    'action' => 'view_cart',
+                    'label' => 'Go to Cart',
+                    'url' => route('cart.index'),
+                ];
+                $actions[] = [
+                    'action' => 'browse_catalog',
+                    'label' => 'Explore Spices',
+                    'url' => route('home'),
+                ];
+            } elseif ($intent === 'spice_quality') {
+                $responseText = $this->nlu->formatResponse('spice_quality', $language);
+                $actions[] = [
+                    'action' => 'browse_catalog',
+                    'label' => 'Explore Pure Spices',
+                    'url' => route('home'),
+                ];
+            } elseif ($intent === 'general_help') {
+                $responseText = $this->nlu->formatResponse('general_help', $language);
+                $actions[] = [
+                    'action' => 'browse_catalog',
+                    'label' => 'Explore Spices',
+                    'url' => route('home'),
+                ];
+                $actions[] = [
+                    'action' => 'view_orders',
+                    'label' => 'My Orders',
+                    'url' => route('account.orders'),
+                ];
+                $actions[] = [
+                    'action' => 'contact_support',
+                    'label' => 'Customer Support',
+                    'url' => url('/#contact'),
+                ];
             } elseif ($intent === 'greeting') {
                 $responseText = $this->nlu->formatResponse('greeting', $language);
                 $products = Product::query()->active()->orderByDesc('priority')->take(3)->get();
@@ -106,8 +215,31 @@ class CustomerAiAssistantService
                     'url' => route('home'),
                 ];
             } else {
-                // Product search or general recommendations
-                [$responseText, $products, $actions, $found] = $this->handleProductSearch($intent, $entities, $analysis, $language, $message, $effectiveUserId, $effectiveSessionId);
+                if (! $this->isExplicitProductSearch($intent, $entities, $message)) {
+                    // Conversational / general inquiry that is NOT a product search
+                    $responseText = $this->nlu->formatResponse('general_help', $language);
+                    $actions = [
+                        [
+                            'action' => 'browse_catalog',
+                            'label' => 'Explore Spices',
+                            'url' => route('home'),
+                        ],
+                        [
+                            'action' => 'view_orders',
+                            'label' => 'My Orders',
+                            'url' => route('account.orders'),
+                        ],
+                        [
+                            'action' => 'contact_support',
+                            'label' => 'Customer Support',
+                            'url' => url('/#contact'),
+                        ],
+                    ];
+                    $found = true;
+                } else {
+                    // Genuine product search or category explore or recommendation
+                    [$responseText, $products, $actions, $found] = $this->handleProductSearch($intent, $entities, $analysis, $language, $message, $effectiveUserId, $effectiveSessionId);
+                }
             }
 
             // 4. Format rich, safe product cards
@@ -204,6 +336,11 @@ class CustomerAiAssistantService
                     'label' => 'Log In to View Orders',
                     'url' => route('login'),
                 ],
+                [
+                    'action' => 'browse_spices',
+                    'label' => 'Explore Spices',
+                    'url' => route('home'),
+                ],
             ];
 
             return [$text, $actions];
@@ -244,22 +381,34 @@ class CustomerAiAssistantService
                     'label' => 'Track Delivery Status',
                     'url' => route('account.orders.track', ['order' => $order->order_number]),
                 ],
+                [
+                    'action' => 'all_orders',
+                    'label' => 'All Orders & Invoices',
+                    'url' => route('account.orders'),
+                ],
             ];
 
             return [trim($text), $actions];
         }
 
-        // Active orders only: exclude Delivered, Cancelled
-        $activeStatuses = ['Pending', 'Confirmed', 'Shipped', 'Out for Delivery', 'pending', 'confirmed', 'shipped', 'out_for_delivery'];
-        $activeOrders = Order::query()
+        // Query user's orders
+        $allOrders = Order::query()
             ->where('user_id', $userId)
-            ->whereIn('status', $activeStatuses)
             ->with('items')
             ->orderBy('created_at', 'desc')
+            ->take(5)
             ->get();
 
-        if ($activeOrders->isEmpty()) {
-            return ["You don't have any active orders to track.", [
+        if ($allOrders->isEmpty()) {
+            $text = match ($language) {
+                'gu' => 'તમારા અકાઉન્ટમાં હજી સુધી કોઈ ઓર્ડર મળ્યો નથી. અમારા તાજા અને શુદ્ધ મસાલા ખરીદવા માટે નીચે બટન ક્લિક કરો.',
+                'gujenglish' => 'Tamara account ma haji sudhi koi order malyo nathi. Fresh spices explore karva mate Explore Spices par click karo.',
+                'hi' => 'आपके खाते में अभी तक कोई ऑर्डर नहीं मिला है। हमारे ताज़ा मसाले ऑर्डर करने के लिए नीचे दिए गए बटन पर क्लिक करें।',
+                'hinglish' => 'Aapke account me abhi tak koi order nahi mila hai. Fresh spices explore karne ke liye neeche click karein.',
+                default => "You don't have any orders placed yet. Browse our pure spices to place your first order!",
+            };
+
+            return [$text, [
                 [
                     'action' => 'browse_spices',
                     'label' => 'Explore Spices',
@@ -268,20 +417,79 @@ class CustomerAiAssistantService
             ]];
         }
 
+        $isHistoryQuery = preg_match('/(?:past|history|previous|all|juna|junan|purane|pichhle|જુના|જુનણ|અગાઉના|ઇતિહાસ|બધા|જૂના|પહેલાના)/iu', $query) === 1;
+        $activeStatuses = ['Pending', 'Confirmed', 'Shipped', 'Out for Delivery', 'pending', 'confirmed', 'shipped', 'out_for_delivery'];
+        $activeOrders = $allOrders->filter(fn ($o) => in_array($o->status, $activeStatuses, true))->values();
+
+        // If customer asks for past orders or has no active orders (e.g. all delivered)
+        if ($isHistoryQuery || $activeOrders->isEmpty()) {
+            $orderLines = [];
+            $actions = [];
+            foreach ($allOrders->take(3) as $o) {
+                $statusLabel = ucfirst(str_replace('_', ' ', (string) $o->status));
+                $total = number_format((float) ($o->total_amount ?? $o->total ?? 0), 2);
+                $date = $o->created_at?->format('M d, Y') ?? '';
+                $orderLines[] = "• #{$o->order_number} — {$statusLabel} (₹{$total}, {$date})";
+                $actions[] = [
+                    'action' => 'view_order',
+                    'label' => "Order #{$o->order_number} ({$statusLabel})",
+                    'url' => route('account.orders.show', ['order' => $o->order_number]),
+                ];
+            }
+
+            $ordersSummary = implode("\n", $orderLines);
+
+            $text = match ($language) {
+                'gu' => "અહીં તમારા તાજેતરના ઓર્ડર્સ છે:\n{$ordersSummary}\n\nઓર્ડરની સંપૂર્ણ વિગતો અને ઇન્વોઇસ જોવા માટે નીચે આપેલા બટન પર ક્લિક કરો.",
+                'gujenglish' => "Ahiya tamara recent orders che:\n{$ordersSummary}\n\nFull details ane tax invoice check karva mate niche click karo.",
+                'hi' => "यहाँ आपके हाल के ऑर्डर्स हैं:\n{$ordersSummary}\n\nपूरी जानकारी और इनवॉयस देखने के लिए नीचे दिए गए बटन पर क्लिक करें।",
+                'hinglish' => "Yahan aapke recent orders hain:\n{$ordersSummary}\n\nFull details aur invoices check karne ke liye neeche click karein.",
+                default => "Here are your recent orders:\n{$ordersSummary}\n\nClick any order below to view full details and download tax invoices.",
+            };
+
+            $actions[] = [
+                'action' => 'all_orders',
+                'label' => 'View All Orders & Invoices',
+                'url' => route('account.orders'),
+            ];
+
+            return [$text, $actions];
+        }
+
         if ($activeOrders->count() > 1) {
-            $reply = "Which order would you like to check?\n";
+            $reply = match ($language) {
+                'gu' => "તમારા એકાઉન્ટમાં નીચે મુજબના સક્રિય ઓર્ડર્સ છે:\n",
+                'gujenglish' => "Tamara account ma multiple active orders che:\n",
+                'hi' => "आपके खाते में निम्नलिखित सक्रिय ऑर्डर्स हैं:\n",
+                'hinglish' => "Aapke account me ye active orders hain:\n",
+                default => "Which order would you like to check?\n",
+            };
+
             foreach ($activeOrders as $index => $o) {
                 $num = $index + 1;
                 $status = ucfirst(str_replace('_', ' ', (string) $o->status));
-                $reply .= "{$num}. #{$o->order_number} — {$status}\n";
+                $total = number_format((float) ($o->total_amount ?? $o->total ?? 0), 2);
+                $reply .= "{$num}. #{$o->order_number} — {$status} (₹{$total})\n";
             }
-            $reply .= 'Please select an order.';
+
+            $reply .= match ($language) {
+                'gu' => 'વિગતો જોવા માટે નીચે ઓર્ડર પસંદ કરો.',
+                'gujenglish' => 'Please select an order below.',
+                'hi' => 'विवरण देखने के लिए नीचे कोई ऑर्डर चुनें।',
+                default => 'Please select an order below.',
+            };
 
             $actions = $activeOrders->map(fn ($o) => [
                 'action' => 'view_order',
                 'label' => "#{$o->order_number} ({$o->status})",
                 'url' => route('account.orders.show', ['order' => $o->order_number]),
             ])->values()->all();
+
+            $actions[] = [
+                'action' => 'all_orders',
+                'label' => 'All Orders & Invoices',
+                'url' => route('account.orders'),
+            ];
 
             return [trim($reply), $actions];
         }
@@ -305,6 +513,11 @@ class CustomerAiAssistantService
                 'action' => 'track_order',
                 'label' => 'Track Delivery Status',
                 'url' => route('account.orders.track', ['order' => $single->order_number]),
+            ],
+            [
+                'action' => 'all_orders',
+                'label' => 'All Orders & Invoices',
+                'url' => route('account.orders'),
             ],
         ];
 
@@ -584,6 +797,54 @@ class CustomerAiAssistantService
     }
 
     /**
+     * Check if user is explicitly searching or inquiring about products/spices,
+     * vs asking general conversational questions, service help, or system inquiries.
+     *
+     * @param  array{category?: ?string, product_name?: ?string, max_budget?: ?float, keywords?: list<string>}  $entities
+     */
+    private function isExplicitProductSearch(string $intent, array $entities, string $query): bool
+    {
+        if (in_array($intent, ['product_search', 'category_explore', 'recommendation'], true)) {
+            return true;
+        }
+
+        if (! empty($entities['product_name']) || ! empty($entities['category'])) {
+            return true;
+        }
+
+        $lower = mb_strtolower($query, 'UTF-8');
+
+        // Check for spice names or buying action keywords
+        $spiceMarkers = [
+            'chilli', 'mirch', 'haldi', 'turmeric', 'elaichi', 'cardamom', 'saffron', 'kesar',
+            'garam masala', 'coriander', 'dhaniya', 'cumin', 'jeera', 'masala', 'spice', 'spices',
+            'marchu', 'halder', 'dhana', 'jira', 'chaat', 'tandoori',
+            'મરચું', 'હળદર', 'એલચી', 'કેસર', 'મસાલો', 'મસાલા', 'ધાણા', 'જીરું', 'ચાટ', 'તંદૂરી',
+            'मिर्च', 'हल्दी', 'इलायची', 'केसर', 'मसाला', 'मसाले', 'धनिया', 'जीरा',
+        ];
+
+        foreach ($spiceMarkers as $marker) {
+            if (str_contains($lower, $marker)) {
+                return true;
+            }
+        }
+
+        $buyingVerbs = [
+            'buy', 'purchase', 'looking for', 'sell', 'have', 'available', 'order spice',
+            'kharidvu', 'joiye che', 'malse', 'kharidna', 'chahiye', 'milega',
+            'ખરીદવું', 'જોઈએ છે', 'મળશે', 'खरीदना', 'चाहिए',
+        ];
+
+        foreach ($buyingVerbs as $verb) {
+            if (str_contains($lower, $verb)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Look up a single product matching entity name or keywords.
      *
      * @param  array{product_name?: ?string, keywords?: list<string>}  $entities
@@ -748,6 +1009,36 @@ class CustomerAiAssistantService
 
         return match ($language) {
             'gu' => match ($intent) {
+                'payment_methods' => [
+                    'કેશ ઓન ડિલિવરી મળશે?',
+                    'UPI QR કોડ પેમેન્ટ કેવી રીતે કરવું?',
+                    'મારો ઓર્ડર ક્યારે આવશે?',
+                ],
+                'refund_returns' => [
+                    'રીટર્ન પોલિસી શું છે?',
+                    'રીફંડ કેટલા દિવસમાં મળશે?',
+                    'ગ્રાહક સેવાનો સંપર્ક કેવી રીતે કરવો?',
+                ],
+                'order_help' => [
+                    'GST ઇન્વોઇસ કેવી રીતે ડાઉનલોડ કરવું?',
+                    'ઓર્ડર કેન્સલ થઈ શકે?',
+                    'શ્રેષ્ઠ મસાલા કલેક્શન બતાવો',
+                ],
+                'shipping_delivery' => [
+                    'ડિલિવરી કેટલા દિવસમાં થાય?',
+                    'ડિલિવરી ચાર્જ કેટલો છે?',
+                    'ઓર્ડર ટ્રેક કેવી રીતે કરવો?',
+                ],
+                'store_contact' => [
+                    'ગ્રાહક સહાય ફોન નંબર શું છે?',
+                    'દુકાનનું સરનામું શું છે?',
+                    'મારો ઓર્ડર ક્યાં પહોંચ્યો?',
+                ],
+                'cooking_recipe' => [
+                    'રસોઈમાં હળદરનો ઉપયોગ કેવી રીતે કરવો?',
+                    'ગરમ મસાલામાં કયા કયા મસાલા હોય?',
+                    'શ્રેષ્ઠ મસાલા બતાવો',
+                ],
                 'product_search', 'recommendation' => [
                     "{$spice} નો ભાવ કેટલો છે?",
                     'કાશ્મીરી મરચું અને હળદર ની સરખામણી કરો',
@@ -769,6 +1060,36 @@ class CustomerAiAssistantService
                 ],
             },
             'gujenglish' => match ($intent) {
+                'payment_methods' => [
+                    'COD available che?',
+                    'UPI QR payment kevi rite karvu?',
+                    'Maro order kyare aavse?',
+                ],
+                'refund_returns' => [
+                    'Return policy su che?',
+                    'Refund ketla divas ma aavse?',
+                    'Customer care no contact kem karvo?',
+                ],
+                'order_help' => [
+                    'GST invoice download kem karvanu?',
+                    'Order cancel thay sake?',
+                    'Best spices recommend karo',
+                ],
+                'shipping_delivery' => [
+                    'Delivery ketla divas ma thay?',
+                    'Delivery charge ketlo che?',
+                    'Order track kevi rite karvo?',
+                ],
+                'store_contact' => [
+                    'Customer support phone number su che?',
+                    'FlavourFlow store address su che?',
+                    'Maro order kya pohchyo?',
+                ],
+                'cooking_recipe' => [
+                    'Halder no use kevi rite karvo?',
+                    'Garam Masala ma su su hoy?',
+                    'Best spices recommend karo',
+                ],
                 'product_search', 'recommendation' => [
                     "{$spice} no bhav ketlo che?",
                     'Marchu ane halder compare karo',
@@ -790,6 +1111,36 @@ class CustomerAiAssistantService
                 ],
             },
             'hi' => match ($intent) {
+                'payment_methods' => [
+                    'क्या कैश ऑन डिलीवरी उपलब्ध है?',
+                    'UPI QR कोड से पेमेंट कैसे करें?',
+                    'मेरा ऑर्डर कब आएगा?',
+                ],
+                'refund_returns' => [
+                    'रिटर्न पॉलिसी क्या है?',
+                    'रिफंड कितने दिन में मिलेगा?',
+                    'कस्टमर केयर से संपर्क कैसे करें?',
+                ],
+                'order_help' => [
+                    'GST इनवॉयस कैसे डाउनलोड करें?',
+                    'क्या ऑर्डर कैंसिल हो सकता है?',
+                    'सबसे अच्छे मसाले सुझाएं',
+                ],
+                'shipping_delivery' => [
+                    'डिलीवरी कितने दिन में होगी?',
+                    'डिलीवरी चार्ज कितना है?',
+                    'ऑर्डर कैसे ट्रैक करें?',
+                ],
+                'store_contact' => [
+                    'कस्टमर सपोर्ट फोन नंबर क्या है?',
+                    'दुकान का पता क्या है?',
+                    'मेरा ऑर्डर कहाँ पहुंचा?',
+                ],
+                'cooking_recipe' => [
+                    'रोज़ाना खाने में हल्दी का उपयोग कैसे करें?',
+                    'गरम मसाला में कौन से मसाले होते हैं?',
+                    'सबसे अच्छे मसाले दिखाएं',
+                ],
                 'product_search', 'recommendation' => [
                     "{$spice} का क्या भाव है?",
                     'कश्मीरी मिर्च और हल्दी की तुलना करें',
@@ -811,6 +1162,36 @@ class CustomerAiAssistantService
                 ],
             },
             'hinglish' => match ($intent) {
+                'payment_methods' => [
+                    'COD available hai?',
+                    'UPI QR payment kaise karein?',
+                    'Mera order kab aayega?',
+                ],
+                'refund_returns' => [
+                    'Return policy kya hai?',
+                    'Refund kitne din me aayega?',
+                    'Customer care se contact kaise karein?',
+                ],
+                'order_help' => [
+                    'GST invoice kaise download karein?',
+                    'Order cancel ho sakta hai?',
+                    'Best spices recommend karo',
+                ],
+                'shipping_delivery' => [
+                    'Delivery kitne din me hogi?',
+                    'Delivery charge kitna hai?',
+                    'Order track kaise karein?',
+                ],
+                'store_contact' => [
+                    'Customer care number kya hai?',
+                    'Store address kya hai?',
+                    'Mera order kahan hai?',
+                ],
+                'cooking_recipe' => [
+                    'Haldi ka use kaise karein?',
+                    'Garam Masala me kya kya hota hai?',
+                    'Best spices recommend karo',
+                ],
                 'product_search', 'recommendation' => [
                     "{$spice} ka price kitna hai?",
                     'Mirch aur haldi compare karo',
@@ -832,6 +1213,36 @@ class CustomerAiAssistantService
                 ],
             },
             default => match ($intent) {
+                'payment_methods' => [
+                    'Can I pay via Cash on Delivery?',
+                    'How does UPI QR payment work?',
+                    'Where can I track my order?',
+                ],
+                'refund_returns' => [
+                    'What is the return policy?',
+                    'How many days for refund?',
+                    'How to contact customer care?',
+                ],
+                'order_help' => [
+                    'How to download GST invoice?',
+                    'Can I cancel my order?',
+                    'Recommend best spices',
+                ],
+                'shipping_delivery' => [
+                    'How many days for delivery?',
+                    'What are the delivery charges?',
+                    'How to track my order?',
+                ],
+                'store_contact' => [
+                    'What is customer support phone number?',
+                    'What is FlavourFlow store address?',
+                    'Where is my order?',
+                ],
+                'cooking_recipe' => [
+                    'How to use Turmeric in daily cooking?',
+                    'What spices are in Royal Garam Masala?',
+                    'Recommend signature blends',
+                ],
                 'product_search', 'recommendation' => [
                     "What is the price of {$spice}?",
                     'Compare Kashmiri Chilli and Turmeric',
@@ -896,8 +1307,8 @@ class CustomerAiAssistantService
         string $fallbackText,
         bool $found
     ): string {
-        // Strict deterministic guard: never query LLM for protected order tracking, delivery charges, or if provider unavailable
-        if (in_array($intent, ['order_tracking', 'delivery_charges'], true) || ! $this->provider->isAvailable() || $this->provider->getName() === 'null') {
+        // Strict deterministic guard: never query LLM for protected operational intents or if provider unavailable
+        if (in_array($intent, ['order_tracking', 'delivery_charges', 'payment_methods', 'refund_returns', 'order_help', 'shipping_delivery', 'store_contact', 'promotions_discounts', 'spice_quality', 'general_help', 'general'], true) || ! $this->provider->isAvailable() || $this->provider->getName() === 'null') {
             return $fallbackText;
         }
 

@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\PaymentGatewaySetting;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 
@@ -954,7 +955,7 @@ test('predictable demo tokens cannot confirm live orders when demo mode is not a
 });
 
 test('demo payment verification is strictly forbidden in production environment', function () {
-    $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class);
+    $this->withoutMiddleware(ValidateCsrfToken::class);
     $this->setting->update(['active_gateway' => 'demo']);
 
     // Simulate production environment

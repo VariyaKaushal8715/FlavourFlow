@@ -5,6 +5,7 @@ use App\Http\Controllers\Account\UserCouponController;
 use App\Http\Controllers\Account\UserProfileController;
 use App\Http\Controllers\Admin\AdminAiController;
 use App\Http\Controllers\Admin\AdminAnalyticsController;
+use App\Http\Controllers\Admin\AdminBusinessSettingController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminCouponController;
 use App\Http\Controllers\Admin\AdminCouponRewardRuleController;
@@ -101,6 +102,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/orders', [OrderController::class, 'index'])->name('orders');
             Route::get('/orders/{order:order_number}', [OrderController::class, 'show'])->name('orders.show');
             Route::get('/orders/{order:order_number}/track', [OrderController::class, 'track'])->name('orders.track');
+            Route::get('/orders/{order:order_number}/invoice', [OrderController::class, 'downloadReceipt'])->name('orders.invoice');
             Route::get('/orders/{order:order_number}/receipt', [OrderController::class, 'downloadReceipt'])->name('orders.receipt');
             Route::get('/orders/notifications/sse', [OrderController::class, 'sse'])->name('orders.notifications.sse');
             Route::post('/orders/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
@@ -159,8 +161,14 @@ Route::prefix('admin')
             Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus');
             Route::patch('/return-requests/{returnRequest}/status', [AdminOrderController::class, 'updateReturnStatus'])->name('returnRequests.updateStatus');
             Route::patch('/refund-requests/{refundRequest}/status', [AdminOrderController::class, 'updateRefundStatus'])->name('refundRequests.updateStatus');
+            Route::get('/orders/{order}/invoice', [AdminOrderController::class, 'downloadReceipt'])->name('orders.invoice.download');
             Route::get('/orders/{order}/receipt', [AdminOrderController::class, 'downloadReceipt'])->name('orders.receipt.download');
             Route::get('/api/new-orders', [AdminOrderController::class, 'newOrders'])->name('api.newOrders');
+
+            // Business & Invoicing Settings
+            Route::get('/business/settings', [AdminBusinessSettingController::class, 'edit'])->name('business.settings');
+            Route::put('/business/settings', [AdminBusinessSettingController::class, 'update'])->name('business.settings.update');
+            Route::delete('/business/settings/logo', [AdminBusinessSettingController::class, 'destroyLogo'])->name('business.settings.logo.destroy');
 
             // Payments & Settings
             Route::get('/payments', [AdminPaymentController::class, 'index'])->name('payments.index');

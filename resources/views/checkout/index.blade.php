@@ -151,25 +151,25 @@
                         @php
                             $defaultSelectedMethod = old('payment_method');
                             if (! $defaultSelectedMethod) {
-                                if (($activeGateway ?? 'demo') === 'razorpay' && ($isRazorpayConfigured ?? false)) {
+                                if (($isUpiConfigured ?? false) && ($isUpiEnabled ?? true)) {
+                                    $defaultSelectedMethod = 'upi';
+                                } elseif (($activeGateway ?? 'demo') === 'razorpay' && ($isRazorpayConfigured ?? false)) {
                                     $defaultSelectedMethod = 'razorpay';
                                 } elseif (($activeGateway ?? 'demo') === 'cashfree' && ($isCashfreeConfigured ?? false)) {
                                     $defaultSelectedMethod = 'cashfree';
-                                } elseif (($activeGateway ?? 'demo') === 'demo') {
-                                    $defaultSelectedMethod = 'demo';
                                 } elseif ($isRazorpayConfigured ?? false) {
                                     $defaultSelectedMethod = 'razorpay';
                                 } elseif ($isCashfreeConfigured ?? false) {
                                     $defaultSelectedMethod = 'cashfree';
                                 } else {
-                                    $defaultSelectedMethod = 'demo';
+                                    $defaultSelectedMethod = 'cod';
                                 }
                             }
                         @endphp
 
                         <div class="mt-5 space-y-4">
                             {{-- Option 1: Demo Payment (Zero Credential Demo Mode) --}}
-                            <label class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'demo' ? 'border-amber-400 bg-amber-50/50' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-amber-50/40">
+                            <label data-method="demo" class="payment-method-card flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'demo' ? 'border-amber-400 bg-amber-50/50' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-amber-50/40">
                                 <input
                                     type="radio"
                                     name="payment_method"
@@ -221,7 +221,7 @@
                             </div>
 
                             {{-- Option 2: Cash on Delivery (COD) --}}
-                            <label class="flex cursor-pointer items-start gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/10 p-4 transition hover:bg-amber-50/20">
+                            <label data-method="cod" class="payment-method-card flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'cod' ? 'border-amber-300 bg-amber-50/30' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-amber-50/20">
                                 <input
                                     type="radio"
                                     name="payment_method"
@@ -238,7 +238,7 @@
 
                             {{-- Option 3: Razorpay Payment Gateway --}}
                             @if ($isRazorpayConfigured ?? false)
-                                <label class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'razorpay' ? 'border-red-400 bg-red-50/30' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-red-50/20">
+                                <label data-method="razorpay" class="payment-method-card flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'razorpay' ? 'border-red-400 bg-red-50/30' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-red-50/20">
                                     <input
                                         type="radio"
                                         name="payment_method"
@@ -281,7 +281,7 @@
 
                             {{-- Option 4: Cashfree Payments Gateway --}}
                             @if ($isCashfreeConfigured ?? false)
-                                <label class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'cashfree' ? 'border-emerald-400 bg-emerald-50/30' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-emerald-50/20">
+                                <label data-method="cashfree" class="payment-method-card flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'cashfree' ? 'border-emerald-400 bg-emerald-50/30' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-emerald-50/20">
                                     <input
                                         type="radio"
                                         name="payment_method"
@@ -324,7 +324,7 @@
 
                             {{-- Option 5: UPI QR Code Payment (Manual Confirmation Required) --}}
                             @if (($isUpiConfigured ?? false) && ($isUpiEnabled ?? true))
-                                <label class="flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'upi' ? 'border-indigo-400 bg-indigo-50/30' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-indigo-50/20">
+                                <label data-method="upi" class="payment-method-card flex cursor-pointer items-start gap-4 rounded-2xl border-2 {{ $defaultSelectedMethod === 'upi' ? 'border-indigo-400 bg-indigo-50/30' : 'border-zinc-200 bg-white' }} p-4 transition hover:bg-indigo-50/20">
                                     <input
                                         type="radio"
                                         name="payment_method"
@@ -491,16 +491,76 @@
                             const razorpayUI = document.getElementById('razorpay-payment-ui');
                             const cashfreeUI = document.getElementById('cashfree-payment-ui');
                             const onlineUI = document.getElementById('online-payment-ui');
-                            if (demoUI) demoUI.classList.toggle('hidden', method !== 'demo');
-                            if (upiUI) upiUI.classList.toggle('hidden', method !== 'upi');
-                            if (razorpayUI) razorpayUI.classList.toggle('hidden', method !== 'razorpay');
-                            if (cashfreeUI) cashfreeUI.classList.toggle('hidden', method !== 'cashfree');
-                            if (onlineUI) onlineUI.classList.toggle('hidden', method !== 'online');
+
+                            if (demoUI) {
+                                if (method === 'demo') {
+                                    demoUI.classList.remove('hidden');
+                                } else {
+                                    demoUI.classList.add('hidden');
+                                }
+                            }
+                            if (upiUI) {
+                                if (method === 'upi') {
+                                    upiUI.classList.remove('hidden');
+                                } else {
+                                    upiUI.classList.add('hidden');
+                                }
+                            }
+                            if (razorpayUI) {
+                                if (method === 'razorpay') {
+                                    razorpayUI.classList.remove('hidden');
+                                } else {
+                                    razorpayUI.classList.add('hidden');
+                                }
+                            }
+                            if (cashfreeUI) {
+                                if (method === 'cashfree') {
+                                    cashfreeUI.classList.remove('hidden');
+                                } else {
+                                    cashfreeUI.classList.add('hidden');
+                                }
+                            }
+                            if (onlineUI) {
+                                if (method === 'online') {
+                                    onlineUI.classList.remove('hidden');
+                                } else {
+                                    onlineUI.classList.add('hidden');
+                                }
+                            }
+
+                            // Dynamic card border highlighting
+                            document.querySelectorAll('.payment-method-card').forEach(card => {
+                                const cardMethod = card.getAttribute('data-method');
+                                if (cardMethod === method) {
+                                    card.classList.remove('border-zinc-200', 'bg-white');
+                                    if (method === 'demo') {
+                                        card.classList.add('border-amber-400', 'bg-amber-50/50');
+                                    } else if (method === 'upi') {
+                                        card.classList.add('border-indigo-400', 'bg-indigo-50/30');
+                                    } else if (method === 'razorpay') {
+                                        card.classList.add('border-red-400', 'bg-red-50/30');
+                                    } else if (method === 'cashfree') {
+                                        card.classList.add('border-emerald-400', 'bg-emerald-50/30');
+                                    } else if (method === 'cod') {
+                                        card.classList.add('border-amber-300', 'bg-amber-50/30');
+                                    }
+                                } else {
+                                    card.classList.remove(
+                                        'border-amber-400', 'bg-amber-50/50',
+                                        'border-indigo-400', 'bg-indigo-50/30',
+                                        'border-red-400', 'bg-red-50/30',
+                                        'border-emerald-400', 'bg-emerald-50/30',
+                                        'border-amber-300', 'bg-amber-50/30'
+                                    );
+                                    card.classList.add('border-zinc-200', 'bg-white');
+                                }
+                            });
+
                             updateSubmitBtnText(method);
                         };
 
                         // Initialize button text and panels based on initial selection
-                        const initialMethod = form.querySelector('input[name="payment_method"]:checked')?.value || 'demo';
+                        const initialMethod = form.querySelector('input[name="payment_method"]:checked')?.value || '{{ $defaultSelectedMethod }}';
                         window.showPaymentUI(initialMethod);
 
                         // Dynamic button text based on payment selection
@@ -535,7 +595,25 @@
                                     },
                                     body: formData
                                 })
-                                .then(res => res.json())
+                                .then(async res => {
+                                    const contentType = res.headers.get('content-type') || '';
+                                    let data = {};
+                                    if (contentType.includes('application/json')) {
+                                        data = await res.json();
+                                    } else {
+                                        throw new Error('Server returned an unexpected response (status ' + res.status + ').');
+                                    }
+
+                                    if (!res.ok) {
+                                        if (data.errors) {
+                                            const errorMsg = Object.values(data.errors).flat().join('\n');
+                                            throw new Error(errorMsg);
+                                        }
+                                        throw new Error(data.message || 'Processing failed (status ' + res.status + ').');
+                                    }
+
+                                    return data;
+                                })
                                 .then(data => {
                                     // Handle Demo Mode outcome (Zero-Credential Simulated Flow)
                                     if (data.is_demo || data.gateway === 'demo') {

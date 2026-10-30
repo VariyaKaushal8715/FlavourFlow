@@ -278,3 +278,177 @@ test('activity tracking respects privacy consent', function () {
     // No new event should be stored for declined user
     expect(AiEvent::count())->toBe($beforeDeclinedCount);
 });
+
+test('assistant accurately answers payment, refund, order, shipping, contact, and recipe questions across multiple languages without forcing product recommendations', function () {
+    Product::factory()->create([
+        'name' => 'Royal Garam Masala',
+        'category' => 'Blended Spices',
+        'price' => 199.00,
+        'quantity' => 20,
+        'is_active' => true,
+    ]);
+
+    // 1. Payment Methods - GujEnglish
+    $resPaymentGuj = $this->postJson(route('ai.chat'), [
+        'message' => 'payment kem karvanu? UPI QR scan ke COD available che?',
+    ]);
+    $resPaymentGuj->assertOk();
+    expect($resPaymentGuj['response']['intent'])->toBe('payment_methods');
+    expect($resPaymentGuj['response']['language'])->toBe('gujenglish');
+    expect($resPaymentGuj['response']['message'])->toContain('UPI QR Code');
+    expect($resPaymentGuj['response']['message'])->toContain('Cash on Delivery');
+    expect($resPaymentGuj['response']['products'])->toBeEmpty(); // Does not force random products!
+
+    // 2. Payment Methods - Gujarati Script
+    $resPaymentGu = $this->postJson(route('ai.chat'), [
+        'message' => 'પેમેન્ટ કરવાના વિકલ્પો કયા છે? કેશ ઓન ડિલિવરી મળશે?',
+    ]);
+    $resPaymentGu->assertOk();
+    expect($resPaymentGu['response']['intent'])->toBe('payment_methods');
+    expect($resPaymentGu['response']['language'])->toBe('gu');
+    expect($resPaymentGu['response']['message'])->toContain('કેશ ઓન ડિલિવરી');
+    expect($resPaymentGu['response']['products'])->toBeEmpty();
+
+    // 3. Return & Refund Policy - GujEnglish
+    $resRefund = $this->postJson(route('ai.chat'), [
+        'message' => 'return policy su che? paisa pacha malse?',
+    ]);
+    $resRefund->assertOk();
+    expect($resRefund['response']['intent'])->toBe('refund_returns');
+    expect($resRefund['response']['message'])->toContain('7-Day Easy Returns');
+    expect($resRefund['response']['products'])->toBeEmpty();
+
+    // 4. Return & Refund Policy - Hindi
+    $resRefundHi = $this->postJson(route('ai.chat'), [
+        'message' => 'रिटर्न पॉलिसी क्या है? पैसे वापस कैसे मिलेंगे?',
+    ]);
+    $resRefundHi->assertOk();
+    expect($resRefundHi['response']['intent'])->toBe('refund_returns');
+    expect($resRefundHi['response']['language'])->toBe('hi');
+    expect($resRefundHi['response']['message'])->toContain('7 दिन की रिटर्न सुविधा');
+    expect($resRefundHi['response']['products'])->toBeEmpty();
+
+    // 5. Invoicing & Order Help - GujEnglish
+    $resInvoice = $this->postJson(route('ai.chat'), [
+        'message' => 'GST invoice download kem karvanu? bill malse?',
+    ]);
+    $resInvoice->assertOk();
+    expect($resInvoice['response']['intent'])->toBe('order_help');
+    expect($resInvoice['response']['message'])->toContain('GST');
+    expect($resInvoice['response']['message'])->toContain('invoice');
+    expect($resInvoice['response']['products'])->toBeEmpty();
+
+    // 6. Shipping & Delivery Timeline - GujEnglish
+    $resShipping = $this->postJson(route('ai.chat'), [
+        'message' => 'delivery ketla divas ma thay? delivery time su che?',
+    ]);
+    $resShipping->assertOk();
+    expect($resShipping['response']['intent'])->toBe('shipping_delivery');
+    expect($resShipping['response']['message'])->toContain('2 to 5 business days');
+    expect($resShipping['response']['products'])->toBeEmpty();
+
+    // 7. Store Contact - English
+    $resContact = $this->postJson(route('ai.chat'), [
+        'message' => 'What is your customer support phone number and store address?',
+    ]);
+    $resContact->assertOk();
+    expect($resContact['response']['intent'])->toBe('store_contact');
+    expect($resContact['response']['message'])->toContain('support@flavourflow.test');
+    expect($resContact['response']['message'])->toContain('+91 98765 43210');
+    expect($resContact['response']['products'])->toBeEmpty();
+
+    // 8. Cooking & Recipes - GujEnglish
+    $resRecipe = $this->postJson(route('ai.chat'), [
+        'message' => 'chai masala kevi rite banavvu? recipe su che?',
+    ]);
+    $resRecipe->assertOk();
+    expect($resRecipe['response']['intent'])->toBe('cooking_recipe');
+    expect($resRecipe['response']['message'])->toContain('FlavourFlow Cooking');
+});
+
+test('assistant correctly handles Gujarati order queries, past orders, discounts, quality, and general help without dumping random spice cards', function () {
+    Product::factory()->create([
+        'name' => 'Royal Garam Masala',
+        'category' => 'Blended Spices',
+        'price' => 149.00,
+        'quantity' => 15,
+        'is_active' => true,
+    ]);
+
+    // 1. Guest single-word Gujarati order query: "ઓર્ડર"
+    $guestOrderRes = $this->postJson(route('ai.chat'), [
+        'message' => 'ઓર્ડર',
+    ]);
+    $guestOrderRes->assertOk();
+    expect($guestOrderRes['response']['intent'])->toBe('order_tracking');
+    expect($guestOrderRes['response']['language'])->toBe('gu');
+    expect($guestOrderRes['response']['message'])->not->toContain('કૅટેલોગમાં ઉપલબ્ધ નથી');
+    expect($guestOrderRes['response']['products'])->toBeEmpty();
+    expect($guestOrderRes['response']['actions'][0]['action'])->toBe('login');
+
+    // 2. Authenticated user Gujarati past orders query: "મારા જુનણ ઓર્ડર્સ"
+    $user = User::factory()->create();
+
+    // 2a. When user has NO orders yet
+    $noOrderRes = $this->actingAs($user)->postJson(route('ai.chat'), [
+        'message' => 'ઓર્ડર',
+    ]);
+    $noOrderRes->assertOk();
+    expect($noOrderRes['response']['intent'])->toBe('order_tracking');
+    expect($noOrderRes['response']['language'])->toBe('gu');
+    expect($noOrderRes['response']['message'])->toContain('કોઈ ઓર્ડર મળ્યો નથી');
+    expect($noOrderRes['response']['products'])->toBeEmpty();
+
+    // 2b. When user has orders
+    $deliveredOrder = Order::factory()->create([
+        'user_id' => $user->id,
+        'order_number' => 'ORD-GUJ-999',
+        'status' => 'delivered',
+        'total_amount' => 350.00,
+    ]);
+
+    $authPastOrderRes = $this->actingAs($user)->postJson(route('ai.chat'), [
+        'message' => 'મારા જુનણ ઓર્ડર્સ',
+    ]);
+    $authPastOrderRes->assertOk();
+    expect($authPastOrderRes['response']['intent'])->toBe('order_tracking');
+    expect($authPastOrderRes['response']['language'])->toBe('gu');
+    expect($authPastOrderRes['response']['message'])->toContain('ORD-GUJ-999');
+    expect($authPastOrderRes['response']['message'])->not->toContain('કૅટેલોગમાં ઉપલબ્ધ નથી');
+    expect($authPastOrderRes['response']['products'])->toBeEmpty();
+
+    // 3. Single-word English order query: "order"
+    $enOrderRes = $this->postJson(route('ai.chat'), [
+        'message' => 'order',
+    ]);
+    $enOrderRes->assertOk();
+    expect($enOrderRes['response']['intent'])->toBe('order_tracking');
+    expect($enOrderRes['response']['products'])->toBeEmpty();
+
+    // 4. Discounts & Coupons query: "discount malse? koi coupon code che?"
+    $discountRes = $this->postJson(route('ai.chat'), [
+        'message' => 'discount malse? koi coupon code che?',
+    ]);
+    $discountRes->assertOk();
+    expect($discountRes['response']['intent'])->toBe('promotions_discounts');
+    expect($discountRes['response']['message'])->toContain('WELCOME10');
+    expect($discountRes['response']['products'])->toBeEmpty();
+
+    // 5. Spice Quality & Authenticity query: "quality kevi che? pure che?"
+    $qualityRes = $this->postJson(route('ai.chat'), [
+        'message' => 'quality kevi che? pure che?',
+    ]);
+    $qualityRes->assertOk();
+    expect($qualityRes['response']['intent'])->toBe('spice_quality');
+    expect($qualityRes['response']['message'])->toContain('100%');
+    expect($qualityRes['response']['products'])->toBeEmpty();
+
+    // 6. General Help & Services Guide: "તમે શું કરી શકો?"
+    $helpRes = $this->postJson(route('ai.chat'), [
+        'message' => 'તમે શું કરી શકો?',
+    ]);
+    $helpRes->assertOk();
+    expect($helpRes['response']['intent'])->toBe('general_help');
+    expect($helpRes['response']['message'])->not->toContain('કૅટેલોગમાં ઉપલબ્ધ નથી');
+    expect($helpRes['response']['products'])->toBeEmpty();
+});

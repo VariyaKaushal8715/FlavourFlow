@@ -11,7 +11,7 @@ use App\Models\Order;
 use App\Models\OrderNotification;
 use App\Models\RefundRequest;
 use App\Models\ReturnRequest;
-use App\Support\PdfReceiptGenerator;
+use App\Services\InvoiceService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -156,12 +156,15 @@ class OrderController extends Controller
 
         $order->load(['items.product', 'user']);
 
-        $pdfGenerator = new PdfReceiptGenerator;
-        $pdfContent = $pdfGenerator->generate($order);
+        $invoiceService = app(InvoiceService::class);
+        $pdfContent = $invoiceService->generatePdf($order);
+
+        $filename = ($order->fresh()->invoice_number ?: 'Invoice_'.$order->order_number).'.pdf';
+        $disposition = $request->has('inline') ? 'inline' : 'attachment';
 
         return response($pdfContent, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="Receipt_'.$order->order_number.'.pdf"',
+            'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
             'Content-Length' => strlen($pdfContent),
         ]);
     }

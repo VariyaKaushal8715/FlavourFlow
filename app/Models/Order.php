@@ -47,6 +47,9 @@ class Order extends Model
         'otp_verified_at',
         'payment_verified_at',
         'payment_status',
+        'invoice_number',
+        'invoiced_at',
+        'invoice_snapshot',
     ];
 
     protected $casts = [
@@ -64,6 +67,8 @@ class Order extends Model
         'otp_sent_at' => 'datetime',
         'otp_verified_at' => 'datetime',
         'payment_verified_at' => 'datetime',
+        'invoiced_at' => 'datetime',
+        'invoice_snapshot' => 'array',
     ];
 
     protected static function booted(): void
