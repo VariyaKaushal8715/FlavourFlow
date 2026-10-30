@@ -7,6 +7,7 @@ use App\AI\Contracts\AiAnalyzerInterface;
 use App\AI\Contracts\AiBrainInterface;
 use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Contracts\AiEventTrackerInterface;
+use App\AI\Contracts\AiKnowledgeBaseInterface;
 use App\AI\Contracts\AiLanguageUnderstandingInterface;
 use App\AI\Contracts\AiProviderInterface;
 use App\AI\Contracts\AiRecommendationEngineInterface;
@@ -216,8 +217,26 @@ class CustomerAiAssistantService
                 ];
             } else {
                 if (! $this->isExplicitProductSearch($intent, $entities, $message)) {
-                    // Conversational / general inquiry that is NOT a product search
-                    $responseText = $this->nlu->formatResponse('general_help', $language);
+                    // Check if query matches our E-commerce Knowledge Base or store policies
+                    $kbAnswer = null;
+                    try {
+                        /** @var AiKnowledgeBaseInterface $kb */
+                        $kb = app(AiKnowledgeBaseInterface::class);
+                        $kbResults = $kb->search($message, limit: 1);
+                        if (! empty($kbResults) && ($kbResults[0]['confidence'] ?? 0) >= 0.5) {
+                            $top = $kbResults[0];
+                            $kbAnswer = "📌 **{$top['title']}**\n\n{$top['concept']}";
+                            if (! empty($top['rules'])) {
+                                $topRules = array_slice($top['rules'], 0, 2);
+                                $kbAnswer .= "\n\n**Key Points:**\n• ".implode("\n• ", $topRules);
+                            }
+                        }
+                    } catch (Throwable) {
+                        $kbAnswer = null;
+                    }
+
+                    // Conversational / general inquiry
+                    $responseText = $kbAnswer ?? $this->nlu->formatResponse('general_help', $language);
                     $actions = [
                         [
                             'action' => 'browse_catalog',
@@ -439,7 +458,17 @@ class CustomerAiAssistantService
 
             $ordersSummary = implode("\n", $orderLines);
 
-            $text = match ($language) {
+            $noActivePrefix = (! $isHistoryQuery && $activeOrders->isEmpty())
+                ? match ($language) {
+                    'gu' => "તમારી પાસે ટ્રેક કરવા માટે કોઈ સક્રિય ઓર્ડર નથી.\n\n",
+                    'gujenglish' => "Tamari pase track karva mate koi active order nathi.\n\n",
+                    'hi' => "आपके पास ट्रैक करने के लिए कोई सक्रिय ऑर्डर नहीं है।\n\n",
+                    'hinglish' => "Aapke paas track karne ke liye koi active order nahi hai.\n\n",
+                    default => "You don't have any active orders to track.\n\n",
+                }
+            : '';
+
+            $text = $noActivePrefix.match ($language) {
                 'gu' => "અહીં તમારા તાજેતરના ઓર્ડર્સ છે:\n{$ordersSummary}\n\nઓર્ડરની સંપૂર્ણ વિગતો અને ઇન્વોઇસ જોવા માટે નીચે આપેલા બટન પર ક્લિક કરો.",
                 'gujenglish' => "Ahiya tamara recent orders che:\n{$ordersSummary}\n\nFull details ane tax invoice check karva mate niche click karo.",
                 'hi' => "यहाँ आपके हाल के ऑर्डर्स हैं:\n{$ordersSummary}\n\nपूरी जानकारी और इनवॉयस देखने के लिए नीचे दिए गए बटन पर क्लिक करें।",

@@ -239,6 +239,12 @@ Route::prefix('admin')
                 ->middleware('throttle:10,1')
                 ->name('ai.providerTest');
 
+            // AI Knowledge Curriculum & Domain Consultant (Admin)
+            Route::post('/ai/knowledge/seed', [AdminAiController::class, 'seedCurriculum'])->name('ai.knowledge.seed');
+            Route::post('/ai/knowledge/consult', [AdminAiController::class, 'consultSimulate'])->name('ai.knowledge.consult');
+            Route::get('/ai/knowledge/search', [AdminAiController::class, 'searchKnowledge'])->name('ai.knowledge.search');
+            Route::post('/ai/knowledge/gaps/{gap}/resolve', [AdminAiController::class, 'resolveGap'])->name('ai.knowledge.gap.resolve');
+
             Route::post('/logout', [AdminSessionController::class, 'destroy'])->name('logout');
         });
     });

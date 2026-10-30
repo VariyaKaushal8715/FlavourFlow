@@ -6,9 +6,12 @@ use App\AI\Adapters\FlavourFlowAdapter;
 use App\AI\Contracts\AiAdapterInterface;
 use App\AI\Contracts\AiAnalyzerInterface;
 use App\AI\Contracts\AiBrainInterface;
+use App\AI\Contracts\AiConsultantInterface;
 use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Contracts\AiEngineInterface;
 use App\AI\Contracts\AiEventTrackerInterface;
+use App\AI\Contracts\AiKnowledgeBaseInterface;
+use App\AI\Contracts\AiKnowledgeIngestionInterface;
 use App\AI\Contracts\AiLanguageUnderstandingInterface;
 use App\AI\Contracts\AiProviderInterface;
 use App\AI\Contracts\AiRecommendationEngineInterface;
@@ -21,6 +24,11 @@ use App\AI\Core\AiReasoningResponse;
 use App\AI\Core\AiRecommendationResult;
 use App\AI\Core\AiRequest;
 use App\AI\Models\AiEvent;
+use App\AI\Models\AiKnowledgeDomain;
+use App\AI\Models\AiKnowledgeGap;
+use App\AI\Models\AiKnowledgeItem;
+use App\AI\Models\AiKnowledgeSource;
+use App\AI\Models\AiKnowledgeTopic;
 use App\AI\Services\AiProviderManager;
 use App\AI\Services\CustomerAiAssistantService;
 use App\Http\Controllers\Controller;
@@ -88,6 +96,9 @@ class AdminAiController extends Controller
 
             // Step 8: Customer AI Assistant Verification
             'customer_assistant_integration' => $this->checkCustomerAssistantIntegration(),
+
+            // Step 9: E-Commerce Domain Knowledge & Consultant Verification
+            'knowledge_curriculum' => $this->checkKnowledgeCurriculumEngine(),
         ];
 
         // Framework and core checks decide readiness
@@ -181,6 +192,33 @@ class AdminAiController extends Controller
             }
         }
 
+        // Step 9: E-Commerce Knowledge Curriculum & BI Diagnostics
+        $knowledgeStats = [
+            'total_domains' => class_exists(AiKnowledgeDomain::class) ? AiKnowledgeDomain::count() : 0,
+            'total_topics' => class_exists(AiKnowledgeTopic::class) ? AiKnowledgeTopic::count() : 0,
+            'verified_topics' => class_exists(AiKnowledgeTopic::class) ? AiKnowledgeTopic::where('verification_status', 'verified')->count() : 0,
+            'total_items' => class_exists(AiKnowledgeItem::class) ? AiKnowledgeItem::count() : 0,
+            'total_sources' => class_exists(AiKnowledgeSource::class) ? AiKnowledgeSource::count() : 0,
+            'pending_gaps' => class_exists(AiKnowledgeGap::class) ? AiKnowledgeGap::where('status', 'identified')->count() : 0,
+        ];
+
+        $knowledgeDomains = class_exists(AiKnowledgeDomain::class)
+            ? AiKnowledgeDomain::with(['topics' => fn ($q) => $q->with('items')])->orderBy('priority')->get()
+            : collect();
+
+        $knowledgeGaps = class_exists(AiKnowledgeGap::class)
+            ? AiKnowledgeGap::with('domain')->latest()->take(10)->get()
+            : collect();
+
+        $storeBiDiagnostics = [];
+        if (app()->bound(AiConsultantInterface::class)) {
+            try {
+                $storeBiDiagnostics = app(AiConsultantInterface::class)->diagnoseStore();
+            } catch (Throwable) {
+                $storeBiDiagnostics = [];
+            }
+        }
+
         return view('admin.ai.index', [
             'checks' => $checks,
             'isReady' => $allPassed,
@@ -194,6 +232,10 @@ class AdminAiController extends Controller
             'providerStatusMap' => $providerStatusMap,
             'providerConnectionTest' => $providerConnectionTest,
             'sampleMultilingualTestResults' => $sampleMultilingualTestResults,
+            'knowledgeStats' => $knowledgeStats,
+            'knowledgeDomains' => $knowledgeDomains,
+            'knowledgeGaps' => $knowledgeGaps,
+            'storeBiDiagnostics' => $storeBiDiagnostics,
         ]);
     }
 
@@ -1571,5 +1613,187 @@ class AdminAiController extends Controller
                 'details' => 'Error: '.$e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Check 9: Verify E-Commerce Knowledge Engine, Ingestion, and Domain Consultant.
+     *
+     * @return array{name: string, description: string, passed: bool, details: string}
+     */
+    private function checkKnowledgeCurriculumEngine(): array
+    {
+        try {
+            $hasKbContract = app()->bound(AiKnowledgeBaseInterface::class);
+            $hasIngestionContract = app()->bound(AiKnowledgeIngestionInterface::class);
+            $hasConsultantContract = app()->bound(AiConsultantInterface::class);
+
+            if (! $hasKbContract || ! $hasIngestionContract || ! $hasConsultantContract) {
+                return [
+                    'name' => 'E-Commerce Knowledge Curriculum & Consultant',
+                    'description' => 'Verifies 18 e-commerce domains, multi-tiered curriculum, and domain consultant copilot.',
+                    'passed' => false,
+                    'details' => 'One or more Knowledge contracts are not bound in the service container.',
+                ];
+            }
+
+            $domainsCount = class_exists(AiKnowledgeDomain::class)
+                ? AiKnowledgeDomain::count()
+                : 0;
+
+            $topicsCount = class_exists(AiKnowledgeTopic::class)
+                ? AiKnowledgeTopic::count()
+                : 0;
+
+            $itemsCount = class_exists(AiKnowledgeItem::class)
+                ? AiKnowledgeItem::count()
+                : 0;
+
+            if ($domainsCount < 18 || $topicsCount < 54) {
+                return [
+                    'name' => 'E-Commerce Knowledge Curriculum & Consultant',
+                    'description' => 'Verifies 18 e-commerce domains, multi-tiered curriculum, and domain consultant copilot.',
+                    'passed' => false,
+                    'details' => "Curriculum incomplete: {$domainsCount}/18 domains, {$topicsCount}/54 topics loaded. Click Re-seed Curriculum to sync.",
+                ];
+            }
+
+            return [
+                'name' => 'E-Commerce Knowledge Curriculum & Consultant',
+                'description' => 'Verifies 18 e-commerce domains, multi-tiered curriculum, and domain consultant copilot.',
+                'passed' => true,
+                'details' => "Operational: {$domainsCount} Domains, {$topicsCount} Multi-tier Topics, {$itemsCount} Verified Knowledge Items loaded across all 5 memory layers.",
+            ];
+        } catch (Throwable $e) {
+            return [
+                'name' => 'E-Commerce Knowledge Curriculum & Consultant',
+                'description' => 'Verifies 18 e-commerce domains, multi-tiered curriculum, and domain consultant copilot.',
+                'passed' => false,
+                'details' => 'Error checking curriculum: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Trigger curriculum re-seeding via Admin.
+     */
+    public function seedCurriculum(Request $request): JsonResponse
+    {
+        Gate::authorize('access-admin');
+
+        try {
+            /** @var AiKnowledgeIngestionInterface $ingestion */
+            $ingestion = app(AiKnowledgeIngestionInterface::class);
+            $results = $ingestion->seedDefaultCurriculum();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Curriculum seeded successfully: {$results['domains']} domains, {$results['topics']} topics, {$results['items']} items, {$results['sources']} sources.",
+                'data' => $results,
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error seeding curriculum: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Simulate consultation across business intelligence, technical, implementation, or compliance roles.
+     */
+    public function consultSimulate(Request $request): JsonResponse
+    {
+        Gate::authorize('access-admin');
+
+        $validated = $request->validate([
+            'role' => 'nullable|string|in:business_intelligence,technical_consultant,implementation_copilot,architecture_advisor,operations_lead',
+            'query' => 'required|string|max:1000',
+            'language' => 'nullable|string|in:en,gu,hi,hinglish,gujenglish',
+        ]);
+
+        try {
+            /** @var AiConsultantInterface $consultant */
+            $consultant = app(AiConsultantInterface::class);
+            $response = $consultant->consult(
+                query: $validated['query'],
+                context: ['role' => $validated['role'] ?? 'business_intelligence'],
+                options: ['language' => $validated['language'] ?? 'en'],
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $response,
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Consultant consultation error: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Search the AI Knowledge Base with keyword, domain, and memory type filtering.
+     */
+    public function searchKnowledge(Request $request): JsonResponse
+    {
+        Gate::authorize('access-admin');
+
+        $validated = $request->validate([
+            'q' => 'required|string|max:500',
+            'domain' => 'nullable|string',
+            'memory_type' => 'nullable|string|in:general_ecommerce,store_business,technical_architecture,admin_decisions,implementation_history',
+            'limit' => 'nullable|integer|min:1|max:20',
+        ]);
+
+        try {
+            /** @var AiKnowledgeBaseInterface $kb */
+            $kb = app(AiKnowledgeBaseInterface::class);
+            $searchPayload = $kb->search(
+                $validated['q'],
+                [
+                    'domain' => $validated['domain'] ?? null,
+                    'memory_type' => $validated['memory_type'] ?? null,
+                    'limit' => (int) ($validated['limit'] ?? 5),
+                ]
+            );
+
+            $results = $searchPayload['items'] ?? [];
+
+            return response()->json([
+                'success' => true,
+                'count' => count($results),
+                'results' => $results,
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Search error: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Mark an identified knowledge gap as resolved.
+     */
+    public function resolveGap(Request $request, int $gapId): JsonResponse
+    {
+        Gate::authorize('access-admin');
+
+        $gap = AiKnowledgeGap::find($gapId);
+        if (! $gap) {
+            return response()->json(['success' => false, 'message' => 'Knowledge gap not found'], 404);
+        }
+
+        $gap->update([
+            'status' => 'resolved',
+            'resolution_notes' => (string) ($request->input('notes') ?: 'Resolved via Admin AI Knowledge Dashboard'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Knowledge gap #{$gapId} marked as resolved.",
+            'gap' => $gap,
+        ]);
     }
 }

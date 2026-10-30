@@ -6,9 +6,12 @@ use App\AI\Adapters\FlavourFlowAdapter;
 use App\AI\Contracts\AiAdapterInterface;
 use App\AI\Contracts\AiAnalyzerInterface;
 use App\AI\Contracts\AiBrainInterface;
+use App\AI\Contracts\AiConsultantInterface;
 use App\AI\Contracts\AiContextBuilderInterface;
 use App\AI\Contracts\AiEngineInterface;
 use App\AI\Contracts\AiEventTrackerInterface;
+use App\AI\Contracts\AiKnowledgeBaseInterface;
+use App\AI\Contracts\AiKnowledgeIngestionInterface;
 use App\AI\Contracts\AiLanguageUnderstandingInterface;
 use App\AI\Contracts\AiProviderInterface;
 use App\AI\Contracts\AiRecommendationEngineInterface;
@@ -16,7 +19,10 @@ use App\AI\Core\AiEngine;
 use App\AI\Services\AiAnalyzer;
 use App\AI\Services\AiBrain;
 use App\AI\Services\AiContextBuilder;
+use App\AI\Services\AiDomainConsultantService;
 use App\AI\Services\AiEventTracker;
+use App\AI\Services\AiKnowledgeBaseService;
+use App\AI\Services\AiKnowledgeIngestionService;
 use App\AI\Services\AiLanguageUnderstanding;
 use App\AI\Services\AiProviderManager;
 use App\AI\Services\AiRecommendationEngine;
@@ -70,6 +76,13 @@ class AiServiceProvider extends ServiceProvider
 
         // Step 7: Multilingual Language Understanding Layer
         $this->app->singleton(AiLanguageUnderstandingInterface::class, AiLanguageUnderstanding::class);
+
+        // Step 9: E-commerce Domain Knowledge Base & Ingestion Engine
+        $this->app->singleton(AiKnowledgeIngestionInterface::class, AiKnowledgeIngestionService::class);
+        $this->app->singleton(AiKnowledgeBaseInterface::class, AiKnowledgeBaseService::class);
+
+        // Step 10: E-commerce Domain Expert & Technical Consultant Copilot
+        $this->app->singleton(AiConsultantInterface::class, AiDomainConsultantService::class);
     }
 
     /**
